@@ -1,0 +1,63 @@
+>> operators:
+matlab => python
+elseif => elif
+array(idx) => array[idx]
+&& => &, and
+|| => |, or
+^ => **
+
+>> function definition (note that indents are necessary)
+def funcName(parameter1, parameter2, ...):
+	<body>
+	return returnVariable1, returnVariable2, ...
+
+
+>> conditional statements
+	MATLAB: (no colon ":", "end" statement, no need for indentation)
+if <condition>
+<body>
+else if <condition>
+<body>
+else
+<body>
+end
+
+	Python: (use of colon ":", no "end" statement, indented bodies)
+if <condition>:
+	<body>
+elif <condition>:
+	<body>
+else:
+	<body>
+
+
+>> Math:
+	MATLAB:
+elements of a row vector can be separated by either a comma  "," or a white space " "
+elements of a column vector can be separated by a semi-colon ";"
+element-wise operation (hamard operation) between arrays need an extra dot, e.g.: .*, ./, .^
+standard math functions names are defined by default (e.g., cos, sin, etc.)
+
+	Python:
+elements of a row vector can be separated by a comma ","
+elements of a column vector are given in separate row vectors separated by a comma ",", e.g. [[1, 2], [3, 4]] instead of [1 2 ; 3 4]
+element-wise operation (hamard operation) between arrays by default, e.g.: *, /, **
+math functions need to be imported from a library of choice, e.g. NumPy (prefered choice) or Math (standard math python library)
+e.g.:
+from numpy import cos, sin, pi
+theta = pi / 2
+tanTheta = sin(theta) / cos(theta)
+
+
+>> Miscellaneous:
+	MATLAB:
+Use semi-colons ";" at the end of statements or statement return value will be printed, printing can also be done using `printf` and `disp`
+Array indices start at 1
+Array methods can be used on scalar variables, e.g. len(5.2) is valid
+Array slicing is start : step : end, including end element of array is done by using keyword `end`, e.g.: 1:2:end (note the use of 1)
+
+	Python:
+Do not use semi-colons ";" at the end of statements (but it won't do anything if you do), printing a var is through the `print` function
+Array indices start at 0
+Array methods cannot be used on scalar variables, e.g. len(5.2) will raise a Type error
+Array slicing is start : end : step, including last array element is done by not giving a value, e.g.: 0::2 (note the use of 0)
