@@ -135,16 +135,4 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
         # ihMTs.append(...)
         MTds.append(MTd_ALT)
 
-    # print('a', v_MT0)
-    # print('b', v_MT0[:, 0])
-    # print('c', sum(v_MT0[:, 0]))
-    # print('d', MT0)
-    # print('f', sum(MT0[:]))
-
-    # print('a', v_MTs)
-    # print('b', v_MTs[:, 0])
-    # print('c', sum(v_MTs[:, 0]))
-    # print('d', MTs)
-    # print('f', sum(MTs[:]))
-
     return MT0, MTs, *MTds
