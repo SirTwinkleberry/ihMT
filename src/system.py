@@ -6,22 +6,22 @@ from scipy.linalg import block_diag
 
 
 class System():
-    poolFree_Rrf: ndarray = [] # empty(3,3)
-    poolFree_M0: float = 0.
-    poolFree_T1: float = 0.
-    poolFree_T2: float = 0.
+    poolFree_Rrf: ndarray
+    poolFree_M0: float
+    poolFree_T1: float
+    poolFree_T2: float
 
-    poolFreeBound_exchangeRate: float = 0.
+    poolFreeBound_exchangeRate: float
 
-    poolBound_Rrf_singleSat_Positive: ndarray = [] # empty(3,3) # []
-    poolBound_Rrf_singleSat_Negative: ndarray = [] # empty(3,3)
-    poolBound_Rrf_dualSat: ndarray = [] # empty(3,3)
-    poolBound_M0: float = 0.
-    poolBound_T1: float = 0.
-    poolBound_T2: float = 0.
-    poolBound_T1D: float = 0.
+    poolBound_Rrf_singleSat_Positive: ndarray
+    poolBound_Rrf_singleSat_Negative: ndarray
+    poolBound_Rrf_dualSat: ndarray
+    poolBound_M0: float
+    poolBound_T1: float
+    poolBound_T2: float
+    poolBound_T1D: float
 
-    N_pools: int = 0
+    N_pools: int
 
     def __init__(self, M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T2b: float, T1D: float):
         """_summary_

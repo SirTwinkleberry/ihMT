@@ -2,6 +2,7 @@ from typing import Callable
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad
 
+
 class Pulse():
     """_Abstraction class for pulses_
 
@@ -12,9 +13,19 @@ class Pulse():
     """
 
     gyromagneticFactor = 1e6 * 267.513  # rad / s / T
-    duration = 0.                       # s
-    flipAngle = 0.                      # °
-    offset = 0.                         # Hz
+    
+    duration: float                     # s
+    flipAngle: float                    # °
+    offset: float                       # Hz
+
+    amplitudeIntegral: float
+    powerIntegral: float
+    B1peak: float
+    omegaRMS: float
+
+    B1: Callable
+    omega: Callable
+    omegaSquared: Callable
 
     def compute(self):
         invDuration = 1. / self.duration
@@ -34,6 +45,8 @@ class Pulse():
 
 
 class Tukey(Pulse):
+    shape: float                        # r factor for Tukey shape
+
     def __init__(self, duration: float, shape: float, flipAngle: float, offset: float):
         """_Tukey pulse class_
 

@@ -9,7 +9,25 @@ class Modulation(Flag):
 
 
 class Sequence():
+    modulation: Modulation
+
     pulse: Pulse
+
+    N_pulsePerOffset: int
+    N_pulse: int
+    N_burst: int
+    N_adc: int
+
+    readout_flipAngle: float
+
+    dt_interPulse: float
+    dt_LastBurst: float
+    TR_burst: float
+    ES: float
+    TR: float
+    duration_readout: float
+    duration_preparation: float
+    duration_recovery: float
 
     def __init__(self, modulation: Modulation, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, ES: float, TR: float, readout_flipAngle: float):
         """_summary_

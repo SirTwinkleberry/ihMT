@@ -1,5 +1,3 @@
-# To Do
-
 from system import System
 from sequence import Sequence, Modulation
 from numpy import ndarray, zeros, kron, eye, diag, array, sum, vstack, hstack, abs, matmul, radians, cos

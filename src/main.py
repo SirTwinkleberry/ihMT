@@ -1,5 +1,3 @@
-# To Do
-
 from pulses import Tukey
 from sequence import Sequence, Modulation
 from system import System
