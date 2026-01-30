@@ -71,17 +71,17 @@ class Sequence():
             _description_
         """
         self.modulation = modulation
-        
+
         self.pulse = pulse
 
         self.N_pulsePerOffset = N_pulsePerOffset
         self.N_pulse = N_pulse
-        self.N_burst = N_burst 
+        self.N_burst = N_burst
         self.N_adc = N_adc
 
-        self.dt_interPulse = dt_interPulse 
-        self.dt_LastBurst = dt_lastBurst 
-        self.TR_burst = TR_burst 
+        self.dt_interPulse = dt_interPulse
+        self.dt_LastBurst = dt_lastBurst
+        self.TR_burst = TR_burst
         self.ES = ES 
         self.TR = TR
 
@@ -93,12 +93,12 @@ class Sequence():
 
         if TR < round(self.duration_readout + self.duration_preparation, 6):
             raise RuntimeError('TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)')
-        
+
         if dt_interPulse < pulse.duration:
             raise RuntimeError('dt_interPulse < pulse.duration')
-        
+
         if TR_burst < round(N_pulse * dt_interPulse, 6):
             raise RuntimeError('TR_burst < round(N_pulse * dt_interPulse, 6)')
-        
+
         if .5 * N_pulse % N_pulsePerOffset != 0:
             raise RuntimeError('.5 * N_pulse % N_pulsePerOffset != 0')

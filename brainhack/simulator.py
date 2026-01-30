@@ -51,40 +51,40 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     evol_rf_readoutInstantAction = eye(2 + 2 * (system.N_pools - 1))
     evol_rf_readoutInstantAction[0, 0] = cos(radians(sequence.readout_flipAngle))
 
-    evol_rf_singleSat_Positive = expm( 
-                                      vstack([
-                                              hstack( [ system.poolBound_Rrf_singleSat_Positive + system.poolFree_Rrf + REX, HomogenizeCol.T ] ), 
-                                              zeros( (1, 2 + 2 * (system.N_pools - 1)) ) 
-                                      ]) * sequence.pulse.duration
-                                    )
-    evol_rf_singleSat_Negative = expm( 
-                                      vstack([
-                                              hstack( [ system.poolBound_Rrf_singleSat_Negative + system.poolFree_Rrf + REX, HomogenizeCol.T ] ), 
-                                              zeros( (1, 2 + 2 * (system.N_pools - 1)) ) 
-                                      ]) * sequence.pulse.duration
-                                    )
+    evol_rf_singleSat_Positive = expm(
+        vstack([
+            hstack( [ system.poolBound_Rrf_singleSat_Positive + system.poolFree_Rrf + REX, HomogenizeCol.T ] ),
+            zeros( (1, 2 + 2 * (system.N_pools - 1)) )
+        ]) * sequence.pulse.duration
+    )
+
+    evol_rf_singleSat_Negative = expm(
+        vstack([
+            hstack( [ system.poolBound_Rrf_singleSat_Negative + system.poolFree_Rrf + REX, HomogenizeCol.T ] ),
+            zeros( (1, 2 + 2 * (system.N_pools - 1)) )
+        ]) * sequence.pulse.duration
+    )
 
     evol_RAGE = matmul( evol_relax_recovery, matrix_power(matmul(evol_relax_interReadRF, evol_rf_readoutInstantAction), sequence.N_adc) )
-   
+
     evol_MTsat_single = matmul(
         matmul( evol_relax_lastBurst, matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse) ),
-        matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse)),sequence.N_burst-1)
+        matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse)), sequence.N_burst - 1)
     )
 
     if Modulation.CM in sequence.modulation:
-        evol_rf_dualSat_SM = expm( 
-                                      vstack([
-                                              hstack( [ system.poolBound_Rrf_dualSat + system.poolFree_Rrf + REX, HomogenizeCol.T ] ), 
-                                              zeros( (1, 2 + 2 * (system.N_pools - 1)) ) 
-                                      ]) * sequence.pulse.duration
-                                    )     
-        
-        
+        evol_rf_dualSat_SM = expm(
+            vstack([
+                hstack( [ system.poolBound_Rrf_dualSat + system.poolFree_Rrf + REX, HomogenizeCol.T ] ),
+                zeros( (1, 2 + 2 * (system.N_pools - 1)) )
+            ]) * sequence.pulse.duration
+        )
+
         evol_MTsat_dual_CM = matmul(
             matmul( evol_relax_lastBurst, matrix_power(matmul(evol_relax_interPulse, evol_rf_dualSat_SM), sequence.N_pulse) ),
             matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_dualSat_SM), sequence.N_pulse)), sequence.N_burst - 1)
         )
-    
+
     if Modulation.ALT in sequence.modulation:
         evol_MTsat_dual_ALT = matmul(
             matmul(
@@ -92,23 +92,26 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
                 matrix_power(
                     matmul(matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Negative),
                                         sequence.N_pulsePerOffset),
-                           matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), 
+                           matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive),
                                         sequence.N_pulsePerOffset)),
                     int(.5 * sequence.N_pulse / sequence.N_pulsePerOffset)
-                    )),
+                )
+            ),
             matrix_power(
                 matmul(
                     evol_relax_TR_burst,
                     matrix_power(
                         matmul(matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Negative),
                                             sequence.N_pulsePerOffset),
-                               matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), 
+                               matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive),
                                             sequence.N_pulsePerOffset)),
                         int(.5 * sequence.N_pulse / sequence.N_pulsePerOffset)
-                        )),
-                sequence.N_burst - 1)
+                    )
+                ),
+                sequence.N_burst - 1
+            )
         )
-    
+
     # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
     # normalization: see https://github.com/mriphysics/ihMT_steadystate/blob/master/src/ssSPGR_ihMT_integrate.m#L121-L123
     v_MT0 = eig(matmul(evol_relax_fullPrep, evol_RAGE))[1]
@@ -122,11 +125,11 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     if Modulation.CM in sequence.modulation:
         v_MTd_CM = eig(matmul(evol_MTsat_dual_CM, evol_RAGE))[1]
         MTd_CM = abs(v_MTd_CM[:, 0] / v_MTd_CM[-1, -1])
-        
+
         # ihMT_cm = 2 * (abs(V2(1, end) / V2(end, end)) - abs(V3(1, end) / V3(end, end)));
         # ihMTs.append(...)
         MTds.append(MTd_CM)
-    
+
     if Modulation.ALT in sequence.modulation:
         v_MTd_ALT = eig(matmul(evol_MTsat_dual_ALT, evol_RAGE))[1]
         MTd_ALT = abs(v_MTd_ALT[:, 0] / v_MTd_ALT[-1, -1])

@@ -13,7 +13,7 @@ class Pulse():
     """
 
     gyromagneticFactor = 1e6 * 267.513  # rad / s / T
-    
+
     duration: float                     # s
     flipAngle: float                    # °
     offset: float                       # Hz
@@ -32,7 +32,7 @@ class Pulse():
 
         self.amplitudeIntegral: float = invDuration * quad(self.value, 0, self.duration)[0]                                     # no dimension
         self.powerIntegral: float = invDuration * quad(lambda t: self.value(t)**2, 0, self.duration)[0]                         # no dimension
-        
+
         self.B1peak: float = radians(self.flipAngle) / (self.gyromagneticFactor * self.amplitudeIntegral * self.duration)     # T
         self.B1: Callable = lambda t: self.value(t) * self.B1peak                                                               # T
 
@@ -85,7 +85,7 @@ class Tukey(Pulse):
         # see https://git.bitbybyte.fi/publicgroup/quantumwheelpublic/blob/c99f7f912244379e9d5ed2bbd41f976578efcda1/QuantumWheel/Assets/Plugins/QuantumWheel/.Python/scipy/signal/windows/windows.py
         # inputs:
         #   t: float = time(s) at which we sample the pulse
-        # output: 
+        # output:
         #   pulse: float = amplitude at time `t`
 
         if (t < 0) or (t > self.duration):

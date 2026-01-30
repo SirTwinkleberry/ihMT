@@ -73,7 +73,7 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
     RuntimeError
         _description_
     """
-    
+
     if FLAG_Sine_Modulation.upper() == "CM":
         modulation = Modulation.CM
     elif FLAG_Sine_Modulation.upper() == "ALT":
@@ -82,36 +82,36 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
         modulation = Modulation.BP
     else:
         raise RuntimeError("Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`.")
-    
+
     pulse = Tukey(
-        duration = pw,
-        shape = r_tukey,
-        flipAngle = fa_sat,
-        offset = offset
+        duration=pw,
+        shape=r_tukey,
+        flipAngle=fa_sat,
+        offset=offset
     )
     sequence = Sequence(
-        modulation = modulation,
-        pulse = pulse,
-        N_pulsePerOffset = N_altern,
-        N_pulse = np,
-        N_burst = nb,
-        N_adc = turbo,
-        dt_interPulse = dt,
-        TR_burst = btr,
-        dt_lastBurst = btrlast,
-        ES = es,
-        TR = tr,
-        readout_flipAngle = fa_rage
+        modulation=modulation,
+        pulse=pulse,
+        N_pulsePerOffset=N_altern,
+        N_pulse=np,
+        N_burst=nb,
+        N_adc=turbo,
+        dt_interPulse=dt,
+        TR_burst=btr,
+        dt_lastBurst=btrlast,
+        ES=es,
+        TR=tr,
+        readout_flipAngle=fa_rage
     )
     system = System(
-        M0a = M0a,
-        M0b = M0b,
-        T1f = T1f,
-        T1b = T1b,
-        T1D = T1D,
-        T2f = T2f,
-        T2b = T2b,
-        R = R
+        M0a=M0a,
+        M0b=M0b,
+        T1f=T1f,
+        T1b=T1b,
+        T1D=T1D,
+        T2f=T2f,
+        T2b=T2b,
+        R=R
     )
 
     system.RFabsorption_Matrix(sequence.pulse)
@@ -138,10 +138,10 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
                 suffix = 'CM'
             else:
                 NotImplementedError("`modulation` has flag enabled outside of implemented list.")
-        
+
             outDict[f'MTd_{suffix}'] = MTd
 
-        savemat(outPrefix + f'simulation.mat', outDict, do_compression=True)
+        savemat(outPrefix + 'simulation.mat', outDict, do_compression=True)
 
     return MT0, MTs, *MTds
 
