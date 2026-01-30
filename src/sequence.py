@@ -79,3 +79,6 @@ class Sequence():
         
         if TR_burst < round(N_pulse * dt_interPulse, 6):
             raise RuntimeError('TR_burst < round(N_pulse * dt_interPulse, 6)')
+        
+        if .5 * N_pulse % N_pulsePerOffset != 0:
+            raise RuntimeError('.5 * N_pulse % N_pulsePerOffset != 0')

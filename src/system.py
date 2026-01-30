@@ -1,27 +1,27 @@
 from typing import Callable
 from pulses import Pulse
-from numpy import ndarray, array, empty, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos
+from numpy import ndarray, array, empty, diag, fliplr, sum, zeros, kron, eye, pi, sqrt, exp, sin, cos
 from scipy.integrate import quad
 from scipy.linalg import block_diag
 
 
 class System():
-    poolFree_exchanges: ndarray = empty()
+    poolFree_Rrf: ndarray = [] # empty(3,3)
     poolFree_M0: float = 0.
     poolFree_T1: float = 0.
     poolFree_T2: float = 0.
 
     poolFreeBound_exchangeRate: float = 0.
 
-    poolBound_exchanges_singleSat_Positive: ndarray = empty()
-    poolBound_exchanges_singleSat_Negative: ndarray = empty()
-    poolBound_exchanges_dualSat: ndarray = empty()
+    poolBound_Rrf_singleSat_Positive: ndarray = [] # empty(3,3) # []
+    poolBound_Rrf_singleSat_Negative: ndarray = [] # empty(3,3)
+    poolBound_Rrf_dualSat: ndarray = [] # empty(3,3)
     poolBound_M0: float = 0.
     poolBound_T1: float = 0.
     poolBound_T2: float = 0.
     poolBound_T1D: float = 0.
 
-    N_compartments: int = 0
+    N_pools: int = 0
 
     def __init__(self, M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T2b: float, T1D: float):
         """_summary_
@@ -55,11 +55,11 @@ class System():
         self.poolBound_T1 = T1b
         self.poolBound_T2 = T2b
         self.poolBound_T1D = T1D
-        self.poolBound_formFactor = 1. / ( sqrt(15) * T2b )
+        self.poolBound_omegaLocField = 1. / ( sqrt(15) * T2b )
 
-        self.N_compartments = len(array(self.poolFree_T2).flatten()) + len(array(self.poolBound_T2).flatten())
+        self.N_pools = len(array(self.poolFree_T2).flatten()) + len(array(self.poolBound_T2).flatten())
 
-    def Exchanges(self, pulse: Pulse):
+    def RFabsorption_Matrix(self, pulse: Pulse):
         """_summary_
 
         Parameters
@@ -67,19 +67,21 @@ class System():
         pulse : Pulse
             _description_
         """
-        invFormFactor = 1. / self.poolBound_formFactor
+        inv_omegaLocField = 1. / self.poolBound_omegaLocField
         angularFrequencyOffset = 2 * pi * pulse.offset
 
-        self.poolFree_exchanges: ndarray = diag( [ -pi * pulse.omegaRMS**2 * self.Lorentzian(pulse, self.poolFree_T2), zeros(2 * self.N_compartments) ] )
+        self.poolFree_Rrf: ndarray = diag( [ -pi * pulse.omegaRMS**2 * self.Lorentzian(pulse, self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
 
         superLorentzian: Callable = self.SuperLorentzian if abs(pulse.offset) > 1000 else self.PampelSuperLorentzian
-        omega: float = superLorentzian(pulse, self.poolBound_T2)
-        tmp_diag: ndarray = diag( [ -omega, -omega * (angularFrequencyOffset * invFormFactor)**2 ] )
-        tmp_anti: ndarray = fliplr( diag( [ angularFrequencyOffset, angularFrequencyOffset * invFormFactor**2 ] ) )
+        poolBound_Rrf: float = pi * pulse.omegaRMS**2 *superLorentzian(pulse, self.poolBound_T2)
+        tmp_diag: ndarray = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocField)**2 ] )
+        tmp_anti: ndarray = fliplr( diag( [ angularFrequencyOffset, angularFrequencyOffset * inv_omegaLocField**2 ] ) )
 
-        self.poolBound_exchanges_dualSat: ndarray = block_diag( 0, kron( eye(self.N_compartments), tmp_diag ) )
-        self.poolBound_exchanges_singleSat_Positive: ndarray = block_diag( 0, kron( tmp_diag + tmp_anti ) )
-        self.poolBound_exchanges_singleSat_Negative: ndarray = block_diag( 0, kron( tmp_diag - tmp_anti ) )
+        self.poolBound_Rrf_dualSat: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag ) )
+        self.poolBound_Rrf_singleSat_Positive: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag + tmp_anti ) )
+        self.poolBound_Rrf_singleSat_Negative: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag - tmp_anti ) )
+
+        # print(self.poolBound_Rrf_singleSat_Positive)
 
     def Lorentzian(self, pulse: Pulse, T2: float) -> float:
         """_summary_
