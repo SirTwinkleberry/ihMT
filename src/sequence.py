@@ -2,6 +2,7 @@ from pulses import Pulse
 from numpy import round
 from enum import Flag, auto
 
+
 class Modulation(Flag):
     CM = auto()
     ALT = auto()
