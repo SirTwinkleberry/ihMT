@@ -4,6 +4,7 @@ from numpy import ndarray, zeros, kron, eye, diag, array, sum, vstack, hstack, a
 from numpy.linalg import matrix_power
 from scipy.linalg import expm, block_diag, eig
 
+
 def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     """_summary_
 
