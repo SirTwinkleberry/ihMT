@@ -1,7 +1,8 @@
-from pulses import Tukey
-from sequence import Sequence, Modulation
-from system import System
-from simulator import Simulate
+from .pulses import Tukey
+from .sequence import Sequence, Modulation
+from .system import System
+from .simulator import Simulate
+
 from scipy.io import savemat
 from numpy import ndarray
 from yaml import safe_load

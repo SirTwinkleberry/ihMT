@@ -1,5 +1,6 @@
+from .pulses import Pulse
+
 from typing import Callable
-from pulses import Pulse
 from numpy import ndarray, array, empty, diag, fliplr, sum, zeros, kron, eye, pi, sqrt, exp, sin, cos
 from scipy.integrate import quad
 from scipy.linalg import block_diag

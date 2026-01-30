@@ -1,4 +1,5 @@
-from pulses import Pulse
+from .pulses import Pulse
+
 from numpy import round
 from enum import Flag, auto
 
