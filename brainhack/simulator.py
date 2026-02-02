@@ -1,7 +1,7 @@
 from .system import System
 from .sequence import Sequence, Modulation
 
-from numpy import ndarray, zeros, kron, eye, diag, array, sum, vstack, hstack, abs, matmul, radians, cos
+from numpy import ndarray, zeros, kron, eye, diag, array, sum, vstack, hstack, matmul, radians, cos
 from numpy.linalg import matrix_power
 from scipy.linalg import expm, block_diag, eig
 
@@ -21,9 +21,10 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     tuple[float]
         _description_
     """
-    HomogenizeCol: ndarray = zeros((1, 1 + 2 * (system.N_pools - 1)))
+    HomogenizeCol: ndarray = zeros(1 + 2 * (system.N_pools - 1))
     HomogenizeCol[0] = system.poolFree_M0 / system.poolFree_T1
     HomogenizeCol[1::2] = system.poolBound_M0 / system.poolBound_T1
+    HomogenizeCol = array([HomogenizeCol]).T
 
     REX = block_diag(
         -(1. / system.poolFree_T1 + system.poolFreeBound_exchangeRate * sum(array(system.poolBound_M0))),
@@ -39,7 +40,7 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     # Assuming only 1 free pool with 1 single compartment, filling the dipolar compartment relaxations
     REX[2::2, 2::2] = diag( array( [-1. / system.poolBound_T1D] ).flatten() )
 
-    mat_REX = vstack([hstack([REX, HomogenizeCol.T]), zeros((1, 2 + 2 * (system.N_pools - 1)))])
+    mat_REX = vstack([hstack([REX, HomogenizeCol]), zeros((1, 2 + 2 * (system.N_pools - 1)))])
 
     evol_relax_interPulse = expm(mat_REX * (sequence.dt_interPulse - sequence.pulse.duration))
     evol_relax_interReadRF = expm(mat_REX * sequence.ES)
@@ -53,14 +54,14 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
 
     evol_rf_singleSat_Positive = expm(
         vstack([
-            hstack( [ system.poolBound_Rrf_singleSat_Positive + system.poolFree_Rrf + REX, HomogenizeCol.T ] ),
+            hstack( [ system.poolBound_Rrf_singleSat_Positive + system.poolFree_Rrf + REX, HomogenizeCol ] ),
             zeros( (1, 2 + 2 * (system.N_pools - 1)) )
         ]) * sequence.pulse.duration
     )
 
     evol_rf_singleSat_Negative = expm(
         vstack([
-            hstack( [ system.poolBound_Rrf_singleSat_Negative + system.poolFree_Rrf + REX, HomogenizeCol.T ] ),
+            hstack( [ system.poolBound_Rrf_singleSat_Negative + system.poolFree_Rrf + REX, HomogenizeCol ] ),
             zeros( (1, 2 + 2 * (system.N_pools - 1)) )
         ]) * sequence.pulse.duration
     )
@@ -75,7 +76,7 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     if Modulation.CM in sequence.modulation:
         evol_rf_dualSat_SM = expm(
             vstack([
-                hstack( [ system.poolBound_Rrf_dualSat + system.poolFree_Rrf + REX, HomogenizeCol.T ] ),
+                hstack( [ system.poolBound_Rrf_dualSat + system.poolFree_Rrf + REX, HomogenizeCol ] ),
                 zeros( (1, 2 + 2 * (system.N_pools - 1)) )
             ]) * sequence.pulse.duration
         )
@@ -114,28 +115,32 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
 
     # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
     # normalization: see https://github.com/mriphysics/ihMT_steadystate/blob/master/src/ssSPGR_ihMT_integrate.m#L121-L123
-    v_MT0 = eig(matmul(evol_relax_fullPrep, evol_RAGE))[1]
-    v_MTs = eig(matmul(evol_MTsat_single, evol_RAGE))[1]
+    v_MT0 = eig(matmul(evol_relax_fullPrep, evol_RAGE))[1][:, -1]
+    v_MTs = eig(matmul(evol_MTsat_single, evol_RAGE))[1][:, -1]
 
-    MT0 = v_MT0[:, 0] / v_MT0[-1, -1]
-    MTs = abs(v_MTs[:, 0] / v_MTs[-1, -1])
+    MT0 = v_MT0 / v_MT0[-1]
+    MTs = v_MTs / v_MTs[-1]
 
-    # ihMTs = list()
     MTds = list()
     if Modulation.CM in sequence.modulation:
-        v_MTd_CM = eig(matmul(evol_MTsat_dual_CM, evol_RAGE))[1]
-        MTd_CM = abs(v_MTd_CM[:, 0] / v_MTd_CM[-1, -1])
+        v_MTd_CM = eig(matmul(evol_MTsat_dual_CM, evol_RAGE))[1][:, -1]
+        MTd_CM = v_MTd_CM / v_MTd_CM[-1]
 
-        # ihMT_cm = 2 * (abs(V2(1, end) / V2(end, end)) - abs(V3(1, end) / V3(end, end)));
-        # ihMTs.append(...)
         MTds.append(MTd_CM)
 
     if Modulation.ALT in sequence.modulation:
-        v_MTd_ALT = eig(matmul(evol_MTsat_dual_ALT, evol_RAGE))[1]
-        MTd_ALT = abs(v_MTd_ALT[:, 0] / v_MTd_ALT[-1, -1])
+        v_MTd_ALT = eig(matmul(evol_MTsat_dual_ALT, evol_RAGE))[1][:, -1]
+        MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
 
-        # ihMT_alt = 2 * (abs(V2(1, end) / V2(end, end)) - abs(V3(1, end) / V3(end, end)));
-        # ihMTs.append(...)
         MTds.append(MTd_ALT)
+
+    # print('evol_MTsat_dual_ALT')
+    # print(evol_MTsat_dual_ALT)
+    # print('matmul(evol_MTsat_dual_ALT, evol_RAGE)')
+    # print(matmul(evol_MTsat_dual_ALT, evol_RAGE))
+    # print('v_MTd_ALT')
+    # print(v_MTd_ALT)
+    # print('MTd_ALT')
+    # print(MTd_ALT)
 
     return MT0, MTs, *MTds
