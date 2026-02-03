@@ -1,11 +1,9 @@
 from .system import System
 from .sequence import Sequence, Modulation
 
-from numpy import ndarray, set_printoptions, zeros, kron, eye, diag, array, sum, vstack, hstack, round, matmul, radians, cos
+from numpy import ndarray, zeros, kron, eye, diag, array, sum, vstack, hstack, round, matmul, radians, cos
 from numpy.linalg import matrix_power
-from scipy.linalg import expm, block_diag, eig, schur
-
-set_printoptions(suppress=True, precision=4)
+from scipy.linalg import expm, block_diag, eig
 
 
 def Simulate(system: System, sequence: Sequence) -> tuple[float]:
@@ -117,103 +115,23 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
 
     # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
     # normalization: see https://github.com/mriphysics/ihMT_steadystate/blob/master/src/ssSPGR_ihMT_integrate.m#L121-L123
-    use_schur = False
-    use_round = True
-    digits    = 16
+    v_MT0 = eig(round(matmul(evol_relax_fullPrep, evol_RAGE), 16))[1][:, -1]
+    v_MTs = eig(round(matmul(evol_MTsat_single, evol_RAGE), 16))[1][:, -1]
 
-    use_schur_into_eig = True
+    MT0 = v_MT0 / v_MT0[-1]
+    MTs = v_MTs / v_MTs[-1]
 
-    # print('use_schur =', use_schur)
-    # print('use_round =', use_round)
-    # print('digits    =', digits)
+    MTds = list()
+    if Modulation.CM in sequence.modulation:
+        v_MTd_CM = eig(round(matmul(evol_MTsat_dual_CM, evol_RAGE), 16))[1][:, -1]
+        MTd_CM = v_MTd_CM / v_MTd_CM[-1]
 
-    if use_schur:
-        if use_schur_into_eig:
-            v_MT0 = schur(round(matmul(evol_relax_fullPrep, evol_RAGE), digits) if use_round else matmul(evol_relax_fullPrep, evol_RAGE), output='real', check_finite=False)[0]
-            v_MT0 = eig(round(v_MT0, digits) if use_round else v_MT0)[1][:, -1]
-            v_MTs = schur(round(matmul(evol_MTsat_single, evol_RAGE), digits) if use_round else matmul(evol_MTsat_single, evol_RAGE), output='real', check_finite=False)[0]
-            v_MTs = eig(round(v_MTs, digits) if use_round else v_MTs)[1][:, -1]
+        MTds.append(MTd_CM)
 
-            MT0 = v_MT0 / v_MT0[-1]
-            MTs = v_MTs / v_MTs[-1]
+    if Modulation.ALT in sequence.modulation:
+        v_MTd_ALT = eig(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), 16))[1][:, -1]
+        MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
 
-            MTds = list()
-            if Modulation.CM in sequence.modulation:
-                v_MTd_CM = schur(round(matmul(evol_MTsat_dual_CM, evol_RAGE), digits) if use_round else matmul(evol_MTsat_dual_CM, evol_RAGE), output='real', check_finite=False)[0]
-                v_MTd_CM = eig(round(v_MTd_CM, digits) if use_round else v_MTd_CM)[1][:, -1]
-                MTd_CM = v_MTd_CM / v_MTd_CM[-1]
-
-                MTds.append(MTd_CM)
-
-            if Modulation.ALT in sequence.modulation:
-                v_MTd_ALT = schur(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), digits) if use_round else matmul(evol_MTsat_dual_ALT, evol_RAGE), output='real', check_finite=False)[0]
-                v_MTd_ALT = eig(round(v_MTd_ALT, digits) if use_round else v_MTd_ALT)[1][:, -1]
-                MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
-
-                MTds.append(MTd_ALT)
-        else:
-            v_MT0 = schur(round(matmul(evol_relax_fullPrep, evol_RAGE), digits) if use_round else matmul(evol_relax_fullPrep, evol_RAGE), output='real', check_finite=False)[0][:, -1]
-            v_MTs = schur(round(matmul(evol_MTsat_single, evol_RAGE), digits) if use_round else matmul(evol_MTsat_single, evol_RAGE), output='real', check_finite=False)[0][:, -1]
-
-            MT0 = v_MT0 / v_MT0[-1]
-            MTs = v_MTs / v_MTs[-1]
-
-            MTds = list()
-            if Modulation.CM in sequence.modulation:
-                v_MTd_CM = schur(round(matmul(evol_MTsat_dual_CM, evol_RAGE), digits) if use_round else matmul(evol_MTsat_dual_CM, evol_RAGE), output='real', check_finite=False)[0][:, -1]
-                MTd_CM = v_MTd_CM / v_MTd_CM[-1]
-
-                MTds.append(MTd_CM)
-
-            if Modulation.ALT in sequence.modulation:
-                v_MTd_ALT = schur(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), digits) if use_round else matmul(evol_MTsat_dual_ALT, evol_RAGE), output='real', check_finite=False)[0][:, -1]
-                MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
-
-                MTds.append(MTd_ALT)
-    else:
-        v_MT0 = eig(round(matmul(evol_relax_fullPrep, evol_RAGE), digits) if use_round else matmul(evol_relax_fullPrep, evol_RAGE))[1][:, -1]
-        v_MTs = eig(round(matmul(evol_MTsat_single, evol_RAGE), digits) if use_round else matmul(evol_MTsat_single, evol_RAGE))[1][:, -1]
-
-        MT0 = v_MT0 / v_MT0[-1]
-        MTs = v_MTs / v_MTs[-1]
-
-        MTds = list()
-        if Modulation.CM in sequence.modulation:
-            v_MTd_CM = eig(round(matmul(evol_MTsat_dual_CM, evol_RAGE), digits) if use_round else matmul(evol_MTsat_dual_CM, evol_RAGE))[1][:, -1]
-            MTd_CM = v_MTd_CM / v_MTd_CM[-1]
-
-            MTds.append(MTd_CM)
-
-        if Modulation.ALT in sequence.modulation:
-            v_MTd_ALT = eig(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), digits) if use_round else matmul(evol_MTsat_dual_ALT, evol_RAGE))[1][:, -1]
-            MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
-
-            MTds.append(MTd_ALT)
-
-    # print('Full MT0')
-    # for mat in schur(matmul(evol_relax_fullPrep, evol_RAGE), output='real', check_finite=False):
-    #     print(mat)
-    # print('Full MTs')
-    # for mat in schur(matmul(evol_MTsat_single, evol_RAGE), output='real', check_finite=False):
-    #     print(mat)
-    # print('Full MTd_CM')
-    # for mat in schur(matmul(evol_MTsat_dual_CM, evol_RAGE), output='real', check_finite=False):
-    #     print(mat)
-    # print('Full MTd_ALT')
-    # for mat in schur(matmul(evol_MTsat_dual_ALT, evol_RAGE), output='real', check_finite=False):
-    #     print(mat)
-
-    # print(f'v_MT0     {v_MT0}')
-    # print(f'MT0       {MT0}')
-    # print(f'v_MTs     {v_MTs}')
-    # print(f'MTs       {MTs}')
-    # print(f'v_MTd_CM  {v_MTd_CM}')
-    # print(f'MTd_CM    {MTd_CM}')
-    # print(f'v_MTd_ALT {v_MTd_ALT}')
-    # print(f'MTd_ALT   {MTd_ALT}')
-
-    # print(f'MTsR:     {1 - MTs / MT0}')
-    # print(f'MTdR_CM:  {1 - MTd_CM / MT0}')
-    # print(f'MTdR_ALT: {1 - MTd_ALT / MT0}')
+        MTds.append(MTd_ALT)
 
     return MT0, MTs, *MTds
