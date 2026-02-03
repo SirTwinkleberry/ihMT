@@ -82,8 +82,8 @@ class Sequence():
         self.dt_interPulse = dt_interPulse
         self.dt_LastBurst = dt_lastBurst
         self.TR_burst = TR_burst
-        self.ES = ES 
-        self.TR = TR
+        self.es = ES
+        self.tr = TR
 
         self.duration_readout = N_adc * ES
         self.duration_preparation = (N_burst - 1) * TR_burst + dt_lastBurst

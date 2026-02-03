@@ -1,12 +1,13 @@
 from .system import System
 from .sequence import Sequence, Modulation
 
-from numpy import ndarray, zeros, kron, eye, diag, array, sum, vstack, hstack, round, matmul, radians, cos
-from numpy.linalg import matrix_power
-from scipy.linalg import expm, block_diag, eig
+from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, round, matmul, radians, cos
+from numpy.typing import NDArray
+from numpy.linalg import matrix_power, eig
+from scipy.linalg import expm, block_diag  # type: ignore
 
 
-def Simulate(system: System, sequence: Sequence) -> tuple[float]:
+def Simulate(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
@@ -20,8 +21,18 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
     -------
     tuple[float]
         _description_
+
+    Raises
+    ------
+    AttributeError
+        _description_
     """
-    HomogenizeCol: ndarray = zeros(1 + 2 * (system.N_pools - 1))
+    if ((not hasattr(system, 'poolBound_Rrf_dualSat'))
+        or (not hasattr(system, 'poolBound_Rrf_singleSat_Positive'))
+            or (not hasattr(system, 'poolBound_Rrf_singleSat_Negative'))):
+        raise AttributeError("Missing `System` attribute(s). Have you called `System.RFabsorption_Matrix(sequence.pulse)`?")
+
+    HomogenizeCol: NDArray[float64] = zeros(1 + 2 * (system.N_pools - 1))
     HomogenizeCol[0] = system.poolFree_M0 / system.poolFree_T1
     HomogenizeCol[1::2] = system.poolBound_M0 / system.poolBound_T1
     HomogenizeCol = array([HomogenizeCol]).T
@@ -42,52 +53,66 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
 
     mat_REX = vstack([hstack([REX, HomogenizeCol]), zeros((1, 2 + 2 * (system.N_pools - 1)))])
 
-    evol_relax_interPulse = expm(mat_REX * (sequence.dt_interPulse - sequence.pulse.duration))
-    evol_relax_interReadRF = expm(mat_REX * sequence.ES)
-    evol_relax_recovery = expm(mat_REX * sequence.duration_recovery)
-    evol_relax_TR_burst = expm(mat_REX * (sequence.TR_burst - sequence.N_pulse * sequence.dt_interPulse))
-    evol_relax_lastBurst = expm(mat_REX * (sequence.dt_LastBurst - sequence.N_pulse * sequence.dt_interPulse))
-    evol_relax_fullPrep = expm(mat_REX * sequence.duration_preparation)
+    evol_relax_interPulse: NDArray[float64] = expm(mat_REX * (sequence.dt_interPulse - sequence.pulse.duration))  # type: ignore
+    evol_relax_interReadRF: NDArray[float64] = expm(mat_REX * sequence.ES)  # type: ignore
+    evol_relax_recovery: NDArray[float64] = expm(mat_REX * sequence.duration_recovery)  # type: ignore
+    evol_relax_TR_burst: NDArray[float64] = expm(mat_REX * (sequence.TR_burst - sequence.N_pulse * sequence.dt_interPulse))  # type: ignore
+    evol_relax_lastBurst: NDArray[float64] = expm(mat_REX * (sequence.dt_LastBurst - sequence.N_pulse * sequence.dt_interPulse))  # type: ignore
+    evol_relax_fullPrep: NDArray[float64] = expm(mat_REX * sequence.duration_preparation)  # type: ignore
 
     evol_rf_readoutInstantAction = eye(2 + 2 * (system.N_pools - 1))
     evol_rf_readoutInstantAction[0, 0] = cos(radians(sequence.readout_flipAngle))
 
-    evol_rf_singleSat_Positive = expm(
+    evol_rf_singleSat_Positive: NDArray[float64] = expm(  # type: ignore
         vstack([
             hstack( [ system.poolBound_Rrf_singleSat_Positive + system.poolFree_Rrf + REX, HomogenizeCol ] ),
             zeros( (1, 2 + 2 * (system.N_pools - 1)) )
         ]) * sequence.pulse.duration
     )
 
-    evol_rf_singleSat_Negative = expm(
+    evol_rf_singleSat_Negative: NDArray[float64] = expm(  # type: ignore
         vstack([
             hstack( [ system.poolBound_Rrf_singleSat_Negative + system.poolFree_Rrf + REX, HomogenizeCol ] ),
             zeros( (1, 2 + 2 * (system.N_pools - 1)) )
         ]) * sequence.pulse.duration
     )
 
-    evol_RAGE = matmul( evol_relax_recovery, matrix_power(matmul(evol_relax_interReadRF, evol_rf_readoutInstantAction), sequence.N_adc) )
+    evol_RAGE: NDArray[float64] = matmul( evol_relax_recovery, matrix_power(matmul(evol_relax_interReadRF, evol_rf_readoutInstantAction), sequence.N_adc) )
 
-    evol_MTsat_single = matmul(
+    evol_MTsat_single: NDArray[float64] = matmul(
         matmul( evol_relax_lastBurst, matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse) ),
         matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse)), sequence.N_burst - 1)
     )
 
+    # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
+    # normalization: see https://github.com/mriphysics/ihMT_steadystate/blob/master/src/ssSPGR_ihMT_integrate.m#L121-L123
+    v_MT0 = eig(round(matmul(evol_relax_fullPrep, evol_RAGE), 16))[1][:, -1]  # type: ignore
+    v_MTs = eig(round(matmul(evol_MTsat_single, evol_RAGE), 16))[1][:, -1]  # type: ignore
+
+    MT0: NDArray[float64] = v_MT0 / v_MT0[-1]
+    MTs: NDArray[float64] = v_MTs / v_MTs[-1]
+
+    MTds: list[NDArray[float64]] = list()
     if Modulation.CM in sequence.modulation:
-        evol_rf_dualSat_SM = expm(
+        evol_rf_dualSat_SM: NDArray[float64] = expm(  # type: ignore
             vstack([
                 hstack( [ system.poolBound_Rrf_dualSat + system.poolFree_Rrf + REX, HomogenizeCol ] ),
                 zeros( (1, 2 + 2 * (system.N_pools - 1)) )
             ]) * sequence.pulse.duration
         )
 
-        evol_MTsat_dual_CM = matmul(
+        evol_MTsat_dual_CM: NDArray[float64] = matmul(
             matmul( evol_relax_lastBurst, matrix_power(matmul(evol_relax_interPulse, evol_rf_dualSat_SM), sequence.N_pulse) ),
             matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_dualSat_SM), sequence.N_pulse)), sequence.N_burst - 1)
         )
 
+        v_MTd_CM = eig(round(matmul(evol_MTsat_dual_CM, evol_RAGE), 16))[1][:, -1]  # type: ignore
+        MTd_CM = v_MTd_CM / v_MTd_CM[-1]
+
+        MTds.append(MTd_CM)
+
     if Modulation.ALT in sequence.modulation:
-        evol_MTsat_dual_ALT = matmul(
+        evol_MTsat_dual_ALT: NDArray[float64] = matmul(
             matmul(
                 evol_relax_lastBurst,
                 matrix_power(
@@ -113,23 +138,7 @@ def Simulate(system: System, sequence: Sequence) -> tuple[float]:
             )
         )
 
-    # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
-    # normalization: see https://github.com/mriphysics/ihMT_steadystate/blob/master/src/ssSPGR_ihMT_integrate.m#L121-L123
-    v_MT0 = eig(round(matmul(evol_relax_fullPrep, evol_RAGE), 16))[1][:, -1]
-    v_MTs = eig(round(matmul(evol_MTsat_single, evol_RAGE), 16))[1][:, -1]
-
-    MT0 = v_MT0 / v_MT0[-1]
-    MTs = v_MTs / v_MTs[-1]
-
-    MTds = list()
-    if Modulation.CM in sequence.modulation:
-        v_MTd_CM = eig(round(matmul(evol_MTsat_dual_CM, evol_RAGE), 16))[1][:, -1]
-        MTd_CM = v_MTd_CM / v_MTd_CM[-1]
-
-        MTds.append(MTd_CM)
-
-    if Modulation.ALT in sequence.modulation:
-        v_MTd_ALT = eig(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), 16))[1][:, -1]
+        v_MTd_ALT = eig(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), 16))[1][:, -1]  # type: ignore
         MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
 
         MTds.append(MTd_ALT)

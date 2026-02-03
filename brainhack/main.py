@@ -3,13 +3,15 @@ from .sequence import Sequence, Modulation
 from .system import System
 from .simulator import Simulate
 
-from scipy.io import savemat
-from numpy import ndarray
+from typing import Any
+from scipy.io import savemat  # type: ignore
+from numpy import float64
+from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
 
 
-def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outPrefix: str, export: bool, offset: float, *args, **kwargs) -> tuple[ndarray[float]]:
+def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outPrefix: str, export: bool, offset: float, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
@@ -115,15 +117,15 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
     )
 
     system.RFabsorption_Matrix(sequence.pulse)
-    MT0, MTs, *MTds = Simulate(system, sequence)
+    arrays: tuple[NDArray[float64], ...] = Simulate(system, sequence)
 
     if export:
-        outDict = {
-            'MT0': MT0,
-            'MTs': MTs,
+        outDict: dict[str, NDArray[float64]] = {
+            'MT0': arrays[0],
+            'MTs': arrays[1],
         }
 
-        for i, MTd in enumerate(MTds):
+        for i, MTd in enumerate(arrays[2:]):
             suffix: str = ''
             if Modulation.BP in modulation:
                 if i == 0:
@@ -143,7 +145,7 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
 
         savemat(outPrefix + 'simulation.mat', outDict, do_compression=True)
 
-    return MT0, MTs, *MTds
+    return arrays
 
 
 if __name__ == '__main__':
