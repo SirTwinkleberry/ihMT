@@ -16,30 +16,30 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
     Parameters
     ----------
-    B1rel : float
+    M0a : float
         _description_
     T1f : float
-        _description [s]_
+        _description_
     T2f : float
-        _description [s]_
+        _description_
     R : float
-        _description [per s]_
+        _description_
     M0b : float
         _description_
     T1b : float
-        _description [s]_
+        _description_
     T1D : float
-        _description [s]_
+        _description_
     T2b : float
-        _description [s]_
+        _description_
     pw : float
-        _description [s]_
+        _description_
     dt : float
-        _description [s]_
+        _description_
     es : float
-        _description [s]_
+        _description_
     tr : float
-        _description [s]_
+        _description_
     turbo : int
         _description_
     np : int
@@ -47,13 +47,13 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     nb : int
         _description_
     btr : float
-        _description [s]_
+        _description_
     btrlast : float
-        _description [s]_
+        _description_
     fa_sat : float
-        _description [°]_
+        _description_
     fa_rage : float
-        _description [°]_
+        _description_
     FLAG_Sine_Modulation : str
         _description_
     N_altern : int
@@ -64,10 +64,12 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         _description_
     export : bool
         _description_
+    offset : float
+        _description_
 
     Returns
     -------
-    tuple[ndarray[float]]
+    tuple[NDArray[float64], ...]
         _description_
 
     Raises
