@@ -1,0 +1,20 @@
+{
+    "python.REPL.enableREPLSmartSend": false,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.typeEvaluation.strictSetInference": true,
+    "python.analysis.typeEvaluation.strictListInference": true,
+    "python.analysis.typeEvaluation.strictDictionaryInference": true,
+    "python.analysis.typeEvaluation.deprecateTypingAliases": true,
+    "python.analysis.diagnosticSeverityOverrides": {
+
+    },
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        ".",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
+}

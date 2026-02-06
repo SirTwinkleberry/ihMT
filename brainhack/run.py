@@ -1,43 +1,45 @@
-from .pulses import Tukey
-from .sequence import Sequence, Modulation
-from .system import System
-from .simulator import Simulate
+from brainhack.pulses import Tukey
+from brainhack.sequence import Sequence, Modulation
+from brainhack.system import System
+from brainhack.simulator import Simulate
 
-from scipy.io import savemat
-from numpy import ndarray
+from typing import Any
+from scipy.io import savemat  # type: ignore
+from numpy import float64
+from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
 
 
-def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outPrefix: str, export: bool, offset: float, *args, **kwargs) -> tuple[ndarray[float]]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outPrefix: str, export: bool, offset: float, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
     ----------
-    B1rel : float
+    M0a : float
         _description_
     T1f : float
-        _description [s]_
+        _description_
     T2f : float
-        _description [s]_
+        _description_
     R : float
-        _description [per s]_
+        _description_
     M0b : float
         _description_
     T1b : float
-        _description [s]_
+        _description_
     T1D : float
-        _description [s]_
+        _description_
     T2b : float
-        _description [s]_
+        _description_
     pw : float
-        _description [s]_
+        _description_
     dt : float
-        _description [s]_
+        _description_
     es : float
-        _description [s]_
+        _description_
     tr : float
-        _description [s]_
+        _description_
     turbo : int
         _description_
     np : int
@@ -45,13 +47,13 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
     nb : int
         _description_
     btr : float
-        _description [s]_
+        _description_
     btrlast : float
-        _description [s]_
+        _description_
     fa_sat : float
-        _description [°]_
+        _description_
     fa_rage : float
-        _description [°]_
+        _description_
     FLAG_Sine_Modulation : str
         _description_
     N_altern : int
@@ -62,10 +64,12 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
         _description_
     export : bool
         _description_
+    offset : float
+        _description_
 
     Returns
     -------
-    tuple[ndarray[float]]
+    tuple[NDArray[float64], ...]
         _description_
 
     Raises
@@ -104,26 +108,26 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
         readout_flipAngle=fa_rage
     )
     system = System(
-        M0a=M0a,
-        M0b=M0b,
-        T1f=T1f,
-        T1b=T1b,
-        T1D=T1D,
-        T2f=T2f,
-        T2b=T2b,
-        R=R
+        poolFree_M0=M0a,
+        poolFree_T1=T1f,
+        poolFree_T2=T2f,
+        poolFreeBound_exchangeRate=R,
+        poolBound_M0=M0b,
+        poolBound_T1=T1b,
+        poolBound_T2=T2b,
+        poolBound_T1D=T1D
     )
 
     system.RFabsorption_Matrix(sequence.pulse)
-    MT0, MTs, *MTds = Simulate(system, sequence)
+    arrays: tuple[NDArray[float64], ...] = Simulate(system, sequence)
 
     if export:
-        outDict = {
-            'MT0': MT0,
-            'MTs': MTs,
+        outDict: dict[str, NDArray[float64]] = {
+            'MT0': arrays[0],
+            'MTs': arrays[1],
         }
 
-        for i, MTd in enumerate(MTds):
+        for i, MTd in enumerate(arrays[2:]):
             suffix: str = ''
             if Modulation.BP in modulation:
                 if i == 0:
@@ -143,7 +147,7 @@ def Main(B1rel: float, M0a: float, T1f: float, T2f: float, R: float, M0b: float,
 
         savemat(outPrefix + 'simulation.mat', outDict, do_compression=True)
 
-    return MT0, MTs, *MTds
+    return arrays
 
 
 if __name__ == '__main__':
@@ -158,7 +162,7 @@ if __name__ == '__main__':
     with open(argv[1], 'r') as file:
         config = safe_load(file)
 
-    for output in Main(**config):
+    for output in SingleRun(**config):
         print(output)
 
 # Note:

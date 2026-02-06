@@ -21,6 +21,6 @@ fa_rage: 5
 FLAG_Sine_Modulation: "BP"
 N_altern: 1
 r_tukey: 0.3
-outPrefix: ''
+outPrefix: './output/'
 export: True
 offset: 7000

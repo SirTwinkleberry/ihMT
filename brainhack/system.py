@@ -1,64 +1,66 @@
-from .pulses import Pulse
+from brainhack.pulses import Pulse
 
-from typing import Callable
-from numpy import ndarray, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos
-from scipy.integrate import quad
-from scipy.linalg import block_diag
+from collections.abc import Callable
+from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos
+from numpy.typing import NDArray
+from scipy.integrate import quad  # type: ignore
+from scipy.linalg import block_diag  # type: ignore
 
 
 class System():
-    poolFree_Rrf: ndarray
+    poolFree_Rrf: NDArray[float64]
     poolFree_M0: float
     poolFree_T1: float
     poolFree_T2: float
 
     poolFreeBound_exchangeRate: float
 
-    poolBound_Rrf_singleSat_Positive: ndarray
-    poolBound_Rrf_singleSat_Negative: ndarray
-    poolBound_Rrf_dualSat: ndarray
+    poolBound_Rrf_singleSat_Positive: NDArray[float64]
+    poolBound_Rrf_singleSat_Negative: NDArray[float64]
+    poolBound_Rrf_dualSat: NDArray[float64]
     poolBound_M0: float
     poolBound_T1: float
     poolBound_T2: float
     poolBound_T1D: float
+    poolBound_omegaLocField: float
 
     N_pools: int
 
-    def __init__(self, M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T2b: float, T1D: float):
+    def __init__(self, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float):
         """_summary_
 
         Parameters
         ----------
-        M0a : float
+        poolFree_M0 : float
             _description_
-        T1f : float
+        poolFree_T1 : float
             _description_
-        T2f : float
+        poolFree_T2 : float
             _description_
-        R : float
+        poolFreeBound_exchangeRate : float
             _description_
-        M0b : float
+        poolBound_M0 : float
             _description_
-        T1b : float
+        poolBound_T1 : float
             _description_
-        T2b : float
+        poolBound_T2 : float
             _description_
-        T1D : float
+        poolBound_T1D : float
             _description_
         """
-        self.poolFree_M0 = M0a
-        self.poolFree_T1 = T1f
-        self.poolFree_T2 = T2f
+        self.poolFree_M0 = poolFree_M0
+        self.poolFree_T1 = poolFree_T1
+        self.poolFree_T2 = poolFree_T2
 
-        self.poolFreeBound_exchangeRate = R
+        self.poolFreeBound_exchangeRate = poolFreeBound_exchangeRate
 
-        self.poolBound_M0 = M0b
-        self.poolBound_T1 = T1b
-        self.poolBound_T2 = T2b
-        self.poolBound_T1D = T1D
-        self.poolBound_omegaLocField = 1. / ( sqrt(15) * T2b )
+        self.poolBound_M0 = poolBound_M0
+        self.poolBound_T1 = poolBound_T1
+        self.poolBound_T2 = poolBound_T2
+        self.poolBound_T1D = poolBound_T1D
+        self.poolBound_omegaLocField = 1. / ( sqrt(15) * poolBound_T2 )
 
-        self.N_pools = len(array(self.poolFree_T2).flatten()) + len(array(self.poolBound_T2).flatten())
+        self.N_pools = len(array(poolFree_T2).flatten()) + len(array(poolBound_T2).flatten())
 
     def RFabsorption_Matrix(self, pulse: Pulse):
         """_summary_
@@ -71,18 +73,16 @@ class System():
         inv_omegaLocField = 1. / self.poolBound_omegaLocField
         angularFrequencyOffset = 2 * pi * pulse.offset
 
-        self.poolFree_Rrf: ndarray = diag( [ -pi * pulse.omegaRMS**2 * self.Lorentzian(pulse, self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
+        self.poolFree_Rrf = diag( [ -pi * pulse.omegaRMS**2 * self.Lorentzian(pulse, self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
 
-        superLorentzian: Callable = self.SuperLorentzian if abs(pulse.offset) > 1000 else self.PampelSuperLorentzian
+        superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(pulse.offset) > 1000 else self.PampelSuperLorentzian
         poolBound_Rrf: float = pi * pulse.omegaRMS**2 * superLorentzian(pulse, self.poolBound_T2)
-        tmp_diag: ndarray = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocField)**2 ] )
-        tmp_anti: ndarray = fliplr( diag( [ poolBound_Rrf *angularFrequencyOffset, poolBound_Rrf *angularFrequencyOffset * inv_omegaLocField**2 ] ) )
+        tmp_diag: NDArray[float64] = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocField)**2 ] )
+        tmp_anti: NDArray[float64] = fliplr( diag( [ poolBound_Rrf * angularFrequencyOffset, poolBound_Rrf * angularFrequencyOffset * inv_omegaLocField**2 ] ) )
 
-        self.poolBound_Rrf_dualSat: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag ) )
-        self.poolBound_Rrf_singleSat_Positive: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag + tmp_anti ) )
-        self.poolBound_Rrf_singleSat_Negative: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag - tmp_anti ) )
-
-        # print(self.poolBound_Rrf_singleSat_Positive)
+        self.poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag ) )
+        self.poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag + tmp_anti ) )
+        self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag - tmp_anti ) )
 
     def Lorentzian(self, pulse: Pulse, T2: float) -> float:
         """_summary_
@@ -116,7 +116,7 @@ class System():
         float
             _description_
         """
-        return sqrt(1. / (2 * pi) ) * self.T2 * exp( -.5 * (2 * pi * pulse.offset * T2)**2 )
+        return sqrt(1. / (2 * pi) ) * T2 * exp( -.5 * (2 * pi * pulse.offset * T2)**2 )
 
     def SuperLorentzian(self, pulse: Pulse, T2: float) -> float:
         """_summary_
@@ -133,7 +133,7 @@ class System():
         float
             _description_
         """
-        return quad(lambda u: sqrt(2 / pi) * (T2 / abs(3 * u * u - 1)) * exp(-2 * ((2 * pi * pulse.offset * T2) / (3 * u * u - 1))**2), 0, 1)[0]
+        return quad(lambda u: sqrt(2 / pi) * (T2 / abs(3 * u * u - 1)) * exp(-2 * ((2 * pi * pulse.offset * T2) / (3 * u * u - 1))**2), 0, 1)[0]  # type: ignore
 
     def PampelSuperLorentzian(self, pulse: Pulse, T2: float) -> float:
         """_summary_
@@ -160,4 +160,4 @@ class System():
 
             return sin(theta) * T2_eff * exp( -.5 * ( 2 * pi * offset * T2_eff )**2 )
 
-        return sqrt(1. / (2 * pi)) * quad( lambda theta: Spherical(theta, pulse.offset, T2), 0, .5 * pi)
+        return sqrt(1. / (2 * pi)) * quad( lambda theta: Spherical(theta, pulse.offset, T2), 0, .5 * pi)[0]  # type: ignore

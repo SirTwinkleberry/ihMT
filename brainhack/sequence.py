@@ -1,4 +1,4 @@
-from .pulses import Pulse
+from brainhack.pulses import Pulse
 
 from numpy import round
 from enum import Flag, auto
@@ -25,8 +25,8 @@ class Sequence():
     dt_interPulse: float
     dt_LastBurst: float
     TR_burst: float
-    ES: float
-    TR: float
+    es: float
+    tr: float
     duration_readout: float
     duration_preparation: float
     duration_recovery: float
@@ -82,8 +82,8 @@ class Sequence():
         self.dt_interPulse = dt_interPulse
         self.dt_LastBurst = dt_lastBurst
         self.TR_burst = TR_burst
-        self.ES = ES 
-        self.TR = TR
+        self.es = ES
+        self.tr = TR
 
         self.duration_readout = N_adc * ES
         self.duration_preparation = (N_burst - 1) * TR_burst + dt_lastBurst
@@ -92,13 +92,13 @@ class Sequence():
         self.readout_flipAngle = readout_flipAngle
 
         if TR < round(self.duration_readout + self.duration_preparation, 6):
-            raise RuntimeError('TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)')
+            raise ValueError('TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)')
 
         if dt_interPulse < pulse.duration:
-            raise RuntimeError('dt_interPulse < pulse.duration')
+            raise ValueError('dt_interPulse < pulse.duration')
 
         if TR_burst < round(N_pulse * dt_interPulse, 6):
-            raise RuntimeError('TR_burst < round(N_pulse * dt_interPulse, 6)')
+            raise ValueError('TR_burst < round(N_pulse * dt_interPulse, 6)')
 
         if .5 * N_pulse % N_pulsePerOffset != 0:
-            raise RuntimeError('.5 * N_pulse % N_pulsePerOffset != 0')
+            raise ValueError('.5 * N_pulse % N_pulsePerOffset != 0')
