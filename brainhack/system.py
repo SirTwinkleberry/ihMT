@@ -76,7 +76,7 @@ class System():
         superLorentzian: Callable = self.SuperLorentzian if abs(pulse.offset) > 1000 else self.PampelSuperLorentzian
         poolBound_Rrf: float = pi * pulse.omegaRMS**2 * superLorentzian(pulse, self.poolBound_T2)
         tmp_diag: ndarray = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocField)**2 ] )
-        tmp_anti: ndarray = fliplr( diag( [ angularFrequencyOffset, angularFrequencyOffset * inv_omegaLocField**2 ] ) )
+        tmp_anti: ndarray = fliplr( diag( [ poolBound_Rrf *angularFrequencyOffset, poolBound_Rrf *angularFrequencyOffset * inv_omegaLocField**2 ] ) )
 
         self.poolBound_Rrf_dualSat: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag ) )
         self.poolBound_Rrf_singleSat_Positive: ndarray = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag + tmp_anti ) )
