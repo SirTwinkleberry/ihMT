@@ -1,3 +1,4 @@
+from typing import Any
 from collections.abc import Callable
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad  # type: ignore
@@ -23,25 +24,25 @@ class Pulse():
     b1peak: float
     omegaRMS: float
 
-    b1: Callable[[float], float]
-    omega: Callable[[float], float]
-    omegaSquared: Callable[[float], float]
+    def __init__(self, *args: Any, **kwargs: Any):
+        raise NotImplementedError("Object `Pulse` should not be instantiated directly. Use daughter classes instead.")
 
     def compute(self):
+        if type(self) is Pulse:
+            raise NotImplementedError("Object `Pulse` should not be instantiated directly. Use daughter classes instead.")
+
         invDuration = 1. / self.duration
 
-        self.amplitudeIntegral: float = invDuration * quad(self.value, 0, self.duration)[0]                                     # no dimension
-        self.powerIntegral: float = invDuration * quad(lambda t: self.value(t)**2, 0, self.duration)[0]  # type: ignore         # no dimension
+        self.amplitudeIntegral: float = invDuration * quad(self.value, 0, self.duration)[0]                                    # no dimension
+        self.powerIntegral: float = invDuration * quad(lambda t: self.value(t)**2, 0, self.duration)[0]  # type: ignore        # no dimension
 
         self.b1peak: float = radians(self.flipAngle) / (self.gyromagneticFactor * self.amplitudeIntegral * self.duration)  # type: ignore   # T
-        self.b1 = lambda t: self.value(t) * self.b1peak                                                               # T
 
-        self.omega = lambda t: self.gyromagneticFactor * self.b1(t)                                                   # rad / s
-        self.omegaSquared = lambda t: self.omega(t)**2                                                                # (rad / s)^2
-        self.omegaRMS: float = sqrt(invDuration * quad(self.omegaSquared, 0, self.duration)[0])  # type: ignore       # rad / s
+        omega: Callable[[float], float] = lambda t: self.value(t) * self.b1peak * self.gyromagneticFactor                       # rad / s
+        self.omegaRMS: float = sqrt(invDuration * quad(lambda t: omega(t)**2, 0, self.duration)[0])  # type: ignore             # rad / s
 
     def value(self, t: float) -> float:
-        raise RuntimeError("Pulse.value should not be called directly. User daughter class' `value` method instead.")
+        raise NotImplementedError("Pulse.value should not be called directly. User daughter class' `value` method instead.")
 
 
 class Tukey(Pulse):
@@ -88,16 +89,16 @@ class Tukey(Pulse):
         # output:
         #   pulse: float = amplitude at time `t`
 
-        if (t < 0) or (t > self.duration):
+        if (t <= 0) or (t >= self.duration):
             return 0
 
         dimless_time = t / self.duration
 
-        if (0 <= dimless_time) & (dimless_time < .5 * self.shape):
+        if (0 < dimless_time) & (dimless_time < .5 * self.shape):
             pulse: float = 0.5 * ( 1 + cos(pi * (-1 + 2 * dimless_time / self.shape)) )
 
-        elif (.5 * self.shape <= dimless_time) & (dimless_time < 1 - .5 * self.shape):
-            pulse = 1.
+        elif (.5 * self.shape <= dimless_time) & (dimless_time <= 1 - .5 * self.shape):
+            pulse = 1
 
         else:
             pulse: float = 0.5 * ( 1 + cos(pi * (1 - 2 / self.shape + 2 * dimless_time / self.shape)) )

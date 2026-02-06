@@ -1,7 +1,7 @@
-from .pulses import Tukey
-from .sequence import Sequence, Modulation
-from .system import System
-from .simulator import Simulate
+from brainhack.pulses import Tukey
+from brainhack.sequence import Sequence, Modulation
+from brainhack.system import System
+from brainhack.simulator import Simulate
 
 from typing import Any
 from scipy.io import savemat  # type: ignore
@@ -108,14 +108,14 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         readout_flipAngle=fa_rage
     )
     system = System(
-        M0a=M0a,
-        M0b=M0b,
-        T1f=T1f,
-        T1b=T1b,
-        T1D=T1D,
-        T2f=T2f,
-        T2b=T2b,
-        R=R
+        poolFree_M0=M0a,
+        poolFree_T1=T1f,
+        poolFree_T2=T2f,
+        poolFreeBound_exchangeRate=R,
+        poolBound_M0=M0b,
+        poolBound_T1=T1b,
+        poolBound_T2=T2b,
+        poolBound_T1D=T1D
     )
 
     system.RFabsorption_Matrix(sequence.pulse)

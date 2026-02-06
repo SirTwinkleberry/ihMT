@@ -1,5 +1,5 @@
-from .system import System
-from .sequence import Sequence, Modulation
+from brainhack.system import System
+from brainhack.sequence import Sequence, Modulation
 
 from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, round, matmul, radians, cos
 from numpy.typing import NDArray

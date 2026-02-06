@@ -6,6 +6,15 @@
     "python.analysis.typeEvaluation.strictDictionaryInference": true,
     "python.analysis.typeEvaluation.deprecateTypingAliases": true,
     "python.analysis.diagnosticSeverityOverrides": {
-        
-    }
+
+    },
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        ".",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true
 }
