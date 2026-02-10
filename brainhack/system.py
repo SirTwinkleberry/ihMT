@@ -1,4 +1,4 @@
-from brainhack.pulses import Pulse
+from brainhack.pulse import Pulse
 
 from collections.abc import Callable
 from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos

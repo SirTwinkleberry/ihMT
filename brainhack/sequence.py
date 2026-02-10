@@ -1,4 +1,4 @@
-from brainhack.pulses import Pulse
+from brainhack.pulse import Pulse
 
 from numpy import round
 from enum import Flag, auto
@@ -63,11 +63,13 @@ class Sequence():
 
         Raises
         ------
-        RuntimeError
+        ValueError
             _description_
-        RuntimeError
+        ValueError
             _description_
-        RuntimeError
+        ValueError
+            _description_
+        ValueError
             _description_
         """
         self.modulation = modulation
@@ -86,7 +88,7 @@ class Sequence():
         self.tr = TR
 
         self.duration_readout = N_adc * ES
-        self.duration_preparation = (N_burst - 1) * TR_burst + dt_lastBurst
+        self.duration_preparation = (N_burst - 1) * TR_burst + N_pulse * dt_interPulse + dt_lastBurst
         self.duration_recovery = TR - self.duration_readout - self.duration_preparation
 
         self.readout_flipAngle = readout_flipAngle

@@ -13,7 +13,7 @@ def Simulate(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]
     Parameters
     ----------
     system : System
-        _description_   
+        _description_
     sequence : Sequence
         _description_
 
@@ -61,8 +61,6 @@ def Simulate(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]
     evol_relax_lastBurst: NDArray[float64] = expm(mat_REX * (sequence.dt_LastBurst - sequence.N_pulse * sequence.dt_interPulse))  # type: ignore
     evol_relax_fullPrep: NDArray[float64] = expm(mat_REX * sequence.duration_preparation)  # type: ignore
 
-
-   
     evol_rf_readoutInstantAction = eye(2 + 2 * (system.N_pools - 1))
     evol_rf_readoutInstantAction[0, 0] = cos(radians(sequence.readout_flipAngle))
 
@@ -71,7 +69,7 @@ def Simulate(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]
             hstack( [ system.poolBound_Rrf_singleSat_Positive + system.poolFree_Rrf + REX, HomogenizeCol ] ),
             zeros( (1, 2 + 2 * (system.N_pools - 1)) )
         ]) * sequence.pulse.duration
-    )   
+    )
 
     evol_rf_singleSat_Negative: NDArray[float64] = expm(  # type: ignore
         vstack([

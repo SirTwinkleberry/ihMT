@@ -1,4 +1,4 @@
-from brainhack.pulses import Pulse, Tukey
+from brainhack.pulse import Pulse, Tukey
 
 from unittest import TestCase, skip
 

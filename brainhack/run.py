@@ -1,17 +1,19 @@
-from brainhack.pulses import Tukey
+from brainhack.pulse import Tukey
 from brainhack.sequence import Sequence, Modulation
 from brainhack.system import System
 from brainhack.simulator import Simulate
 
+from sys import maxsize
 from typing import Any
 from scipy.io import savemat  # type: ignore
-from numpy import float64
+from numpy import float64, set_printoptions
 from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
+from pathlib import Path
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outPrefix: str, export: bool, offset: float, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
@@ -60,7 +62,9 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         _description_
     r_tukey : float
         _description_
-    outPrefix : str
+    outputDirr : str
+        _description_
+    filePrefix : str
         _description_
     export : bool
         _description_
@@ -85,7 +89,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     elif FLAG_Sine_Modulation.upper() == "BP":
         modulation = Modulation.BP
     else:
-        raise RuntimeError("Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`.")
+        raise ValueError("Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`.")
 
     pulse = Tukey(
         duration=pw,
@@ -145,14 +149,14 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
             outDict[f'MTd_{suffix}'] = MTd
 
-        savemat(outPrefix + 'simulation.mat', outDict, do_compression=True)
+        savemat(Path(outputDir).resolve() / (filePrefix + 'simulation.mat'), outDict, do_compression=True)
 
     return arrays
 
 
 if __name__ == '__main__':
     if len(argv) != 2:
-        raise RuntimeError(
+        raise SyntaxError(
             f"""
             Running command with the wrong number of arguments.
             Expecting: `{argv[0]} path/to/config.yaml`
@@ -162,8 +166,9 @@ if __name__ == '__main__':
     with open(argv[1], 'r') as file:
         config = safe_load(file)
 
+    set_printoptions(precision=maxsize)
     for output in SingleRun(**config):
-        print(output)
+        print(output.tolist())
 
 # Note:
 # This current (incomplete) version has implemented logic for 1 free pool and 1 bound pool only
