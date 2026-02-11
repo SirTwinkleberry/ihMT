@@ -53,18 +53,18 @@ class TestModulation(TestCase):
 class TestSequence(TestCase):
     def setUp(self):
         self.pulse = Tukey(**CONFIG_TUKEY['init'])
-        self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])  # type: ignore
+        self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
 
     def test___init__modulation_CM(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
         tmp['modulation'] = Modulation.CM
-        self.sequence = Sequence(pulse=self.pulse, **tmp)  # type: ignore
+        self.sequence = Sequence(pulse=self.pulse, **tmp)
         self.assertEqual(self.sequence.modulation, Modulation.CM)
 
     def test___init__modulation_ALT(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
         tmp['modulation'] = Modulation.ALT
-        self.sequence = Sequence(pulse=self.pulse, **tmp)  # type: ignore
+        self.sequence = Sequence(pulse=self.pulse, **tmp)
         self.assertEqual(self.sequence.modulation, Modulation.ALT)
 
     def test___init__modulation_BP(self):
@@ -101,37 +101,37 @@ class TestSequence(TestCase):
         self.assertEqual(self.sequence.tr, CONFIG_SEQUENCE['init']['TR'])
 
     def test___init__duration_readout(self):
-        self.assertEqual(self.sequence.duration_readout, CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['ES'])  # type: ignore
+        self.assertEqual(self.sequence.duration_readout, CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['ES'])
 
     def test___init__duration_preparation(self):
-        self.assertEqual(self.sequence.duration_preparation, (CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] + CONFIG_SEQUENCE['init']['dt_lastBurst'])  # type: ignore
+        self.assertEqual(self.sequence.duration_preparation, (CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] + CONFIG_SEQUENCE['init']['dt_lastBurst'])
 
     def test___init__duration_recovery(self):
-        self.assertEqual(self.sequence.duration_recovery, CONFIG_SEQUENCE['init']['TR'] - (CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['ES']) - ((CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] + CONFIG_SEQUENCE['init']['dt_lastBurst']))  # type: ignore
+        self.assertEqual(self.sequence.duration_recovery, CONFIG_SEQUENCE['init']['TR'] - (CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['ES']) - ((CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] + CONFIG_SEQUENCE['init']['dt_lastBurst']))
 
     def test___init__flipAngle(self):
-        self.assertEqual(self.sequence.readout_flipAngle, CONFIG_SEQUENCE['init']['readout_flipAngle'])  # type: ignore
+        self.assertEqual(self.sequence.readout_flipAngle, CONFIG_SEQUENCE['init']['readout_flipAngle'])
 
     def test___init__wrong_TR(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
         tmp['TR'] = self.sequence.duration_preparation + self.sequence.duration_readout - 1e-15
         with self.assertRaises(ValueError):
-            Sequence(pulse=self.pulse, **tmp)  # type: ignore
+            Sequence(pulse=self.pulse, **tmp)
 
     def test___init__wrong_dt_interPulse(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
         tmp['dt_interPulse'] = CONFIG_TUKEY['init']['duration'] - 1e-15
         with self.assertRaises(ValueError):
-            Sequence(pulse=self.pulse, **tmp)  # type: ignore
+            Sequence(pulse=self.pulse, **tmp)
 
     def test___init__wrong_TR_burst(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
-        tmp['TR_burst'] = CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] - 1e-15  # type: ignore
+        tmp['TR_burst'] = CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] - 1e-15
         with self.assertRaises(ValueError):
-            Sequence(pulse=self.pulse, **tmp)  # type: ignore
+            Sequence(pulse=self.pulse, **tmp)
 
     def test___init__wrong_N_pulsePerOffset_Multiplicity(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
-        tmp['N_pulsePerOffset'] = 4  # type: ignore
+        tmp['N_pulsePerOffset'] = 4
         with self.assertRaises(ValueError):
-            Sequence(pulse=self.pulse, **tmp)  # type: ignore
+            Sequence(pulse=self.pulse, **tmp)

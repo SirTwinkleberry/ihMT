@@ -1,11 +1,11 @@
 from brainhack.pulse import Tukey
 from brainhack.sequence import Sequence, Modulation
 from brainhack.system import System
-from brainhack.simulator import Simulate
+from brainhack.simulator import SteadyState
 
 from sys import maxsize
 from typing import Any
-from scipy.io import savemat  # type: ignore
+from scipy.io import savemat
 from numpy import float64, set_printoptions
 from numpy.typing import NDArray
 from yaml import safe_load
@@ -123,7 +123,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     )
 
     system.RFabsorption_Matrix(sequence.pulse)
-    arrays: tuple[NDArray[float64], ...] = Simulate(system, sequence)
+    arrays: tuple[NDArray[float64], ...] = SteadyState(system, sequence)
 
     if export:
         outDict: dict[str, NDArray[float64]] = {

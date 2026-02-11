@@ -3,8 +3,8 @@ from brainhack.pulse import Pulse
 from collections.abc import Callable
 from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos
 from numpy.typing import NDArray
-from scipy.integrate import quad  # type: ignore
-from scipy.linalg import block_diag  # type: ignore
+from scipy.integrate import quad
+from scipy.linalg import block_diag
 
 
 class System():
@@ -133,7 +133,7 @@ class System():
         float
             _description_
         """
-        return quad(lambda u: sqrt(2 / pi) * (T2 / abs(3 * u * u - 1)) * exp(-2 * ((2 * pi * pulse.offset * T2) / (3 * u * u - 1))**2), 0, 1)[0]  # type: ignore
+        return quad(lambda u: sqrt(2 / pi) * (T2 / abs(3 * u * u - 1)) * exp(-2 * ((2 * pi * pulse.offset * T2) / (3 * u * u - 1))**2), 0, 1)[0]
 
     def PampelSuperLorentzian(self, pulse: Pulse, T2: float) -> float:
         """_summary_
@@ -160,4 +160,4 @@ class System():
 
             return sin(theta) * T2_eff * exp( -.5 * ( 2 * pi * offset * T2_eff )**2 )
 
-        return sqrt(1. / (2 * pi)) * quad( lambda theta: Spherical(theta, pulse.offset, T2), 0, .5 * pi)[0]  # type: ignore
+        return sqrt(1. / (2 * pi)) * quad( lambda theta: Spherical(theta, pulse.offset, T2), 0, .5 * pi)[0]

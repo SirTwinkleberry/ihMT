@@ -10,12 +10,6 @@ CONFIG_TUKEY = {
         'shape': .3,
         'flipAngle': 299,
         'offset': 7e3,
-    },
-    'compute': {
-        'amplitudeIntegral': 0.8500000205357132,
-        'powerIntegral': 0.8125000410741003,
-        'b1peak': 2.2950107701791806e-05,
-        'omegaRMS': 5534.027393037432,
     }
 }
 
@@ -33,28 +27,17 @@ CONFIG_SYSTEM = {
     'compute': {
         'poolBound_omegaLocField': 1. / ( sqrt(15) * 1e-5 ),
         'N_pools': 2,
-        'poolFree_Rrf': array( [[-0.15831671499986222,  0.,          0.],
-                                [ 0.,                   0.,          0.],
-                                [ 0.,                   0.,          0.]] ),
-
-        'poolBound_Rrf_dualSat': array( [[-0.,    0.,                  0.             ],
-                                         [ 0., -360.4495719010987,     0.             ],
-                                         [ 0.,    0.,              -1045.9034362745224]] ),
-
-        'poolBound_Rrf_singleSat_Positive': array( [[-0.,    0.,                          0.             ],
-                                                    [ 0., -360.4495719010987,      15853400.179037085    ],
-                                                    [ 0.,    0.02378010026855563,     -1045.9034362745224]] ),
-
-        'poolBound_Rrf_singleSat_Negative': array( [[-0.,    0.,                          0.             ],
-                                                    [ 0., -360.4495719010987,     -15853400.179037085    ],
-                                                    [ 0.,   -0.02378010026855563,     -1045.9034362745224]] ),
+        'poolFree_Rrf': array( [[-0.15831673065100935, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
+        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.4496075350448, 0.0], [0.0, 0.0, -1045.90353967225]] ),
+        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.4496075350448, -15853401.74629989], [0.0, -0.02378010261944984, -1045.90353967225]] ),
+        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.4496075350448, 15853401.74629989], [0.0, 0.02378010261944984, -1045.90353967225]] ),
     }
 }
 
 
 class TestSystem(TestCase):
     def setUp(self):
-        self.system = System(**CONFIG_SYSTEM['init'])  # type: ignore
+        self.system = System(**CONFIG_SYSTEM['init'])
 
     def test___init__poolFree_M0(self):
         self.assertEqual(self.system.poolFree_M0, CONFIG_SYSTEM['init']['poolFree_M0'])
@@ -109,7 +92,7 @@ class TestSystem(TestCase):
 
 class TestLineshapes(TestCase):
     def setUp(self):
-        self.system = System(**CONFIG_SYSTEM['init'])  # type: ignore
+        self.system = System(**CONFIG_SYSTEM['init'])
         self.pulse = Tukey(**CONFIG_TUKEY['init'])
 
     def test_Lorentzian(self):

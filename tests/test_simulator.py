@@ -1,8 +1,8 @@
-# from brainhack.simulator import Simulate
+# from brainhack.simulator import SteadyState
 from brainhack.sequence import Sequence, Modulation
 from brainhack.pulse import Tukey
 from brainhack.system import System
-from brainhack.simulator import Simulate
+from brainhack.simulator import SteadyState
 
 from unittest import TestCase
 from numpy import array
@@ -45,53 +45,44 @@ CONFIG_SYSTEM = {
     }
 }
 
-CONFIG_SIMULATE = {
+CONFIG_STEADYSTATE = {
     'compute': {
-        'CM': array([[0.9037829677605914,  0.090378370844482970,  0.                    , 1.],
-                     [0.7676252586373370,  0.045410925323905185,  1.5267491627581326e-06, 1.],
-                     [0.6599520592347559,  0.010208120168757757,  0.                    , 1.]]),
-
-        'ALT': array([[0.9037829677605914, 0.090378370844482970,  0.                    , 1.],
-                     [0.76762525863733700, 0.045410925323905185,  1.5267491627581326e-06, 1.],
-                     [0.67007143512606930, 0.013280098185195757, -2.7246884677924776e-07, 1.]]),
-
-        'BP': array([[0.9037829677605914,  0.090378370844482970,  0.                    , 1.],
-                     [0.7676252586373370,  0.045410925323905185,  1.5267491627581326e-06, 1.],
-                     [0.6599520592347559,  0.010208120168757757,  0.                    , 1.],
-                     [0.6700714351260693,  0.013280098185195757, -2.7246884677924776e-07, 1.]]),
+        'CM':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252570368822, 0.04541092490829171, 1.5267491676219505e-06, 1.0], [0.6599520525265348, 0.010208118167907999, 0.0, 1.0]]),
+        'ALT': array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252570368822, 0.04541092490829171, 1.5267491676219505e-06, 1.0], [0.6700714292496244, 0.01328009641722453, -2.7246884257360736e-07, 1.0]]),
+        'BP':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252570368822, 0.04541092490829171, 1.5267491676219505e-06, 1.0], [0.6599520525265348, 0.010208118167907999, 0.0, 1.0], [0.6700714292496244, 0.01328009641722453, -2.7246884257360736e-07, 1.0]]),
     }
 }
 
 
-class TestSimulate(TestCase):
+class TestSteadyState(TestCase):
     def setUp(self):
         self.pulse = Tukey(**CONFIG_TUKEY['init'])
-        self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])  # type: ignore
-        self.system = System(**CONFIG_SYSTEM['init'])  # type: ignore
+        self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        self.system = System(**CONFIG_SYSTEM['init'])
         self.system.RFabsorption_Matrix(self.pulse)
 
-    def test_simulate_CM(self):
+    def test_steadyState_CM(self):
         self.sequence.modulation = Modulation.CM
-        self.assertTrue((array(Simulate(self.system, self.sequence)) == CONFIG_SIMULATE['compute']['CM']).all())
+        self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['CM']).all())
 
-    def test_simulate_ALT(self):
+    def test_steadyState_ALT(self):
         self.sequence.modulation = Modulation.ALT
-        self.assertTrue((array(Simulate(self.system, self.sequence)) == CONFIG_SIMULATE['compute']['ALT']).all())
+        self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['ALT']).all())
 
-    def test_simulate_BP(self):
-        self.assertTrue((array(Simulate(self.system, self.sequence)) == CONFIG_SIMULATE['compute']['BP']).all())
+    def test_steadyState_BP(self):
+        self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['BP']).all())
 
-    def test_simulate_missingAttr_poolBound_Rrf_dualSat(self):
+    def test_steadyState_missingAttr_poolBound_Rrf_dualSat(self):
         del self.system.poolBound_Rrf_dualSat
         with self.assertRaises(AttributeError):
-            Simulate(self.system, self.sequence)
+            SteadyState(self.system, self.sequence)
 
-    def test_simulate_missingAttr_poolBound_Rrf_singleSat_Positive(self):
+    def test_steadyState_missingAttr_poolBound_Rrf_singleSat_Positive(self):
         del self.system.poolBound_Rrf_singleSat_Positive
         with self.assertRaises(AttributeError):
-            Simulate(self.system, self.sequence)
+            SteadyState(self.system, self.sequence)
 
-    def test_simulate_missingAttr_poolBound_Rrf_singleSat_Negative(self):
+    def test_steadyState_missingAttr_poolBound_Rrf_singleSat_Negative(self):
         del self.system.poolBound_Rrf_singleSat_Negative
         with self.assertRaises(AttributeError):
-            Simulate(self.system, self.sequence)
+            SteadyState(self.system, self.sequence)

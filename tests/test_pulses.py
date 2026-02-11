@@ -10,10 +10,10 @@ CONFIG_TUKEY = {
         'offset': 7e3,
     },
     'compute': {
-        'amplitudeIntegral': 0.8500000205357132,
-        'powerIntegral': 0.8125000410741003,
-        'b1peak': 2.2950107701791806e-05,
-        'omegaRMS': 5534.027393037432,
+        'amplitudeIntegral': 0.85,
+        'powerIntegral': 0.8125,
+        'b1peak': 2.2950108256258665e-05,
+        'omegaRMS': 5534.027666583643,
     }
 }
 
@@ -30,10 +30,10 @@ class TestPulse(TestCase):
             mock_pulse.value(0)
 
     @skip("Pulse constructor will raise NotImplementedError")
-    def test_compute(self):
+    def test_resetComputedAttributes(self):
         mock_pulse = Pulse()
         with self.assertRaises(NotImplementedError):
-            mock_pulse.compute()
+            mock_pulse.resetComputedAttributes()
 
 
 class TestTukey(TestCase):
