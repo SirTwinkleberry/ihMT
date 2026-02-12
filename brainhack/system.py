@@ -9,25 +9,25 @@ from scipy.linalg import block_diag
 
 
 class System():
-    __pulse: Pulse
+    _pulse: Pulse
 
-    __poolFree_Rrf: NDArray[float64]
-    __poolFree_M0: float
-    __poolFree_T1: float
-    __poolFree_T2: float
+    _poolFree_Rrf: NDArray[float64]
+    _poolFree_M0: float
+    _poolFree_T1: float
+    _poolFree_T2: float
 
-    __poolFreeBound_exchangeRate: float
+    _poolFreeBound_exchangeRate: float
 
-    __poolBound_Rrf_singleSat_Positive: NDArray[float64]
-    __poolBound_Rrf_singleSat_Negative: NDArray[float64]
-    __poolBound_Rrf_dualSat: NDArray[float64]
-    __poolBound_M0: float
-    __poolBound_T1: float
-    __poolBound_T2: float
-    __poolBound_T1D: float
-    __poolBound_omegaLocalField: float
+    _poolBound_Rrf_singleSat_Positive: NDArray[float64]
+    _poolBound_Rrf_singleSat_Negative: NDArray[float64]
+    _poolBound_Rrf_dualSat: NDArray[float64]
+    _poolBound_M0: float
+    _poolBound_T1: float
+    _poolBound_T2: float
+    _poolBound_T1D: float
+    _poolBound_omegaLocalField: float
 
-    __N_pools: int
+    _N_pools: int
 
     def __init__(self, pulse: Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, *args: Any, **kwargs: Any):
         """_summary_
@@ -82,18 +82,18 @@ class System():
         self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag - tmp_anti ) )
 
     def resetComputedAttributes_poolBound_RFabsorptionMatrices(self):
-        if hasattr(self, '__poolBound_Rrf_dualSat'): del self.poolBound_Rrf_dualSat  # noqa: E701
-        if hasattr(self, '__poolBound_Rrf_singleSat_Positive'): del self.poolBound_Rrf_singleSat_Positive  # noqa: E701
-        if hasattr(self, '__poolBound_Rrf_singleSat_Negative'): del self.poolBound_Rrf_singleSat_Negative  # noqa: E701
+        if hasattr(self, '_poolBound_Rrf_dualSat'): del self._poolBound_Rrf_dualSat  # noqa: E701
+        if hasattr(self, '_poolBound_Rrf_singleSat_Positive'): del self._poolBound_Rrf_singleSat_Positive  # noqa: E701
+        if hasattr(self, '_poolBound_Rrf_singleSat_Negative'): del self._poolBound_Rrf_singleSat_Negative  # noqa: E701
 
     def resetComputedAttributes_poolFree_Rrf(self):
-        if hasattr(self, '__poolFree_Rrf'): del self.poolFree_Rrf  # noqa: E701
+        if hasattr(self, '_poolFree_Rrf'): del self._poolFree_Rrf  # noqa: E701
 
     def resetComputedAttributes_poolBound_omegaLocalField(self):
-        if hasattr(self, '__poolBound_omegaLocalField'): del self.poolBound_omegaLocalField  # noqa: E701
+        if hasattr(self, '_poolBound_omegaLocalField'): del self._poolBound_omegaLocalField  # noqa: E701
 
     def resetComputedAttributes_N_pools(self):
-        if hasattr(self, '__N_pools'): del self.N_pools  # noqa: E701
+        if hasattr(self, '_N_pools'): del self._N_pools  # noqa: E701
 
     def Lorentzian(self, T2: float) -> float:
         """_summary_
@@ -168,158 +168,158 @@ class System():
     #####
     @property
     def pulse(self):
-        return self.__pulse
+        return self._pulse
 
     @pulse.setter
     def pulse(self, val: Pulse):
-        self.__pulse = val
+        self._pulse = val
         self.resetComputedAttributes_poolFree_Rrf()
         self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
 
     @property
     def poolFree_Rrf(self):
-        if not hasattr(self, '__poolFree_Rrf'):
+        if not hasattr(self, '_poolFree_Rrf'):
             self.poolFree_Rrf = diag( [ -pi * self.pulse.omegaRMS**2 * self.Lorentzian(self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
-        return self.__poolFree_Rrf
+        return self._poolFree_Rrf
 
     @poolFree_Rrf.setter
     def poolFree_Rrf(self, val: NDArray[float64]):
-        self.__poolFree_Rrf = val
+        self._poolFree_Rrf = val
 
     @poolFree_Rrf.deleter
     def poolFree_Rrf(self):
-        del self.__poolFree_Rrf
+        del self._poolFree_Rrf
 
     @property
     def poolFree_M0(self):
-        return self.__poolFree_M0
+        return self._poolFree_M0
 
     @poolFree_M0.setter
     def poolFree_M0(self, val: float):
-        self.__poolFree_M0 = val
+        self._poolFree_M0 = val
 
     @property
     def poolFree_T1(self):
-        return self.__poolFree_T1
+        return self._poolFree_T1
 
     @poolFree_T1.setter
     def poolFree_T1(self, val: float):
-        self.__poolFree_T1 = val
+        self._poolFree_T1 = val
         self.resetComputedAttributes_N_pools()
 
     @property
     def poolFree_T2(self):
-        return self.__poolFree_T2
+        return self._poolFree_T2
 
     @poolFree_T2.setter
     def poolFree_T2(self, val: float):
-        self.__poolFree_T2 = val
+        self._poolFree_T2 = val
         self.resetComputedAttributes_N_pools()
         self.resetComputedAttributes_poolFree_Rrf()
 
     @property
     def poolFreeBound_exchangeRate(self):
-        return self.__poolFreeBound_exchangeRate
+        return self._poolFreeBound_exchangeRate
 
     @poolFreeBound_exchangeRate.setter
     def poolFreeBound_exchangeRate(self, val: float):
-        self.__poolFreeBound_exchangeRate = val
+        self._poolFreeBound_exchangeRate = val
 
     @property
     def poolBound_Rrf_singleSat_Positive(self):
-        if not hasattr(self, '__poolBound_Rrf_singleSat_Positive'):
+        if not hasattr(self, '_poolBound_Rrf_singleSat_Positive'):
             self.compute_poolBound_RFabsorptionMatrices()
-        return self.__poolBound_Rrf_singleSat_Positive
+        return self._poolBound_Rrf_singleSat_Positive
 
     @poolBound_Rrf_singleSat_Positive.setter
     def poolBound_Rrf_singleSat_Positive(self, val: NDArray[float64]):
-        self.__poolBound_Rrf_singleSat_Positive = val
+        self._poolBound_Rrf_singleSat_Positive = val
 
     @poolBound_Rrf_singleSat_Positive.deleter
     def poolBound_Rrf_singleSat_Positive(self):
-        del self.__poolBound_Rrf_singleSat_Positive
+        del self._poolBound_Rrf_singleSat_Positive
 
     @property
     def poolBound_Rrf_singleSat_Negative(self):
-        if not hasattr(self, '__poolBound_Rrf_singleSat_Negative'):
+        if not hasattr(self, '_poolBound_Rrf_singleSat_Negative'):
             self.compute_poolBound_RFabsorptionMatrices()
-        return self.__poolBound_Rrf_singleSat_Negative
+        return self._poolBound_Rrf_singleSat_Negative
 
     @poolBound_Rrf_singleSat_Negative.setter
     def poolBound_Rrf_singleSat_Negative(self, val: NDArray[float64]):
-        self.__poolBound_Rrf_singleSat_Negative = val
+        self._poolBound_Rrf_singleSat_Negative = val
 
     @poolBound_Rrf_singleSat_Negative.deleter
     def poolBound_Rrf_singleSat_Negative(self):
-        del self.__poolBound_Rrf_singleSat_Negative
+        del self._poolBound_Rrf_singleSat_Negative
 
     @property
     def poolBound_Rrf_dualSat(self):
-        if not hasattr(self, '__poolBound_Rrf_dualSat'):
+        if not hasattr(self, '_poolBound_Rrf_dualSat'):
             self.compute_poolBound_RFabsorptionMatrices()
-        return self.__poolBound_Rrf_dualSat
+        return self._poolBound_Rrf_dualSat
 
     @poolBound_Rrf_dualSat.setter
     def poolBound_Rrf_dualSat(self, val: NDArray[float64]):
-        self.__poolBound_Rrf_dualSat = val
+        self._poolBound_Rrf_dualSat = val
 
     @poolBound_Rrf_dualSat.deleter
     def poolBound_Rrf_dualSat(self):
-        del self.__poolBound_Rrf_dualSat
+        del self._poolBound_Rrf_dualSat
 
     @property
     def poolBound_M0(self):
-        return self.__poolBound_M0
+        return self._poolBound_M0
 
     @poolBound_M0.setter
     def poolBound_M0(self, val: float):
-        self.__poolBound_M0 = val
+        self._poolBound_M0 = val
 
     @property
     def poolBound_T1(self):
-        return self.__poolBound_T1
+        return self._poolBound_T1
 
     @poolBound_T1.setter
     def poolBound_T1(self, val: float):
-        self.__poolBound_T1 = val
+        self._poolBound_T1 = val
 
     @property
     def poolBound_T2(self):
-        return self.__poolBound_T2
+        return self._poolBound_T2
 
     @poolBound_T2.setter
     def poolBound_T2(self, val: float):
-        self.__poolBound_T2 = val
+        self._poolBound_T2 = val
         self.resetComputedAttributes_N_pools()
         self.resetComputedAttributes_poolBound_omegaLocalField()
         self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
 
     @property
     def poolBound_T1D(self):
-        return self.__poolBound_T1D
+        return self._poolBound_T1D
 
     @poolBound_T1D.setter
     def poolBound_T1D(self, val: float):
-        self.__poolBound_T1D = val
+        self._poolBound_T1D = val
 
     @property
     def poolBound_omegaLocalField(self):
-        if not hasattr(self, '__poolBound_omegaLocalField'):
-            self.__poolBound_omegaLocalField = 1. / ( sqrt(15) * self.poolBound_T2 )
-        return self.__poolBound_omegaLocalField
+        if not hasattr(self, '_poolBound_omegaLocalField'):
+            self._poolBound_omegaLocalField = 1. / ( sqrt(15) * self.poolBound_T2 )
+        return self._poolBound_omegaLocalField
 
     @poolBound_omegaLocalField.setter
     def poolBound_omegaLocalField(self, val: float):
-        self.__poolBound_omegaLocalField = val
+        self._poolBound_omegaLocalField = val
         self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
 
     @poolBound_omegaLocalField.deleter
     def poolBound_omegaLocalField(self):
-        del self.__poolBound_omegaLocalField
+        del self._poolBound_omegaLocalField
 
     @property
     def N_pools(self):
-        if not hasattr(self, '__N_pools'):
+        if not hasattr(self, '_N_pools'):
             if (len1 := len(array(self.poolFree_T1).flatten())) != (len2 := len(array(self.poolFree_T2).flatten())):
                 raise RuntimeError(f'Could not compute `N_pools` as `poolFree_T1` ({self.poolFree_T1}) and `poolFree_T2` ({self.poolFree_T2}) arrays do not have the same length ({len1} vs {len2})')
             if (len1 := len(array(self.poolBound_T1).flatten())) != (len2 := len(array(self.poolBound_T2).flatten())):
@@ -327,14 +327,14 @@ class System():
             if (len1 := len(array(self.poolBound_T1).flatten())) != (len2 := len(array(self.poolBound_T1D).flatten())):
                 raise RuntimeError(f'Could not compute `N_pools` as `poolBound_T1` ({self.poolBound_T1}) and `poolBound_T1D` ({self.poolBound_T1D}) arrays do not have the same length ({len1} vs {len2})')
             self.N_pools = len(array(self.poolFree_T2).flatten()) + len(array(self.poolBound_T2).flatten())
-        return self.__N_pools
+        return self._N_pools
 
     @N_pools.setter
     def N_pools(self, val: int):
-        self.__N_pools = val
+        self._N_pools = val
         self.resetComputedAttributes_poolFree_Rrf()
         self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
 
     @N_pools.deleter
     def N_pools(self):
-        del self.__N_pools
+        del self._N_pools

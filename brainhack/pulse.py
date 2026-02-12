@@ -1,3 +1,4 @@
+# from logging import
 from typing import Any
 from collections.abc import Callable
 from numpy import cos, pi, sqrt, radians
@@ -14,11 +15,11 @@ class Pulse():
         _raised when user calls `Pulse().value` directly instead of through a daughter class
     """
 
-    __gyromagneticFactor = 267513000  # rad / s / T
+    _gyromagneticFactor = 267513000  # rad / s / T
 
-    __duration: float                 # s
-    __flipAngle: float                # °
-    __offset: float                   # Hz
+    _duration: float                 # s
+    _flipAngle: float                # °
+    _offset: float                   # Hz
 
     _amplitudeIntegral: float
     _powerIntegral: float
@@ -48,10 +49,10 @@ class Pulse():
                     raise ValueError(f'`{attribute_name}` cannot be {boundStr}. Received: {repr(val_to_check)}.')
 
     def resetComputedAttributes(self):
-        if hasattr(self, 'amplitudeIntegral'): del self.amplitudeIntegral  # noqa: E701
-        if hasattr(self, 'powerIntegral'): del self.powerIntegral  # noqa: E701
-        if hasattr(self, 'b1peak'): del self.b1peak  # noqa: E701
-        if hasattr(self, 'omegaRMS'): del self.omegaRMS  # noqa: E701
+        if hasattr(self, '_amplitudeIntegral'): del self._amplitudeIntegral  # noqa: E701
+        if hasattr(self, '_powerIntegral'): del self._powerIntegral  # noqa: E701
+        if hasattr(self, '_b1peak'): del self._b1peak  # noqa: E701
+        if hasattr(self, '_omegaRMS'): del self._omegaRMS  # noqa: E701
         # Add callback for system and sequence, emit "onChange" signal on each setter + resetComputedAttributes
         # and have onChange() go through a dict of self attribute / list of callbacks pairs?
 
@@ -60,42 +61,42 @@ class Pulse():
     #####
     @property
     def gyromagneticFactor(self) -> float:
-        return self.__gyromagneticFactor
+        return self._gyromagneticFactor
 
     @gyromagneticFactor.setter
     def gyromagneticFactor(self, val: float):
         self.check_type(val, float, None, 'gyromagneticFactor')
-        self.__gyromagneticFactor = val
+        self._gyromagneticFactor = val
         self.resetComputedAttributes()
 
     @property
     def duration(self) -> float:
-        return self.__duration
+        return self._duration
 
     @duration.setter
     def duration(self, val: float):
         self.check_type(val, float, [(le, 0)], 'duration')
-        self.__duration = val
+        self._duration = val
         self.resetComputedAttributes()
 
     @property
     def flipAngle(self) -> float:
-        return self.__flipAngle
+        return self._flipAngle
 
     @flipAngle.setter
     def flipAngle(self, val: float):
         self.check_type(val, float, [(le, 0)], 'flipAngle')
-        self.__flipAngle = val
+        self._flipAngle = val
         self.resetComputedAttributes()
 
     @property
     def offset(self) -> float:
-        return self.__offset
+        return self._offset
 
     @offset.setter
     def offset(self, val: float):
         self.check_type(val, float, None, 'offset')
-        self.__offset = val
+        self._offset = val
 
     @property
     def amplitudeIntegral(self) -> float:
@@ -216,12 +217,12 @@ class Tukey(Pulse):
     #####
     @property
     def shape(self) -> float:
-        return self.__shape
+        return self._shape
 
     @shape.setter
     def shape(self, val: float):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'shape')
-        self.__shape = val
+        self._shape = val
         self.resetComputedAttributes()
 
     @property

@@ -1,5 +1,5 @@
 from pathlib import Path
-from yaml import safe_load  # type: ignore # noqa: F401
+from yaml import safe_load  # noqa: F401
 
 
 default: dict['str', bool | int | float | str]
