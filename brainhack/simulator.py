@@ -24,13 +24,11 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
 
     Raises
     ------
-    AttributeError
+    ValueError
         _description_
     """
-    if ((not hasattr(system, 'poolBound_Rrf_dualSat'))
-        or (not hasattr(system, 'poolBound_Rrf_singleSat_Positive'))
-            or (not hasattr(system, 'poolBound_Rrf_singleSat_Negative'))):
-        raise AttributeError("Missing `System` attribute(s). Have you called `System.RFabsorption_Matrix(sequence.pulse)`?")
+    if sequence.pulse != system.pulse:
+        raise ValueError(f'Mismatched RF pulse between sequence and system. Received {sequence.pulse} (sequence) and {system.pulse} (system).')
 
     HomogenizeCol: NDArray[float64] = zeros(1 + 2 * (system.N_pools - 1))
     HomogenizeCol[0] = system.poolFree_M0 / system.poolFree_T1

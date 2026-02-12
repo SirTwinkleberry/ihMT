@@ -112,6 +112,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         readout_flipAngle=fa_rage
     )
     system = System(
+        pulse=pulse,
         poolFree_M0=M0a,
         poolFree_T1=T1f,
         poolFree_T2=T2f,
@@ -122,7 +123,6 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         poolBound_T1D=T1D
     )
 
-    system.RFabsorption_Matrix(sequence.pulse)
     arrays: tuple[NDArray[float64], ...] = SteadyState(system, sequence)
 
     if export:

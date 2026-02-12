@@ -58,8 +58,7 @@ class TestSteadyState(TestCase):
     def setUp(self):
         self.pulse = Tukey(**CONFIG_TUKEY['init'])
         self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
-        self.system = System(**CONFIG_SYSTEM['init'])
-        self.system.RFabsorption_Matrix(self.pulse)
+        self.system = System(pulse=self.pulse, **CONFIG_SYSTEM['init'])
 
     def test_steadyState_CM(self):
         self.sequence.modulation = Modulation.CM
@@ -72,17 +71,8 @@ class TestSteadyState(TestCase):
     def test_steadyState_BP(self):
         self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['BP']).all())
 
-    def test_steadyState_missingAttr_poolBound_Rrf_dualSat(self):
-        del self.system.poolBound_Rrf_dualSat
-        with self.assertRaises(AttributeError):
-            SteadyState(self.system, self.sequence)
-
-    def test_steadyState_missingAttr_poolBound_Rrf_singleSat_Positive(self):
-        del self.system.poolBound_Rrf_singleSat_Positive
-        with self.assertRaises(AttributeError):
-            SteadyState(self.system, self.sequence)
-
-    def test_steadyState_missingAttr_poolBound_Rrf_singleSat_Negative(self):
-        del self.system.poolBound_Rrf_singleSat_Negative
-        with self.assertRaises(AttributeError):
+    def test_steadyState_mismatched_Pulse(self):
+        self.sequence.pulse = Tukey(**CONFIG_TUKEY['init'])
+        self.sequence.pulse.duration = 10e-3
+        with self.assertRaises(ValueError):
             SteadyState(self.system, self.sequence)
