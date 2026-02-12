@@ -149,9 +149,16 @@ class Sequence():
 
     @pulse.setter
     def pulse(self, val: Pulse):
+        duration = None
+        if hasattr(self, '_pulse'):
+            duration = self._pulse.duration
+
         self._pulse = val
-        self.resetComputedAttributes_Preparation()
-        self.check_against_pulse_duration()
+        self._pulse.onChange('duration', [self.resetComputedAttributes_Preparation, self.check_against_pulse_duration])
+
+        if (duration is not None) and (self._pulse.duration != duration):
+            self.resetComputedAttributes_Preparation()
+            self.check_against_pulse_duration()
 
     @property
     def N_pulsePerOffset(self):

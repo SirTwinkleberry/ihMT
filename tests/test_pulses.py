@@ -53,6 +53,10 @@ class TestTukey(TestCase):
         pulse = Tukey(**CONFIG_TUKEY['init'])
         self.assertEqual(CONFIG_TUKEY['init']['offset'], pulse.offset)
 
+    def test__init__GyromagneticFactor(self):
+        pulse = Tukey(**CONFIG_TUKEY['init'])
+        self.assertEqual(267513000, pulse.gyromagneticFactor)
+
     def test__init__AmplitudeIntegral(self):
         pulse = Tukey(**CONFIG_TUKEY['init'])
         self.assertEqual(CONFIG_TUKEY['compute']['amplitudeIntegral'], pulse.amplitudeIntegral)
@@ -100,6 +104,6 @@ class TestTukey(TestCase):
         pulse.powerIntegral
         pulse.b1peak
         pulse.omegaRMS
-        self.assertDictEqual(pulse.__dict__, {'_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0, '_amplitudeIntegral': 0.85, '_powerIntegral': 0.8125, '_b1peak': 2.2950108256258665e-05, '_omegaRMS': 5534.027666583643})
+        self.assertDictEqual(pulse.__dict__, {'_onChange': {}, '_gyromagneticFactor': 267513000, '_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0, '_amplitudeIntegral': 0.85, '_powerIntegral': 0.8125, '_b1peak': 2.2950108256258665e-05, '_omegaRMS': 5534.027666583643})
         pulse.resetComputedAttributes()
-        self.assertDictEqual(pulse.__dict__, {'_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0})
+        self.assertDictEqual(pulse.__dict__, {'_onChange': {}, '_gyromagneticFactor': 267513000, '_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0})

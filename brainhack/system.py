@@ -172,9 +172,21 @@ class System():
 
     @pulse.setter
     def pulse(self, val: Pulse):
+        offset = None
+        omegaRMS = None
+        if hasattr(self, '_pulse'):
+            offset = self._pulse.offset
+            omegaRMS = self._pulse.omegaRMS
+
         self._pulse = val
-        self.resetComputedAttributes_poolFree_Rrf()
-        self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
+        self._pulse.onChange('omegaRMS', [self.resetComputedAttributes_poolFree_Rrf, self.resetComputedAttributes_poolBound_RFabsorptionMatrices])
+        self._pulse.onChange('offset', [self.resetComputedAttributes_poolBound_RFabsorptionMatrices])
+
+        if (omegaRMS is not None) and (self._pulse.omegaRMS != omegaRMS):
+            self.resetComputedAttributes_poolFree_Rrf()
+            self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
+        elif (offset is not None) and (self._pulse.offset != offset):
+            self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
 
     @property
     def poolFree_Rrf(self):

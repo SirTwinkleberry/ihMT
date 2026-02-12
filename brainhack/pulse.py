@@ -15,7 +15,7 @@ class Pulse():
         _raised when user calls `Pulse().value` directly instead of through a daughter class
     """
 
-    _gyromagneticFactor = 267513000  # rad / s / T
+    _gyromagneticFactor: float       # rad / s / T
 
     _duration: float                 # s
     _flipAngle: float                # °
@@ -25,6 +25,8 @@ class Pulse():
     _powerIntegral: float
     _b1peak: float
     _omegaRMS: float
+
+    _onChange: dict[str, list[Callable]]
 
     def __init__(self, *args: Any, **kwargs: Any):
         raise NotImplementedError("Object `Pulse` should not be instantiated directly. Use daughter classes instead.")
@@ -49,24 +51,57 @@ class Pulse():
                     raise ValueError(f'`{attribute_name}` cannot be {boundStr}. Received: {repr(val_to_check)}.')
 
     def resetComputedAttributes(self):
-        if hasattr(self, '_amplitudeIntegral'): del self._amplitudeIntegral  # noqa: E701
-        if hasattr(self, '_powerIntegral'): del self._powerIntegral  # noqa: E701
-        if hasattr(self, '_b1peak'): del self._b1peak  # noqa: E701
-        if hasattr(self, '_omegaRMS'): del self._omegaRMS  # noqa: E701
-        # Add callback for system and sequence, emit "onChange" signal on each setter + resetComputedAttributes
-        # and have onChange() go through a dict of self attribute / list of callbacks pairs?
+        if hasattr(self, '_amplitudeIntegral'):
+            del self._amplitudeIntegral
+            self._changed('amplitudeIntegral')
+        if hasattr(self, '_powerIntegral'):
+            del self._powerIntegral
+            self._changed('powerIntegral')
+        if hasattr(self, '_b1peak'):
+            del self._b1peak
+            self._changed('b1peak')
+        if hasattr(self, '_omegaRMS'):
+            del self._omegaRMS
+            self._changed('omegaRMS')
+
+    def onChange(self, attribute: str, callbacks: list[Callable]):
+        if attribute not in ['gyromagneticFactor', 'duration', 'flipAngle', 'offset', 'amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS']:
+            raise ValueError(f"`attribute` name is not within acceptable values ['duration', 'offset', 'omegaRMS'] for callbacks. Received `{attribute}`.")
+
+        if attribute not in self._get_onChange.keys():
+            self._get_onChange[attribute] = []
+        # print(self._get_onChange[attribute])
+        self._get_onChange[attribute].extend(callbacks)
+        # print(self._get_onChange)
+
+    def _changed(self, attribute: str):
+        if attribute in self._get_onChange.keys():
+            for callback in self._get_onChange[attribute]:
+                try:
+                    callback()
+                except Exception:
+                    pass
 
     #####
     # BELOW: property getters and setters
     #####
     @property
+    def _get_onChange(self) -> dict[str, list[Callable]]:
+        if not hasattr(self, '_onChange'):
+            self._onChange = dict()
+        return self._onChange
+
+    @property
     def gyromagneticFactor(self) -> float:
+        if not hasattr(self, '_gyromagneticFactor'):
+            self._gyromagneticFactor = 267513000
         return self._gyromagneticFactor
 
     @gyromagneticFactor.setter
     def gyromagneticFactor(self, val: float):
         self.check_type(val, float, None, 'gyromagneticFactor')
         self._gyromagneticFactor = val
+        self._changed('gyromagneticFactor')
         self.resetComputedAttributes()
 
     @property
@@ -77,6 +112,7 @@ class Pulse():
     def duration(self, val: float):
         self.check_type(val, float, [(le, 0)], 'duration')
         self._duration = val
+        self._changed('duration')
         self.resetComputedAttributes()
 
     @property
@@ -87,6 +123,7 @@ class Pulse():
     def flipAngle(self, val: float):
         self.check_type(val, float, [(le, 0)], 'flipAngle')
         self._flipAngle = val
+        self._changed('flipAngle')
         self.resetComputedAttributes()
 
     @property
@@ -97,6 +134,7 @@ class Pulse():
     def offset(self, val: float):
         self.check_type(val, float, None, 'offset')
         self._offset = val
+        self._changed('offset')
 
     @property
     def amplitudeIntegral(self) -> float:
@@ -108,6 +146,7 @@ class Pulse():
     def amplitudeIntegral(self, val: float):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
         self._amplitudeIntegral = val
+        self._changed('amplitudeIntegral')
 
     @amplitudeIntegral.deleter
     def amplitudeIntegral(self):
@@ -123,6 +162,7 @@ class Pulse():
     def powerIntegral(self, val: float):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
         self._powerIntegral = val
+        self._changed('powerIntegral')
 
     @powerIntegral.deleter
     def powerIntegral(self):
@@ -138,6 +178,7 @@ class Pulse():
     def b1peak(self, val: float):
         self.check_type(val, float, [(lt, 0)], 'b1peak')
         self._b1peak = val
+        self._changed('b1peak')
 
     @b1peak.deleter
     def b1peak(self):
@@ -155,6 +196,7 @@ class Pulse():
     def omegaRMS(self, val: float):
         self.check_type(val, float, [(lt, 0)], 'omegaRMS')
         self._omegaRMS = val
+        self._changed('omegaRMS')
 
     @omegaRMS.deleter
     def omegaRMS(self):
@@ -223,6 +265,7 @@ class Tukey(Pulse):
     def shape(self, val: float):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'shape')
         self._shape = val
+        self._changed('shape')
         self.resetComputedAttributes()
 
     @property
@@ -235,6 +278,7 @@ class Tukey(Pulse):
     def amplitudeIntegral(self, val: float):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
         self._amplitudeIntegral = val
+        self._changed('amplitudeIntegral')
 
     @amplitudeIntegral.deleter
     def amplitudeIntegral(self):
@@ -250,6 +294,7 @@ class Tukey(Pulse):
     def powerIntegral(self, val: float):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
         self._powerIntegral = val
+        self._changed('powerIntegral')
 
     @powerIntegral.deleter
     def powerIntegral(self):
