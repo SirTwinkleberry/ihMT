@@ -72,7 +72,6 @@ class TestSteadyState(TestCase):
         self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['BP']).all())
 
     def test_steadyState_mismatched_Pulse(self):
-        self.sequence.pulse = Tukey(**CONFIG_TUKEY['init'])
-        self.sequence.pulse.duration = 10e-3
+        self.sequence.pulse = Tukey(**CONFIG_TUKEY['init'])  # the _onChange_ callbacks of the new pulse will be different
         with self.assertRaises(ValueError):
             SteadyState(self.system, self.sequence)
