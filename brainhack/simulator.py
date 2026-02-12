@@ -7,7 +7,7 @@ from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
 
 
-def SteadySate(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]:
+def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
@@ -58,7 +58,7 @@ def SteadySate(system: System, sequence: Sequence) -> tuple[NDArray[float64], ..
     evol_relax_interReadRF: NDArray[float64] = expm(mat_REX * sequence.es)
     evol_relax_recovery: NDArray[float64] = expm(mat_REX * sequence.duration_recovery)
     evol_relax_TR_burst: NDArray[float64] = expm(mat_REX * (sequence.TR_burst - sequence.N_pulse * sequence.dt_interPulse))
-    evol_relax_lastBurst: NDArray[float64] = expm(mat_REX * (sequence.dt_LastBurst - sequence.N_pulse * sequence.dt_interPulse))
+    evol_relax_lastBurst: NDArray[float64] = expm(mat_REX * (sequence.dt_lastBurst - sequence.N_pulse * sequence.dt_interPulse))
     evol_relax_fullPrep: NDArray[float64] = expm(mat_REX * sequence.duration_preparation)
 
     evol_rf_readoutInstantAction = eye(2 + 2 * (system.N_pools - 1))

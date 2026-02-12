@@ -26,8 +26,8 @@ CONFIG_SEQUENCE = {
         'dt_interPulse': 1.5e-3,
         'TR_burst': 1e-1,
         'dt_lastBurst': 1e-3,
-        'ES': 6e-3,
-        'TR': 1.387,
+        'es': 6e-3,
+        'tr': 1.387,
         'readout_flipAngle': 5,
     },
 }

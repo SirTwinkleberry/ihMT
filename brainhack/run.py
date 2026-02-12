@@ -107,8 +107,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         dt_interPulse=dt,
         TR_burst=btr,
         dt_lastBurst=btrlast,
-        ES=es,
-        TR=tr,
+        es=es,
+        tr=tr,
         readout_flipAngle=fa_rage
     )
     system = System(

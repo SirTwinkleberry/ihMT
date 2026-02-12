@@ -93,3 +93,13 @@ class TestTukey(TestCase):
         duration: float = CONFIG_TUKEY['init']['duration']
         shape: float = CONFIG_TUKEY['init']['shape']
         self.assertEqual(pulse.value(.5 * shape * duration), 1)
+
+    def test_resetComputedAttributes(self):
+        pulse = Tukey(**CONFIG_TUKEY['init'])
+        pulse.amplitudeIntegral
+        pulse.powerIntegral
+        pulse.b1peak
+        pulse.omegaRMS
+        self.assertDictEqual(pulse.__dict__, {'_Tukey__shape': 0.3, '_Pulse__duration': 0.001, '_Pulse__flipAngle': 299, '_Pulse__offset': 7000.0, '_amplitudeIntegral': 0.85, '_powerIntegral': 0.8125, '_b1peak': 2.2950108256258665e-05, '_omegaRMS': 5534.027666583643})
+        pulse.resetComputedAttributes()
+        self.assertDictEqual(pulse.__dict__, {'_Tukey__shape': 0.3, '_Pulse__duration': 0.001, '_Pulse__flipAngle': 299, '_Pulse__offset': 7000.0})
