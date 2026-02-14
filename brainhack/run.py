@@ -188,20 +188,20 @@ if __name__ == '__main__':
 
     if 'log' in config.keys():
         dictConfig(config['log'])
-        log = getLogger()
-        log.debug(f'Logging configuration successful! Configuration file found at <{configPath}>.')
+        rootlogger = getLogger()
+        rootlogger.debug(f'Logging configuration successful! Configuration file found at <{configPath}>.')
     else:
-        log = getLogger()
-        log.addHandler(StreamHandler())
-        log.setLevel(INFO)
+        rootlogger = getLogger()
+        rootlogger.addHandler(StreamHandler())
+        rootlogger.setLevel(INFO)
 
     if 'run' not in config.keys():
-        log.critical(f'Missing `run` category from configuration file <{configPath}>.')
+        rootlogger.critical(f'Missing `run` category from configuration file <{configPath}>.')
         raise ValueError(f'Missing `run` category from configuration file <{configPath}>.')
 
     set_printoptions(precision=maxsize)
     for output in SingleRun(**config['run']):
-        log.info(output.tolist())
+        rootlogger.info(output.tolist())
 
 # Note:
 # This current (incomplete) version has implemented logic for 1 free pool and 1 bound pool only
