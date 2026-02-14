@@ -1,7 +1,7 @@
 from brainhack.sequence import Modulation, Sequence
 from brainhack.pulse import Tukey
 
-from copy import copy
+from copy import deepcopy as copy
 from unittest import TestCase
 
 CONFIG_SEQUENCE = {

@@ -101,7 +101,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     elif FLAG_Sine_Modulation.upper() == "BP":
         modulation = Modulation.BP
     else:
-        raise ValueError("Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`.")
+        raise ValueError(f"Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`. Received `{repr(FLAG_Sine_Modulation)}`.")
 
     pulse = Tukey(
         duration=pw,

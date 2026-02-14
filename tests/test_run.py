@@ -1,7 +1,7 @@
 from brainhack.run import SingleRun
 
 from pathlib import Path
-from copy import copy
+from copy import deepcopy as copy
 from unittest import TestCase
 from numpy import array
 from scipy.io import loadmat
@@ -203,17 +203,13 @@ class TestRun_withoutExport(TestCase):
 
 
 class TestSingleRun(TestCase):
-    success = False
-
     @classmethod
     def setUpClass(cls):
-        Path(DEFAULT['run']['outputDir']).mkdir(parents=False, exist_ok=False)
-        cls.success = True
+        Path(DEFAULT['run']['outputDir']).mkdir(parents=False, exist_ok=True)
 
     @classmethod
     def tearDownClass(cls):
-        if cls.success:
-            Path(DEFAULT['run']['outputDir']).rmdir()
+        Path(DEFAULT['run']['outputDir']).rmdir()
 
     def tearDown(self):
         (Path(DEFAULT['run']['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
