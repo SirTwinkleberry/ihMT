@@ -4,6 +4,12 @@ from collections.abc import Callable
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad
 from operator import le, lt, gt
+from pathlib import Path
+from sys import path
+try:
+    path.index(str(Path(__file__).parents[1].resolve()))
+except ValueError:
+    path.append(str(Path(__file__).parents[1].resolve()))
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())

@@ -1,9 +1,15 @@
-from brainhack.pulse import Pulse
-
 from logging import getLogger, NullHandler
 from numpy import round
 from enum import Flag, auto
 from typing import Any
+from pathlib import Path
+from sys import path
+try:
+    path.index(str(Path(__file__).parents[1].resolve()))
+except ValueError:
+    path.append(str(Path(__file__).parents[1].resolve()))
+
+from brainhack.pulse import Pulse
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
