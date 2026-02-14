@@ -1,26 +1,88 @@
-B1rel: 1
-M0a: 1
-T1f: 1
-T2f: 0.1
-R: 10
-M0b: 0.1
-T1b: 1
-T1D: 0.01
-T2b: 1.e-5
-pw: 0.001
-dt: 0.0015
-es: 0.006
-tr: 3
-turbo: 80
-np: 4
-nb: 10
-btr: 0.1
-btrlast: 0.001
-fa_sat: 200
-fa_rage: 5
-FLAG_Sine_Modulation: "BP"
-N_altern: 1
-r_tukey: 0.3
-outPrefix: './output/'
-export: True
-offset: 7000
+run:  # mandatory, provides the parameters for simulator.SingleRun
+  B1rel: 1
+  M0a: 1
+  T1f: 1
+  T2f: 0.1
+  R: 10
+  M0b: 0.1
+  T1b: 1
+  T1D: 0.01
+  T2b: 1.e-5
+  pw: 0.001
+  dt: 0.0015
+  es: 0.006
+  tr: 3
+  turbo: 80
+  np: 4
+  nb: 10
+  btr: 0.1
+  btrlast: 0.001
+  fa_sat: 200
+  fa_rage: 5
+  FLAG_Sine_Modulation: BP
+  N_altern: 1
+  r_tukey: 0.3
+  outputDir: ./output/
+  filePrefix: ''
+  export: True
+  offset: 7000
+
+log:  # if `log` category is undefined, no logging will happen
+  # https://docs.python.org/3/library/logging.config.html#dictionary-schema-details
+  version: 1
+  disable_existing_loggers: false
+
+  formatters:
+    standard:
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+    error:
+      format: "%(asctime)s - %(name)s - %(levelname)s <PID %(process)d:%(processName)s> %(name)s.%(funcName)s(): %(message)s"
+
+  handlers:
+    root_file_handler:
+      class: logging.FileHandler
+      level: INFO  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+      formatter: standard
+      filename: ./output/logs.txt
+      mode: w  # a: append, w: write
+      # encoding: utf8
+
+    debug_root_file_handler:
+      class: logging.FileHandler
+      level: DEBUG  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+      formatter: error
+      filename: ./output/logs_debug.txt
+      mode: w  # a: append, w: write
+      # encoding: utf8
+
+    console:
+      class: logging.StreamHandler
+      level: INFO  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+      formatter: standard
+      stream: ext://sys.stdout
+
+    error_console:
+      class: logging.StreamHandler
+      level: ERROR  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+      formatter: error
+      stream: ext://sys.stderr
+
+  root:
+    level: DEBUG
+    # handlers: [console, error_console]
+    handlers: [console, error_console, root_file_handler, debug_root_file_handler]
+
+  # loggers:
+  #   main:
+  #     level: DEBUG
+  #     handlers: [info_file_handler, warn_file_handler, error_file_handler, critical_file_handler, debug_file_handler]
+  #     propagate: no
+  #   werkzeug:
+  #     level: DEBUG
+  #     handlers: [info_file_handler, warn_file_handler, error_file_handler, critical_file_handler, debug_file_handler]
+  #     propagate: yes
+  #   api.app_server:
+  #     level: DEBUG
+  #     handlers: [info_file_handler, warn_file_handler, error_file_handler, critical_file_handler, debug_file_handler]
+  #     propagate: yes

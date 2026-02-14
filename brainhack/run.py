@@ -3,6 +3,8 @@ from brainhack.sequence import Sequence, Modulation
 from brainhack.system import System
 from brainhack.simulator import SteadyState
 
+from logging import getLogger, NullHandler
+from logging.config import dictConfig
 from sys import maxsize
 from typing import Any
 from scipy.io import savemat
@@ -11,6 +13,10 @@ from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
 from pathlib import Path
+
+logger = getLogger(__name__)
+logger.addHandler(NullHandler())
+logger.debug('`run` module loaded successfully')
 
 
 def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
@@ -81,6 +87,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     RuntimeError
         _description_
     """
+    logger.debug(locals())
 
     if FLAG_Sine_Modulation.upper() == "CM":
         modulation = Modulation.CM
@@ -126,6 +133,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     arrays: tuple[NDArray[float64], ...] = SteadyState(system, sequence)
 
     if export:
+        Path(outputDir).resolve().mkdir(parents=True, exist_ok=True)
+
         outDict: dict[str, NDArray[float64]] = {
             'MT0': arrays[0],
             'MTs': arrays[1],
@@ -155,20 +164,35 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
 
 if __name__ == '__main__':
-    if len(argv) != 2:
+    if len(argv) > 2:
         raise SyntaxError(
             f"""
             Running command with the wrong number of arguments.
-            Expecting: `{argv[0]} path/to/config.yaml`
+            Expecting: `{argv[0]} [path/to/config.yaml]`
             Received: `{' '.join(argv)}`
             """
         )
-    with open(argv[1], 'r') as file:
-        config = safe_load(file)
+    if len(argv) == 2:
+        with open(argv[1], 'r') as file:
+            config = safe_load(file)
+            configPath = Path(argv[1]).resolve()
+    else:
+        from config import default
+        config = default
+        configPath = Path(__file__) / 'configs' / 'default.yaml'
+
+    if 'log' in config.keys():
+        dictConfig(config['log'])
+        log = getLogger()
+        log.debug(f'Logging configuration successful! Configuration file found at <{configPath}>.')
+
+    if 'run' not in config.keys():
+        log.critical(f'Missing `run` category from configuration file <{configPath}>.')
+        raise ValueError(f'Missing `run` category from configuration file <{configPath}>.')
 
     set_printoptions(precision=maxsize)
-    for output in SingleRun(**config):
-        print(output.tolist())
+    for output in SingleRun(**config['run']):
+        log.info(output.tolist())
 
 # Note:
 # This current (incomplete) version has implemented logic for 1 free pool and 1 bound pool only

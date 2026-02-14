@@ -1,9 +1,13 @@
-# from logging import
+from logging import getLogger, NullHandler
 from typing import Any
 from collections.abc import Callable
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad
 from operator import le, lt, gt
+
+logger = getLogger(__name__)
+logger.addHandler(NullHandler())
+logger.debug('`pulse` module loaded successfully')
 
 
 class Pulse():
@@ -14,7 +18,6 @@ class Pulse():
     RuntimeError
         _raised when user calls `Pulse().value` directly instead of through a daughter class
     """
-
     _gyromagneticFactor: float       # rad / s / T
 
     _duration: float                 # s

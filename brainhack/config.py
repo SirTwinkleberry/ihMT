@@ -1,5 +1,10 @@
+from logging import getLogger, NullHandler
 from pathlib import Path
 from yaml import safe_load  # noqa: F401
+
+logger = getLogger(__name__)
+logger.addHandler(NullHandler())
+logger.debug('`config` module loaded successfully')
 
 
 default: dict['str', bool | int | float | str]

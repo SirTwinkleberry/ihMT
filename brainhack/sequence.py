@@ -1,8 +1,13 @@
 from brainhack.pulse import Pulse
 
+from logging import getLogger, NullHandler
 from numpy import round
 from enum import Flag, auto
 from typing import Any
+
+logger = getLogger(__name__)
+logger.addHandler(NullHandler())
+logger.debug('`sequence` module loaded successfully')
 
 
 class Modulation(Flag):
