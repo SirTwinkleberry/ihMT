@@ -3,7 +3,7 @@ from brainhack.sequence import Sequence, Modulation
 from brainhack.system import System
 from brainhack.simulator import SteadyState
 
-from logging import getLogger, NullHandler
+from logging import getLogger, NullHandler, StreamHandler, INFO
 from logging.config import dictConfig
 from sys import maxsize
 from typing import Any
@@ -185,6 +185,10 @@ if __name__ == '__main__':
         dictConfig(config['log'])
         log = getLogger()
         log.debug(f'Logging configuration successful! Configuration file found at <{configPath}>.')
+    else:
+        log = getLogger()
+        log.addHandler(StreamHandler())
+        log.setLevel(INFO)
 
     if 'run' not in config.keys():
         log.critical(f'Missing `run` category from configuration file <{configPath}>.')

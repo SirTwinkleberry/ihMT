@@ -9,33 +9,35 @@ from yaml import dump
 from subprocess import check_output, STDOUT, CalledProcessError
 
 DEFAULT: dict[str, bool | int | float | str] = {
-    'B1rel': 1,
-    'M0a': 1,
-    'T1f': 1,
-    'T2f': 0.1,
-    'R': 10,
-    'M0b': 0.1,
-    'T1b': 1,
-    'T1D': 1.0e-2,
-    'T2b': 1.0e-5,
-    'pw': 1.0e-3,
-    'dt': 1.5e-3,
-    'es': 6.0e-3,
-    'tr': 1.387,
-    'turbo': 80,
-    'np': 4,
-    'nb': 10,
-    'btr': 1.0e-1,
-    'btrlast': 1.0e-3,
-    'fa_sat': 299,
-    'fa_rage': 5,
-    'FLAG_Sine_Modulation': "BP",
-    'N_altern': 1,
-    'r_tukey': 0.3,
-    'outputDir': str(Path(__file__).parent / 'output'),
-    'filePrefix': '',
-    'export': True,
-    'offset': 7000,
+    'run': {
+        'B1rel': 1,
+        'M0a': 1,
+        'T1f': 1,
+        'T2f': 0.1,
+        'R': 10,
+        'M0b': 0.1,
+        'T1b': 1,
+        'T1D': 1.0e-2,
+        'T2b': 1.0e-5,
+        'pw': 1.0e-3,
+        'dt': 1.5e-3,
+        'es': 6.0e-3,
+        'tr': 1.387,
+        'turbo': 80,
+        'np': 4,
+        'nb': 10,
+        'btr': 1.0e-1,
+        'btrlast': 1.0e-3,
+        'fa_sat': 299,
+        'fa_rage': 5,
+        'FLAG_Sine_Modulation': "BP",
+        'N_altern': 1,
+        'r_tukey': 0.3,
+        'outputDir': str(Path(__file__).parent / 'output'),
+        'filePrefix': '',
+        'export': True,
+        'offset': 7000,
+    }
 }
 
 CONFIG_STEADYSTATE = {
@@ -49,24 +51,24 @@ CONFIG_STEADYSTATE = {
 
 def dumpConfig(export: bool, modulation: str):
     tmp = copy(DEFAULT)
-    tmp['export'] = export
-    tmp['FLAG_Sine_Modulation'] = modulation
-    with open(Path(tmp['outputDir']) / 'config.yaml', 'w') as file:
+    tmp['run']['export'] = export
+    tmp['run']['FLAG_Sine_Modulation'] = modulation
+    with open(Path(tmp['run']['outputDir']) / 'config.yaml', 'w') as file:
         dump(tmp, file)
 
 
 class TestRun_withoutExport(TestCase):
     @classmethod
     def setUpClass(cls):
-        Path(DEFAULT['outputDir']).mkdir(parents=False, exist_ok=False)
+        Path(DEFAULT['run']['outputDir']).mkdir(parents=False, exist_ok=False)
 
     @classmethod
     def tearDownClass(cls):
-        Path(DEFAULT['outputDir']).rmdir()
+        Path(DEFAULT['run']['outputDir']).rmdir()
 
     def tearDown(self):
-        (Path(DEFAULT['outputDir']) / 'config.yaml').unlink(missing_ok=True)
-        (Path(DEFAULT['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
+        (Path(DEFAULT['run']['outputDir']) / 'config.yaml').unlink(missing_ok=True)
+        (Path(DEFAULT['run']['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
 
     def test_run_SingleRun_CM_noExport(self):
         dumpConfig(export=False, modulation='CM')
@@ -74,7 +76,7 @@ class TestRun_withoutExport(TestCase):
             output = check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
             self.assertEqual(output, str.encode('\n'.join([str(sublist) for sublist in CONFIG_STEADYSTATE['compute']['CM'].tolist()]) + '\n'))
         except CalledProcessError as e:
@@ -86,10 +88,10 @@ class TestRun_withoutExport(TestCase):
             check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
 
-            mat = loadmat(Path(DEFAULT['outputDir']).resolve() / (DEFAULT['filePrefix'] + 'simulation.mat'))
+            mat = loadmat(Path(DEFAULT['run']['outputDir']).resolve() / (DEFAULT['run']['filePrefix'] + 'simulation.mat'))
             base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_CM_checkExport.mat')
 
             self.assertTrue((mat['MT0'] == base['MT0']).all())
@@ -108,7 +110,7 @@ class TestRun_withoutExport(TestCase):
             output = check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
             self.assertEqual(output, str.encode('\n'.join([str(sublist) for sublist in CONFIG_STEADYSTATE['compute']['ALT'].tolist()]) + '\n'))
         except CalledProcessError as e:
@@ -120,10 +122,10 @@ class TestRun_withoutExport(TestCase):
             check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
 
-            mat = loadmat(Path(DEFAULT['outputDir']).resolve() / (DEFAULT['filePrefix'] + 'simulation.mat'))
+            mat = loadmat(Path(DEFAULT['run']['outputDir']).resolve() / (DEFAULT['run']['filePrefix'] + 'simulation.mat'))
             base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_ALT_checkExport.mat')
 
             self.assertTrue((mat['MT0'] == base['MT0']).all())
@@ -142,7 +144,7 @@ class TestRun_withoutExport(TestCase):
             output = check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
             self.assertEqual(output, str.encode('\n'.join([str(sublist) for sublist in CONFIG_STEADYSTATE['compute']['BP'].tolist()]) + '\n'))
         except CalledProcessError as e:
@@ -154,10 +156,10 @@ class TestRun_withoutExport(TestCase):
             check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
 
-            mat = loadmat(Path(DEFAULT['outputDir']).resolve() / (DEFAULT['filePrefix'] + 'simulation.mat'))
+            mat = loadmat(Path(DEFAULT['run']['outputDir']).resolve() / (DEFAULT['run']['filePrefix'] + 'simulation.mat'))
             base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_BP_checkExport.mat')
 
             self.assertTrue((mat['MT0'] == base['MT0']).all())
@@ -178,7 +180,7 @@ class TestRun_withoutExport(TestCase):
                 check_output([
                     'python',
                     str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
-                    str(Path(DEFAULT['outputDir']) / 'config.yaml'),
+                    str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
                 ], stderr=STDOUT)
             except CalledProcessError as e:
                 if "Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`." in str(e.output):
@@ -191,6 +193,8 @@ class TestRun_withoutExport(TestCase):
                 check_output([
                     'python',
                     str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
+                    'blablabla',
+                    'blablaBis'
                 ], stderr=STDOUT)
             except CalledProcessError as e:
                 if "Running command with the wrong number of arguments." in str(e.output):
@@ -203,25 +207,25 @@ class TestSingleRun(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        Path(DEFAULT['outputDir']).mkdir(parents=False, exist_ok=False)
+        Path(DEFAULT['run']['outputDir']).mkdir(parents=False, exist_ok=False)
         cls.success = True
 
     @classmethod
     def tearDownClass(cls):
         if cls.success:
-            Path(DEFAULT['outputDir']).rmdir()
+            Path(DEFAULT['run']['outputDir']).rmdir()
 
     def tearDown(self):
-        (Path(DEFAULT['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
+        (Path(DEFAULT['run']['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
 
     def test_singleRun_CM_noExport(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'CM'
         params['export'] = False
         self.assertTrue((SingleRun(**params) == CONFIG_STEADYSTATE['compute']['CM']).all())
 
     def test_singleRun_CM_checkExport(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'CM'
 
         SingleRun(**params)
@@ -237,13 +241,13 @@ class TestSingleRun(TestCase):
         self.assertDictEqual(mat, base)
 
     def test_singleRun_ALT_noExport(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'ALT'
         params['export'] = False
         self.assertTrue((SingleRun(**params) == CONFIG_STEADYSTATE['compute']['ALT']).all())
 
     def test_singleRun_ALT_checkExport(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'ALT'
 
         SingleRun(**params)
@@ -259,12 +263,12 @@ class TestSingleRun(TestCase):
         self.assertDictEqual(mat, base)
 
     def test_singleRun_BP_noExport(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
         params['export'] = False
         self.assertTrue((SingleRun(**params) == CONFIG_STEADYSTATE['compute']['BP']).all())
 
     def test_singleRun_BP_checkExport(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
 
         SingleRun(**params)
         mat = loadmat(Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat'))
@@ -280,7 +284,7 @@ class TestSingleRun(TestCase):
         self.assertDictEqual(mat, base)
 
     def test_singleRun_wrongModulation(self):
-        params = copy(DEFAULT)
+        params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'None'
 
         with self.assertRaises(ValueError):
