@@ -53,6 +53,7 @@ log:  # if `log` category is undefined, no logging will happen
       level: DEBUG  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
       formatter: error
       filename: ./output/logs_debug.txt
+      # suffix: "%Y%m%d-%H%M%S"
       mode: w  # a: append, w: write
       # encoding: utf8
 

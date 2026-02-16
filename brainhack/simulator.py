@@ -39,7 +39,9 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
         _description_
     """
     if sequence.pulse != system.pulse:
-        raise ValueError(f'Mismatched RF pulse between sequence and system. Received {sequence.pulse} (sequence) and {system.pulse} (system).')
+        error = f'Mismatched RF pulse between sequence and system. Received {sequence.pulse} (sequence) and {system.pulse} (system).'
+        logger.critical(error)
+        raise ValueError(error)
 
     HomogenizeCol: NDArray[float64] = zeros(1 + 2 * (system.N_pools - 1))
     HomogenizeCol[0] = system.poolFree_M0 / system.poolFree_T1

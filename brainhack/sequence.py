@@ -106,29 +106,41 @@ class Sequence():
             and hasattr(self, '_N_burst') and hasattr(self, '_TR_burst') and hasattr(self, '_dt_lastBurst')  # Prep parameters
                 and hasattr(self, '_tr')):
             if self.tr < round(self.duration_readout + self.duration_preparation, 6):
-                raise ValueError('TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)')
+                error = 'TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)'
+                logger.critical(error)
+                raise ValueError(error)
 
     def check_against_tr_burst(self):
         if hasattr(self, '_TR_burst') and hasattr(self, '_N_pulse') and hasattr(self, '_dt_interPulse'):
             if self.TR_burst < round(self.N_pulse * self.dt_interPulse, 6):
-                raise ValueError('TR_burst < round(N_pulse * dt_interPulse, 6)')
+                error = 'TR_burst < round(N_pulse * dt_interPulse, 6)'
+                logger.critical(error)
+                raise ValueError(error)
 
     def check_against_N_pulse_multiplicity(self):
         if hasattr(self, '_N_pulse') and hasattr(self, '_N_pulsePerOffset'):
             if .5 * self.N_pulse % self.N_pulsePerOffset != 0:
-                raise ValueError('.5 * N_pulse % N_pulsePerOffset != 0')
+                error = '.5 * N_pulse % N_pulsePerOffset != 0'
+                logger.critical(error)
+                raise ValueError(error)
 
     def check_against_pulse_duration(self):
         if hasattr(self, '_dt_interPulse') and hasattr(self, '_pulse'):
             if self.dt_interPulse < self.pulse.duration:
-                raise ValueError('dt_interPulse < pulse.duration')
+                error = 'dt_interPulse < pulse.duration'
+                logger.critical(error)
+                raise ValueError(error)
 
     @staticmethod
     def check_type(val_to_check: Any, type_to_check: type, attribute_name: str):
         if type_to_check(val_to_check) != val_to_check:
-            raise ValueError(f'`{attribute_name}` must be safely castable to integer. Received: {repr(val_to_check)}.')
+            error = f'`{attribute_name}` must be safely castable to integer. Received: {repr(val_to_check)}.'
+            logger.critical(error)
+            raise ValueError(error)
         if val_to_check < 0:
-            raise ValueError(f'`{attribute_name}` cannot be negative. Received: {repr(val_to_check)}.')
+            error = f'`{attribute_name}` cannot be negative. Received: {repr(val_to_check)}.'
+            logger.critical(error)
+            raise ValueError(error)
 
     def resetComputedAttributes_Recovery(self):
         if hasattr(self, '_duration_recovery'): del self._duration_recovery  # noqa: E701
@@ -151,7 +163,9 @@ class Sequence():
     @modulation.setter
     def modulation(self, val: Modulation):
         if type(val) is not Modulation:
-            raise TypeError(f"Value {repr(val)} is not a modulation flag of type `Modulation`.")
+            error = f"Value {repr(val)} is not a modulation flag of type `Modulation`."
+            logger.critical(error)
+            raise TypeError(error)
         self._modulation = val
 
     @property

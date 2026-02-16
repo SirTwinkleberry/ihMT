@@ -1,5 +1,6 @@
 from logging import getLogger, NullHandler, StreamHandler, INFO
 from logging.config import dictConfig
+from datetime import datetime
 from sys import maxsize
 from typing import Any
 from scipy.io import savemat
@@ -102,7 +103,9 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     elif FLAG_Sine_Modulation.upper() == "BP":
         modulation = Modulation.BP
     else:
-        raise ValueError(f"Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`. Received `{repr(FLAG_Sine_Modulation)}`.")
+        error = f"Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`. Received `{repr(FLAG_Sine_Modulation)}`."
+        logger.critical(error)
+        raise ValueError(error)
 
     pulse = Tukey(
         duration=pw,
@@ -154,13 +157,17 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
                 elif i == 1:
                     suffix = 'ALT'
                 else:
-                    RuntimeError("`MTds` should not be larger than 2 elements (CM, ALT)")
+                    error = "`MTds` should not be larger than 2 elements (CM, ALT)"
+                    logger.critical(error)
+                    RuntimeError(error)
             elif Modulation.ALT in modulation:
                 suffix = 'ALT'
             elif Modulation.CM in modulation:
                 suffix = 'CM'
             else:
-                NotImplementedError("`modulation` has flag enabled outside of implemented list.")
+                error = "`modulation` has flag enabled outside of implemented list."
+                logger.critical(error)
+                NotImplementedError(error)
 
             outDict[f'MTd_{suffix}'] = MTd
 
@@ -171,13 +178,11 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
 if __name__ == '__main__':
     if len(argv) > 2:
-        raise SyntaxError(
-            f"""
-            Running command with the wrong number of arguments.
-            Expecting: `{argv[0]} [path/to/config.yaml]`
-            Received: `{' '.join(argv)}`
-            """
-        )
+        error = f"""Running command with the wrong number of arguments.
+        Expecting: `{argv[0]} [path/to/config.yaml]`
+        Received: `{' '.join(argv)}`
+        """
+        raise SyntaxError(error)
     if len(argv) == 2:
         with open(argv[1], 'r') as file:
             config = safe_load(file)
@@ -187,18 +192,29 @@ if __name__ == '__main__':
         config = default
         configPath = Path(__file__) / 'configs' / 'default.yaml'
 
+    timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+
+    Path(config['run']['outputDir']).mkdir(parents=True, exist_ok=True)
+    if 'handlers' in config['log'].keys():
+        for handler in config['log']['handlers']:
+            if 'filename' in config['log']['handlers'][handler].keys():
+                tmp = Path(config['log']['handlers'][handler]['filename'])
+                tmp.parent.mkdir(parents=True, exist_ok=True)
+                config['log']['handlers'][handler]['filename'] = tmp.parent / f'{timestamp}_{tmp.stem}{tmp.suffix}'
+
+    rootLogger = getLogger()
+
     if 'log' in config.keys():
         dictConfig(config['log'])
-        rootLogger = getLogger()
         rootLogger.debug(f'Logging configuration successful! Configuration file found at <{configPath}>.')
     else:
-        rootLogger = getLogger()
         rootLogger.addHandler(StreamHandler())
         rootLogger.setLevel(INFO)
 
     if 'run' not in config.keys():
-        rootLogger.critical(f'Missing `run` category from configuration file <{configPath}>.')
-        raise ValueError(f'Missing `run` category from configuration file <{configPath}>.')
+        error = f'Missing `run` category from configuration file <{configPath}>.'
+        rootLogger.critical(error)
+        raise ValueError(error)
 
     set_printoptions(precision=maxsize)
     for output in SingleRun(**config['run']):

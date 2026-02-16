@@ -38,14 +38,21 @@ class Pulse():
     _onChange: dict[str, list[Callable]]
 
     def __init__(self, *args: Any, **kwargs: Any):
-        raise NotImplementedError("Object `Pulse` should not be instantiated directly. Use daughter classes instead.")
+        error = "Object `Pulse` should not be instantiated directly. Use daughter classes instead."
+        logger.critical(error)
+        raise NotImplementedError(error)
 
     def value(self, t: float) -> float:
-        raise NotImplementedError("Pulse.value should not be called directly. User daughter class' `value` method instead.")
+        error = "Method `Pulse.value` should not be called directly. Use daughter class' `value` method instead."
+        logger.critical(error)
+        raise NotImplementedError(error)
 
     def check_type(self, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
         if type_to_check(val_to_check) != val_to_check:
-            raise ValueError(f'`{attribute_name}` must be safely castable to integer. Received: {repr(val_to_check)}.')
+            error = f'`{attribute_name}` must be safely castable to integer. Received: {repr(val_to_check)}.'
+            logger.critical(error)
+            raise ValueError(error)
+
         if operators is not None:
             for operator, bound in operators:
                 if operator == le:
@@ -55,9 +62,14 @@ class Pulse():
                 elif operator == gt:
                     boundStr = f'greater than {bound}'
                 else:
-                    raise NotImplementedError(f"Operator {operator} was not implemented.")
+                    error = f"Operator {operator} was not implemented."
+                    logger.critical(error)
+                    raise NotImplementedError(error)
+
                 if operator(val_to_check, bound):
-                    raise ValueError(f'`{attribute_name}` cannot be {boundStr}. Received: {repr(val_to_check)}.')
+                    error = f'`{attribute_name}` cannot be {boundStr}. Received: {repr(val_to_check)}.'
+                    logger.critical(error)
+                    raise ValueError(error)
 
     def resetComputedAttributes(self):
         if hasattr(self, '_amplitudeIntegral'):
@@ -75,21 +87,21 @@ class Pulse():
 
     def onChange(self, attribute: str, callbacks: list[Callable]):
         if attribute not in ['gyromagneticFactor', 'duration', 'flipAngle', 'offset', 'amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS']:
-            raise ValueError(f"`attribute` name is not within acceptable values ['duration', 'offset', 'omegaRMS'] for callbacks. Received `{attribute}`.")
+            error = f"`attribute` name is not within acceptable values ['duration', 'offset', 'omegaRMS'] for callbacks. Received `{attribute}`."
+            logger.critical(error)
+            raise ValueError(error)
 
         if attribute not in self._get_onChange.keys():
             self._get_onChange[attribute] = []
-        # print(self._get_onChange[attribute])
         self._get_onChange[attribute].extend(callbacks)
-        # print(self._get_onChange)
 
     def _changed(self, attribute: str):
         if attribute in self._get_onChange.keys():
             for callback in self._get_onChange[attribute]:
                 try:
                     callback()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(e)
 
     #####
     # BELOW: property getters and setters

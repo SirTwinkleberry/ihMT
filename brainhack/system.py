@@ -344,11 +344,18 @@ class System():
     def N_pools(self):
         if not hasattr(self, '_N_pools'):
             if (len1 := len(array(self.poolFree_T1).flatten())) != (len2 := len(array(self.poolFree_T2).flatten())):
-                raise RuntimeError(f'Could not compute `N_pools` as `poolFree_T1` ({self.poolFree_T1}) and `poolFree_T2` ({self.poolFree_T2}) arrays do not have the same length ({len1} vs {len2})')
+                error = f'Could not compute `N_pools` as `poolFree_T1` ({self.poolFree_T1}) and `poolFree_T2` ({self.poolFree_T2}) arrays do not have the same length ({len1} vs {len2})'
+                logger.critical(error)
+                raise RuntimeError(error)
             if (len1 := len(array(self.poolBound_T1).flatten())) != (len2 := len(array(self.poolBound_T2).flatten())):
-                raise RuntimeError(f'Could not compute `N_pools` as `poolBound_T1` ({self.poolBound_T1}) and `poolBound_T2` ({self.poolBound_T2}) arrays do not have the same length ({len1} vs {len2})')
+                error = f'Could not compute `N_pools` as `poolBound_T1` ({self.poolBound_T1}) and `poolBound_T2` ({self.poolBound_T2}) arrays do not have the same length ({len1} vs {len2})'
+                logger.critical(error)
+                raise RuntimeError(error)
             if (len1 := len(array(self.poolBound_T1).flatten())) != (len2 := len(array(self.poolBound_T1D).flatten())):
-                raise RuntimeError(f'Could not compute `N_pools` as `poolBound_T1` ({self.poolBound_T1}) and `poolBound_T1D` ({self.poolBound_T1D}) arrays do not have the same length ({len1} vs {len2})')
+                error = f'Could not compute `N_pools` as `poolBound_T1` ({self.poolBound_T1}) and `poolBound_T1D` ({self.poolBound_T1D}) arrays do not have the same length ({len1} vs {len2})'
+                logger.critical(error)
+                raise RuntimeError(error)
+
             self.N_pools = len(array(self.poolFree_T2).flatten()) + len(array(self.poolBound_T2).flatten())
         return self._N_pools
 
