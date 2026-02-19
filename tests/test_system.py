@@ -4,6 +4,10 @@ from brainhack.pulse import Tukey
 from unittest import TestCase
 from numpy import sqrt, array
 
+from numpy import set_printoptions
+from sys import maxsize
+set_printoptions(precision=maxsize)
+
 CONFIG_TUKEY = {
     'init': {
         'duration': 1e-3,
@@ -28,10 +32,10 @@ CONFIG_SYSTEM = {
     'compute': {
         'poolBound_omegaLocalField': 1. / ( sqrt(15) * 1e-5 ),
         'N_pools': 2,
-        'poolFree_Rrf': array( [[-0.15831673065100935, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
-        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.4496075350448, 0.0], [0.0, 0.0, -1045.90353967225]] ),
-        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.4496075350448, -15853401.74629989], [0.0, -0.02378010261944984, -1045.90353967225]] ),
-        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.4496075350448, 15853401.74629989], [0.0, 0.02378010261944984, -1045.90353967225]] ),
+        'poolFree_Rrf': array( [[-0.15831672264766541, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
+        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.4495893133308, 0.0], [0.0, 0.0, -1045.9034867989642]] ),
+        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.4495893133308, -15853400.944867052], [0.0, -0.02378010141730058, -1045.9034867989642]] ),
+        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.4495893133308,  15853400.944867052], [0.0,  0.02378010141730058, -1045.9034867989642]] ),
     }
 }
 

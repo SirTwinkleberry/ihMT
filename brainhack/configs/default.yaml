@@ -73,17 +73,3 @@ log:  # if `log` category is undefined, no logging will happen
     level: DEBUG
     # handlers: [console, error_console]
     handlers: [console, error_console, root_file_handler, debug_root_file_handler]
-
-  # loggers:
-  #   main:
-  #     level: DEBUG
-  #     handlers: [info_file_handler, warn_file_handler, error_file_handler, critical_file_handler, debug_file_handler]
-  #     propagate: no
-  #   werkzeug:
-  #     level: DEBUG
-  #     handlers: [info_file_handler, warn_file_handler, error_file_handler, critical_file_handler, debug_file_handler]
-  #     propagate: yes
-  #   api.app_server:
-  #     level: DEBUG
-  #     handlers: [info_file_handler, warn_file_handler, error_file_handler, critical_file_handler, debug_file_handler]
-  #     propagate: yes

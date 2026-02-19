@@ -8,6 +8,10 @@ from scipy.io import loadmat
 from yaml import dump
 from subprocess import check_output, STDOUT, CalledProcessError
 
+from numpy import set_printoptions
+from sys import maxsize
+set_printoptions(precision=maxsize)
+
 DEFAULT: dict[str, bool | int | float | str] = {
     'run': {
         'B1rel': 1,
@@ -37,14 +41,50 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'filePrefix': '',
         'export': True,
         'offset': 7000,
-    }
+    },
+
+    'log': {
+        'version': 1,
+        'disable_existing_loggers': False,
+
+        'formatters': {
+            'standard': {
+                'format': "%(message)s"
+            },
+            'error': {
+                'format': "%(asctime)s - %(name)s - %(levelname)s <PID %(process)d:%(processName)s> %(name)s.%(funcName)s(): %(message)s"
+            },
+        },
+
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'level': 'INFO',  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+                'formatter': 'standard',
+                'stream': 'ext://sys.stdout',
+            },
+
+            'error_console': {
+                'class': 'logging.StreamHandler',
+                'level': 'ERROR',  # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+                'formatter': 'error',
+                'stream': 'ext://sys.stderr',
+            },
+        },
+
+        'root': {
+            'level': 'DEBUG',
+            # handlers: [console, error_console]
+            'handlers': ['console', 'error_console'],
+        },
+    },
 }
 
 CONFIG_STEADYSTATE = {
     'compute': {
-        'CM':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252570368822, 0.04541092490829171, 1.5267491676219505e-06, 1.0], [0.6599520525265348, 0.010208118167907999, 0.0, 1.0]]),
-        'ALT': array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252570368822, 0.04541092490829171, 1.5267491676219505e-06, 1.0], [0.6700714292496244, 0.01328009641722453, -2.7246884257360736e-07, 1.0]]),
-        'BP':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252570368822, 0.04541092490829171, 1.5267491676219505e-06, 1.0], [0.6599520525265348, 0.010208118167907999, 0.0, 1.0], [0.6700714292496244, 0.01328009641722453, -2.7246884257360736e-07, 1.0]]),
+        'CM':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6599520559568383, 0.010208119191059052, 0.0, 1.0]]),
+        'ALT': array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0]]),
+        'BP':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6599520559568383, 0.010208119191059052, 0.0, 1.0], [0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0]]),
     }
 }
 
@@ -225,6 +265,7 @@ class TestSingleRun(TestCase):
         params['FLAG_Sine_Modulation'] = 'CM'
 
         SingleRun(**params)
+        # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_CM_checkExport.mat')
         mat = loadmat(Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat'))
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_CM_checkExport.mat')
 
@@ -247,6 +288,7 @@ class TestSingleRun(TestCase):
         params['FLAG_Sine_Modulation'] = 'ALT'
 
         SingleRun(**params)
+        # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_ALT_checkExport.mat')
         mat = loadmat(Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat'))
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_ALT_checkExport.mat')
 
@@ -267,6 +309,7 @@ class TestSingleRun(TestCase):
         params = copy(DEFAULT['run'])
 
         SingleRun(**params)
+        # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_BP_checkExport.mat')
         mat = loadmat(Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat'))
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_BP_checkExport.mat')
 

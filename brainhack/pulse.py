@@ -87,9 +87,9 @@ class Pulse():
         for attribute in attributelist:
             if hasattr(self, f'_{attribute}'):
                 delattr(self, f'_{attribute}')
-                logger.info(f'Called for deletion of `_{attribute}`.')
+                logger.debug(f'Called for deletion of `_{attribute}`.')
             else:
-                logger.info(f'Called for deletion of `_{attribute}` but attribute was missing.')
+                logger.debug(f'Called for deletion of `_{attribute}` but attribute was missing.')
 
     #####
     # BELOW: property getters and setters
@@ -213,7 +213,8 @@ class Pulse():
     @property
     def omegaRMS(self) -> float:
         if not hasattr(self, '_omegaRMS'):
-            self.omegaRMS = sqrt(self.powerIntegral / self.duration) * abs(self.b1peak * self.gyromagneticFactor)
+            self.omegaRMS = self.b1RMS * self.gyromagneticFactor
+            # self.omegaRMS = sqrt(self.powerIntegral) * abs(self.b1peak * self.gyromagneticFactor / self.duration)
         return self._omegaRMS
 
     @omegaRMS.setter

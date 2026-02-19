@@ -91,7 +91,12 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
     )
 
     # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
-    # normalization: see https://github.com/mriphysics/ihMT_steadystate/blob/master/src/ssSPGR_ihMT_integrate.m#L121-L123
+    # Indeed: eigenequation is <Av = lv> with l the eigenvalue of A associated to the eigenvector v
+    # Meanwhile: steady state equation is <Av = v>. We can identify both equations by setting l = 1.
+    # For l = 1, v_1 is the steady state eigenvector of A, i.e., the steady state magnetization of A.
+    # Eigenvectors are always defined up to a scaling factor. The last element of v_1 is also necessarily non-zero.
+    # The last element of v_1, present because of the homogeneization of matrix A, is not associated to a physical quantity.
+    # We choose the normalization where this last element of v_1 is unity, so we rescale v_1 by the scalar <1. / v_1[-1]>
     v_MT0 = eig(round(matmul(evol_relax_fullPrep, evol_RAGE), 16))[1][:, -1]
     v_MTs = eig(round(matmul(evol_MTsat_single, evol_RAGE), 16))[1][:, -1]
 

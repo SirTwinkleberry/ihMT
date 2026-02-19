@@ -182,7 +182,7 @@ if __name__ == '__main__':
             config = safe_load(file)
             configPath = Path(argv[1]).resolve()
     else:
-        from config import default
+        from brainhack.config import default
         config = default
         configPath = Path(__file__) / 'configs' / 'default.yaml'
 

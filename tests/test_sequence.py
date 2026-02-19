@@ -4,6 +4,10 @@ from brainhack.pulse import Tukey
 from copy import deepcopy as copy
 from unittest import TestCase
 
+from numpy import set_printoptions
+from sys import maxsize
+set_printoptions(precision=maxsize)
+
 CONFIG_SEQUENCE = {
     'init': {
         'modulation': Modulation.BP,
