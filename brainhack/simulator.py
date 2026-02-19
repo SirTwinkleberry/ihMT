@@ -3,12 +3,6 @@ from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, r
 from numpy.typing import NDArray
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
-from pathlib import Path
-from sys import path
-try:
-    path.index(str(Path(__file__).parents[1].resolve()))
-except ValueError:
-    path.append(str(Path(__file__).parents[1].resolve()))
 
 from brainhack.system import System
 from brainhack.sequence import Sequence, Modulation

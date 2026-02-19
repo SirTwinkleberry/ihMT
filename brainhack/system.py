@@ -5,12 +5,6 @@ from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp,
 from numpy.typing import NDArray
 from scipy.integrate import quad
 from scipy.linalg import block_diag
-from pathlib import Path
-from sys import path
-try:
-    path.index(str(Path(__file__).parents[1].resolve()))
-except ValueError:
-    path.append(str(Path(__file__).parents[1].resolve()))
 
 from brainhack.pulse import Pulse
 

@@ -9,17 +9,11 @@ from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
 from pathlib import Path
-from sys import path
 
-try:
-    path.index(str(Path(__file__).parents[1].resolve()))
-except ValueError:
-    path.append(str(Path(__file__).parents[1].resolve()))
-finally:
-    from brainhack.pulse import Tukey
-    from brainhack.sequence import Sequence, Modulation
-    from brainhack.system import System
-    from brainhack.simulator import SteadyState
+from brainhack.pulse import Tukey
+from brainhack.sequence import Sequence, Modulation
+from brainhack.system import System
+from brainhack.simulator import SteadyState
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())

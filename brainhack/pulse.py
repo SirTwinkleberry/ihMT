@@ -4,12 +4,6 @@ from collections.abc import Callable
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad
 from operator import le, lt, gt
-from pathlib import Path
-from sys import path
-try:
-    path.index(str(Path(__file__).parents[1].resolve()))
-except ValueError:
-    path.append(str(Path(__file__).parents[1].resolve()))
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -71,20 +65,6 @@ class Pulse():
                     logger.critical(error)
                     raise ValueError(error)
 
-    def resetComputedAttributes(self):
-        if hasattr(self, '_amplitudeIntegral'):
-            del self._amplitudeIntegral
-            self._changed('amplitudeIntegral')
-        if hasattr(self, '_powerIntegral'):
-            del self._powerIntegral
-            self._changed('powerIntegral')
-        if hasattr(self, '_b1peak'):
-            del self._b1peak
-            self._changed('b1peak')
-        if hasattr(self, '_omegaRMS'):
-            del self._omegaRMS
-            self._changed('omegaRMS')
-
     def onChange(self, attribute: str, callbacks: list[Callable]):
         if attribute not in ['gyromagneticFactor', 'duration', 'flipAngle', 'offset', 'amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS']:
             error = f"`attribute` name is not within acceptable values ['duration', 'offset', 'omegaRMS'] for callbacks. Received `{attribute}`."
@@ -102,6 +82,14 @@ class Pulse():
                     callback()
                 except Exception as e:
                     logger.error(e)
+
+    def _resetComputedAttributes(self, attributelist: list[str]):
+        for attribute in attributelist:
+            if hasattr(self, f'_{attribute}'):
+                delattr(self, f'_{attribute}')
+                logger.info(f'Called for deletion of `_{attribute}`.')
+            else:
+                logger.info(f'Called for deletion of `_{attribute}` but attribute was missing.')
 
     #####
     # BELOW: property getters and setters
@@ -123,7 +111,7 @@ class Pulse():
         self.check_type(val, float, None, 'gyromagneticFactor')
         self._gyromagneticFactor = val
         self._changed('gyromagneticFactor')
-        self.resetComputedAttributes()
+        self._resetComputedAttributes(['b1peak', 'omegaRMS'])
 
     @property
     def duration(self) -> float:
@@ -134,7 +122,7 @@ class Pulse():
         self.check_type(val, float, [(le, 0)], 'duration')
         self._duration = val
         self._changed('duration')
-        self.resetComputedAttributes()
+        self._resetComputedAttributes(['amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS'])
 
     @property
     def flipAngle(self) -> float:
@@ -145,7 +133,7 @@ class Pulse():
         self.check_type(val, float, [(le, 0)], 'flipAngle')
         self._flipAngle = val
         self._changed('flipAngle')
-        self.resetComputedAttributes()
+        self._resetComputedAttributes(['b1peak'])
 
     @property
     def offset(self) -> float:
@@ -168,10 +156,13 @@ class Pulse():
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
         self._amplitudeIntegral = val
         self._changed('amplitudeIntegral')
+        self._resetComputedAttributes(['b1peak'])
 
     @amplitudeIntegral.deleter
     def amplitudeIntegral(self):
         del self._amplitudeIntegral
+        self._changed('amplitudeIntegral')
+        self._resetComputedAttributes(['b1peak'])
 
     @property
     def powerIntegral(self) -> float:
@@ -184,10 +175,13 @@ class Pulse():
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
         self._powerIntegral = val
         self._changed('powerIntegral')
+        self._resetComputedAttributes(['omegaRMS'])
 
     @powerIntegral.deleter
     def powerIntegral(self):
         del self._powerIntegral
+        self._changed('powerIntegral')
+        self._resetComputedAttributes(['omegaRMS'])
 
     @property
     def b1peak(self) -> float:
@@ -200,17 +194,26 @@ class Pulse():
         self.check_type(val, float, [(lt, 0)], 'b1peak')
         self._b1peak = val
         self._changed('b1peak')
+        self._resetComputedAttributes(['omegaRMS'])
 
     @b1peak.deleter
     def b1peak(self):
         del self._b1peak
+        self._changed('b1peak')
+        self._resetComputedAttributes(['omegaRMS'])
+
+    @property
+    def b1(self):
+        return self.b1peak * self.amplitudeIntegral
+
+    @property
+    def b1RMS(self):
+        return self.b1peak * sqrt(self.powerIntegral)
 
     @property
     def omegaRMS(self) -> float:
         if not hasattr(self, '_omegaRMS'):
-            self.omegaRMS = sqrt(quad(lambda t: self.value(t)**2, 0, self.duration)[0]
-                                 * self.b1peak * self.b1peak  * self.gyromagneticFactor * self.gyromagneticFactor
-                                 / self.duration)
+            self.omegaRMS = sqrt(self.powerIntegral / self.duration) * abs(self.b1peak * self.gyromagneticFactor)
         return self._omegaRMS
 
     @omegaRMS.setter
@@ -222,6 +225,7 @@ class Pulse():
     @omegaRMS.deleter
     def omegaRMS(self):
         del self._omegaRMS
+        self._changed('omegaRMS')
 
 
 class Tukey(Pulse):
@@ -287,7 +291,7 @@ class Tukey(Pulse):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'shape')
         self._shape = val
         self._changed('shape')
-        self.resetComputedAttributes()
+        self._resetComputedAttributes(['amplitudeIntegral', 'powerIntegral'])
 
     @property
     def amplitudeIntegral(self) -> float:
@@ -300,10 +304,12 @@ class Tukey(Pulse):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
         self._amplitudeIntegral = val
         self._changed('amplitudeIntegral')
+        self._resetComputedAttributes(['b1peak'])
 
     @amplitudeIntegral.deleter
     def amplitudeIntegral(self):
         del self._amplitudeIntegral
+        self._resetComputedAttributes(['b1peak'])
 
     @property
     def powerIntegral(self) -> float:
@@ -316,7 +322,9 @@ class Tukey(Pulse):
         self.check_type(val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
         self._powerIntegral = val
         self._changed('powerIntegral')
+        self._resetComputedAttributes(['omegaRMS'])
 
     @powerIntegral.deleter
     def powerIntegral(self):
         del self._powerIntegral
+        self._resetComputedAttributes(['omegaRMS'])
