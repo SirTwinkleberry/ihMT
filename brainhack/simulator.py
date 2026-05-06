@@ -83,12 +83,10 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
         ]) * sequence.pulse.duration
     )
 
-    evol_RAGE: NDArray[float64] = matmul( evol_relax_recovery, matrix_power(matmul(evol_relax_interReadRF, evol_rf_readoutInstantAction), sequence.N_adc) )
+    evol_RAGE: NDArray[float64] = evol_relax_recovery @ matrix_power(evol_relax_interReadRF @ evol_rf_readoutInstantAction, sequence.N_adc)
 
-    evol_MTsat_single: NDArray[float64] = matmul(
-        matmul( evol_relax_lastBurst, matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse) ),
-        matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive), sequence.N_pulse)), sequence.N_burst - 1)
-    )
+    evol_MTsat_single: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, sequence.N_pulse)) \
+        @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, sequence.N_pulse), sequence.N_burst - 1)
 
     # array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
     # Indeed: eigenequation is <Av = lv> with l the eigenvalue of A associated to the eigenvector v
@@ -97,8 +95,8 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
     # Eigenvectors are always defined up to a scaling factor. The last element of v_1 is also necessarily non-zero.
     # The last element of v_1, present because of the homogeneization of matrix A, is not associated to a physical quantity.
     # We choose the normalization where this last element of v_1 is unity, so we rescale v_1 by the scalar <1. / v_1[-1]>
-    v_MT0 = eig(round(matmul(evol_relax_fullPrep, evol_RAGE), 16))[1][:, -1]
-    v_MTs = eig(round(matmul(evol_MTsat_single, evol_RAGE), 16))[1][:, -1]
+    v_MT0 = eig(round(evol_relax_fullPrep @ evol_RAGE, 16))[1][:, -1]
+    v_MTs = eig(round(evol_MTsat_single @ evol_RAGE, 16))[1][:, -1]
 
     MT0: NDArray[float64] = v_MT0 / v_MT0[-1]
     MTs: NDArray[float64] = v_MTs / v_MTs[-1]
@@ -112,44 +110,29 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
             ]) * sequence.pulse.duration
         )
 
-        evol_MTsat_dual_CM: NDArray[float64] = matmul(
-            matmul( evol_relax_lastBurst, matrix_power(matmul(evol_relax_interPulse, evol_rf_dualSat_SM), sequence.N_pulse) ),
-            matrix_power( matmul(evol_relax_TR_burst , matrix_power(matmul(evol_relax_interPulse, evol_rf_dualSat_SM), sequence.N_pulse)), sequence.N_burst - 1)
-        )
+        evol_MTsat_dual_CM: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, sequence.N_pulse)) \
+            @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, sequence.N_pulse), sequence.N_burst - 1)
 
-        v_MTd_CM = eig(round(matmul(evol_MTsat_dual_CM, evol_RAGE), 16))[1][:, -1]
+        v_MTd_CM = eig(round(evol_MTsat_dual_CM @ evol_RAGE, 16))[1][:, -1]
         MTd_CM = v_MTd_CM / v_MTd_CM[-1]
 
         MTds.append(MTd_CM)
 
     if Modulation.ALT in sequence.modulation:
-        evol_MTsat_dual_ALT: NDArray[float64] = matmul(
-            matmul(
-                evol_relax_lastBurst,
-                matrix_power(
-                    matmul(matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Negative),
-                                        sequence.N_pulsePerOffset),
-                           matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive),
-                                        sequence.N_pulsePerOffset)),
+        evol_MTsat_dual_ALT: NDArray[float64] = evol_relax_lastBurst @ matrix_power(
+                matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, sequence.N_pulsePerOffset)
+                @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, sequence.N_pulsePerOffset),
+                int(.5 * sequence.N_pulse / sequence.N_pulsePerOffset)
+            ) \
+            @ matrix_power(evol_relax_TR_burst @ matrix_power(
+                    matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, sequence.N_pulsePerOffset)
+                    @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, sequence.N_pulsePerOffset),
                     int(.5 * sequence.N_pulse / sequence.N_pulsePerOffset)
-                )
-            ),
-            matrix_power(
-                matmul(
-                    evol_relax_TR_burst,
-                    matrix_power(
-                        matmul(matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Negative),
-                                            sequence.N_pulsePerOffset),
-                               matrix_power(matmul(evol_relax_interPulse, evol_rf_singleSat_Positive),
-                                            sequence.N_pulsePerOffset)),
-                        int(.5 * sequence.N_pulse / sequence.N_pulsePerOffset)
-                    )
                 ),
                 sequence.N_burst - 1
             )
-        )
 
-        v_MTd_ALT = eig(round(matmul(evol_MTsat_dual_ALT, evol_RAGE), 16))[1][:, -1]
+        v_MTd_ALT = eig(round(evol_MTsat_dual_ALT @ evol_RAGE, 16))[1][:, -1]
         MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
 
         MTds.append(MTd_ALT)
