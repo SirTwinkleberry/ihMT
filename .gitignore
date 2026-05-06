@@ -164,3 +164,8 @@ cython_debug/
 __pycache__
 
 output/
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+

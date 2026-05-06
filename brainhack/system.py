@@ -1,10 +1,11 @@
 from logging import getLogger, NullHandler
 from typing import Any
 from collections.abc import Callable
-from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos
+from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad
 from numpy.typing import NDArray
-from scipy.integrate import quad
+from scipy.integrate import quad, dblquad
 from scipy.linalg import block_diag
+from scipy.special import i0
 
 from brainhack.pulse import Pulse
 
@@ -167,6 +168,70 @@ class System():
             T2_eff = 1. / sqrt(1. / (T2_tmp * T2_tmp) + 1. / (T2_neighboors * T2_neighboors))
             return sin(theta) * T2_eff * exp( -.5 * ( 2 * pi * offset * T2_eff )**2 )
         return sqrt(1. / (2 * pi)) * quad( lambda theta: Spherical(theta, self.pulse.offset, T2), 0, .5 * pi)[0]
+
+    def Cylindrical(self, T2: float) -> float:
+        """_summary_
+
+        Parameters
+        ----------
+        T2 : float
+            _description_
+
+        Returns
+        -------
+        float
+            _description_
+        """
+        if self.axonal_angle == 0:
+            T2_totSquare = 1 / (31.4 * 31.4 + .25 / (T2 * T2))
+            return sqrt(2 * pi * T2_totSquare) * exp(-2 * (pi * self.pulse.offset)**2 * T2_totSquare)
+
+        def Spherical(theta: float, phi: float, offset: float, T2: float) -> float:
+            # include neighboors contribution to remove singularity at the magic angle, see Pampel et al. NeuroImage 114 (2015) 136–146
+            # R2_neighboors 31.4
+            T2_totSquare = 1 / (31.4 * 31.4 + (abs(3 * (-sin(theta) * cos(phi))**2 - 1) / (2 * T2))**2)
+            return sqrt(T2_totSquare) * exp( -2 * (pi * offset)**2 * T2_totSquare )
+        return sqrt(2 / pi) * quad( lambda phi: Spherical(deg2rad(self.axonal_angle), phi, self.pulse.offset, T2), 0, pi, limit=100)[0]
+
+    def DispersedCylindrical(self, T2: float) -> float:
+        """Fiber bundle orientation distribution lineshape
+
+        Parameters
+        ----------
+        T2 : float
+            _description_
+
+        Returns
+        -------
+        float
+            _description_
+        """
+        raise NotImplementedError("Currently not implemented.")
+        theta = np.deg2rad(theta)
+        
+        def ScaledBingham(theta: float, phi: float) -> float:
+            u: NDArray = array([sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)])
+            values = list()
+            for fiber in self.fibers:
+                f0: float = fiber.maxAngularFiberDensity
+                k: NDArray = fiber.concentrationParameters
+                m: NDArray = fiber.concentrationAxes
+                mat: NDArray = dot(m, dot(diag(k), m.transpose()))
+                norm: float = (f0 * 2 * pi * i0(.5 * (k[0] - k[1])) * exp(.5 * (k[0] + k[1])))**2
+                values.append(norm * exp(dot(u, dot(mat, u))))
+            return tuple(values)
+
+        def Spherical(theta: float, phi: float, offset: float, T2: float) -> float:
+            # This program set up a function for Spherical lineshape integration
+            # include neighboors contribution to remove singularity at the magic angle
+            # see Pampel et al. NeuroImage 114 (2015) 136–146
+            R2_neighboors = 31.4  # 10000000 would mean virtually no effect of T2_neighboors
+            R2_tmp = abs(3 * (-sin(theta) * cos(phi))**2 - 1) / (2 * T2)
+            T2_totSquare = 1 / (R2_neighboors * R2_neighboors + R2_tmp * R2_tmp)
+            return sqrt(T2_totSquare) * exp( -.5 * ( 2 * pi * offset * T2_totSquare )**2 )
+
+        norm = 1. / len(self.fibers)
+        return norm * sqrt(1. / (2 * pi)**3) * dblquad(lambda theta, phi: sin(theta) * Spherical(theta, phi, self.pulse.offset, T2) * sum(ScaledBingham(theta, phi)), 0, pi, 0, 2 * pi)[0]
 
     #####
     # BELOW: property getters and setters
