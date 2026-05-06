@@ -1,5 +1,5 @@
 from logging import getLogger, NullHandler
-from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, round, radians, cos
+from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, round, deg2rad, cos
 from numpy.typing import NDArray
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
@@ -12,7 +12,7 @@ logger.addHandler(NullHandler())
 logger.debug('`simulator` module loaded successfully')
 
 
-def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], ...]:
+def SteadyState(system: System, sequence: Sequence, export_read: bool) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
@@ -67,7 +67,7 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
     evol_relax_fullPrep: NDArray[float64] = expm(mat_REX * sequence.duration_preparation)
 
     evol_rf_readoutInstantAction = eye(2 + 2 * (system.N_pools - 1))
-    evol_rf_readoutInstantAction[0, 0] = cos(radians(sequence.readout_flipAngle))
+    evol_rf_readoutInstantAction[0, 0] = cos(deg2rad(sequence.readout_flipAngle))
 
     evol_rf_singleSat_Positive: NDArray[float64] = expm(
         vstack([
@@ -83,7 +83,9 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
         ]) * sequence.pulse.duration
     )
 
-    evol_RAGE: NDArray[float64] = evol_relax_recovery @ matrix_power(evol_relax_interReadRF @ evol_rf_readoutInstantAction, sequence.N_adc)
+    read: NDArray[float64] = evol_relax_interReadRF @ evol_rf_readoutInstantAction
+    evol_RAGE: NDArray[float64] = evol_relax_recovery @ matrix_power(read, sequence.N_adc - sequence.N_dummyADC)
+    evol_dummyRAGE: NDArray[float64] = matrix_power(read, sequence.N_dummyADC)
 
     evol_MTsat_single: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, sequence.N_pulse)) \
         @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, sequence.N_pulse), sequence.N_burst - 1)
@@ -95,8 +97,8 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
     # Eigenvectors are always defined up to a scaling factor. The last element of v_1 is also necessarily non-zero.
     # The last element of v_1, present because of the homogeneization of matrix A, is not associated to a physical quantity.
     # We choose the normalization where this last element of v_1 is unity, so we rescale v_1 by the scalar <1. / v_1[-1]>
-    v_MT0 = eig(round(evol_relax_fullPrep @ evol_RAGE, 16))[1][:, -1]
-    v_MTs = eig(round(evol_MTsat_single @ evol_RAGE, 16))[1][:, -1]
+    v_MT0 = eig(round(evol_dummyRAGE @ (evol_relax_fullPrep @ evol_RAGE), 16))[1][:, -1]
+    v_MTs = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
 
     MT0: NDArray[float64] = v_MT0 / v_MT0[-1]
     MTs: NDArray[float64] = v_MTs / v_MTs[-1]
@@ -113,7 +115,7 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
         evol_MTsat_dual_CM: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, sequence.N_pulse)) \
             @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, sequence.N_pulse), sequence.N_burst - 1)
 
-        v_MTd_CM = eig(round(evol_MTsat_dual_CM @ evol_RAGE, 16))[1][:, -1]
+        v_MTd_CM = eig(round(evol_dummyRAGE @ (evol_MTsat_dual_CM @ evol_RAGE), 16))[1][:, -1]
         MTd_CM = v_MTd_CM / v_MTd_CM[-1]
 
         MTds.append(MTd_CM)
@@ -132,9 +134,12 @@ def SteadyState(system: System, sequence: Sequence) -> tuple[NDArray[float64], .
                 sequence.N_burst - 1
             )
 
-        v_MTd_ALT = eig(round(evol_MTsat_dual_ALT @ evol_RAGE, 16))[1][:, -1]
+        v_MTd_ALT = eig(round(evol_dummyRAGE @ (evol_MTsat_dual_ALT @ evol_RAGE), 16))[1][:, -1]
         MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
 
         MTds.append(MTd_ALT)
+
+    if export_read:
+        MTds.append(read)
 
     return MT0, MTs, *MTds

@@ -37,7 +37,7 @@ class Sequence():
     _duration_preparation: float
     _duration_recovery: float
 
-    def __init__(self, modulation: Modulation, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
+    def __init__(self, modulation: Modulation, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
@@ -54,6 +54,8 @@ class Sequence():
             _description_
         N_adc : int
             _aka `turbo_factor`_
+        N_dummyADC : int
+            _Number of dummy readout echoes_
         dt_interPulse : float
             _aka `dt`_
         TR_burst : float
@@ -92,6 +94,7 @@ class Sequence():
 
         self.es = es
         self.N_adc = N_adc
+        self.N_dummyADC = N_dummyADC
 
         self.tr = tr
 
@@ -112,8 +115,8 @@ class Sequence():
                 raise ValueError(error)
 
     def check_against_N_pulse_multiplicity(self):
-        if hasattr(self, '_N_pulse') and hasattr(self, '_N_pulsePerOffset'):
-            if .5 * self.N_pulse % self.N_pulsePerOffset != 0:
+        if hasattr(self, '_N_pulse') and hasattr(self, '_N_pulsePerOffset') and hasattr(self, '_modulation'):
+            if (self.modulation != Modulation.CM) and (((.5 * self.N_pulse) % self.N_pulsePerOffset) != 0):
                 error = '.5 * N_pulse % N_pulsePerOffset != 0'
                 logger.critical(error)
                 raise ValueError(error)
@@ -122,6 +125,13 @@ class Sequence():
         if hasattr(self, '_dt_interPulse') and hasattr(self, '_pulse'):
             if self.dt_interPulse < self.pulse.duration:
                 error = 'dt_interPulse < pulse.duration'
+                logger.critical(error)
+                raise ValueError(error)
+
+    def check_against_N_dummyADC(self):
+        if hasattr(self, '_N_dummyADC') and hasattr(self, '_N_adc'):
+            if self.N_adc < self.N_dummyADC:
+                error = 'N_adc < N_dummyADC'
                 logger.critical(error)
                 raise ValueError(error)
 
@@ -160,6 +170,7 @@ class Sequence():
             error = f"Value {repr(val)} is not a modulation flag of type `Modulation`."
             logger.critical(error)
             raise TypeError(error)
+        self.check_against_N_pulse_multiplicity()
         self._modulation = val
 
     @property
@@ -222,7 +233,18 @@ class Sequence():
         self.check_type(val, int, 'N_adc')
         self._N_adc = int(val)
         self.resetComputedAttributes_Readout()
+        self.check_against_N_dummyADC()
         self.check_against_tr()
+
+    @property
+    def N_dummyADC(self):
+        return self._N_dummyADC
+
+    @N_dummyADC.setter
+    def N_dummyADC(self, val: int):
+        self.check_type(val, int, 'N_dummyADC')
+        self._N_dummyADC = int(val)
+        self.check_against_N_dummyADC()
 
     @property
     def readout_flipAngle(self):

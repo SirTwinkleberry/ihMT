@@ -13,6 +13,7 @@ run:  # mandatory, provides the parameters for simulator.SingleRun
   es: 0.006
   tr: 3
   turbo: 80
+  N_dummyADC: 3
   np: 4
   nb: 10
   btr: 0.1
@@ -26,6 +27,7 @@ run:  # mandatory, provides the parameters for simulator.SingleRun
   filePrefix: ''
   export: True
   offset: 7000
+  export_read: False
 
 log:  # if `log` category is undefined, no logging will happen
   # https://docs.python.org/3/library/logging.config.html#dictionary-schema-details

@@ -28,6 +28,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'es': 6.0e-3,
         'tr': 1.387,
         'turbo': 80,
+        'N_dummyADC': 0,
         'np': 4,
         'nb': 10,
         'btr': 1.0e-1,
@@ -41,6 +42,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'filePrefix': '',
         'export': True,
         'offset': 7000,
+        'export_read': False,
     },
 
     'log': {

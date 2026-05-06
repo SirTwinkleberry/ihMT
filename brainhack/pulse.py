@@ -85,8 +85,8 @@ class Pulse():
 
     def _resetComputedAttributes(self, attributelist: list[str]):
         for attribute in attributelist:
-            if hasattr(self, f'_{attribute}'):
-                delattr(self, f'_{attribute}')
+            if hasattr(self, f'_{attribute}'): # prefix `_` to avoid calling getter method
+                delattr(self, f'{attribute}')  # No prefix `_` to ensure calling deleter method
                 logger.debug(f'Called for deletion of `_{attribute}`.')
             else:
                 logger.debug(f'Called for deletion of `_{attribute}` but attribute was missing.')

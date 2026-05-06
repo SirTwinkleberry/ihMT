@@ -27,6 +27,7 @@ CONFIG_SEQUENCE = {
         'N_pulse': 4,
         'N_burst': 10,
         'N_adc': 80,
+        'N_dummyADC': 0,
         'dt_interPulse': 1.5e-3,
         'TR_burst': 1e-1,
         'dt_lastBurst': 1e-3,
@@ -66,16 +67,16 @@ class TestSteadyState(TestCase):
 
     def test_steadyState_CM(self):
         self.sequence.modulation = Modulation.CM
-        self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['CM']).all())
+        self.assertTrue((array(SteadyState(self.system, self.sequence, False)) == CONFIG_STEADYSTATE['compute']['CM']).all())
 
     def test_steadyState_ALT(self):
         self.sequence.modulation = Modulation.ALT
-        self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['ALT']).all())
+        self.assertTrue((array(SteadyState(self.system, self.sequence, False)) == CONFIG_STEADYSTATE['compute']['ALT']).all())
 
     def test_steadyState_BP(self):
-        self.assertTrue((array(SteadyState(self.system, self.sequence)) == CONFIG_STEADYSTATE['compute']['BP']).all())
+        self.assertTrue((array(SteadyState(self.system, self.sequence, False)) == CONFIG_STEADYSTATE['compute']['BP']).all())
 
     def test_steadyState_mismatched_Pulse(self):
         self.sequence.pulse = Tukey(**CONFIG_TUKEY['init'])  # the _onChange_ callbacks of the new pulse will be different
         with self.assertRaises(ValueError):
-            SteadyState(self.system, self.sequence)
+            SteadyState(self.system, self.sequence, False)

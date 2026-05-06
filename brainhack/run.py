@@ -20,7 +20,7 @@ logger.addHandler(NullHandler())
 logger.debug('`run` module loaded successfully')
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, export_read: bool, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
     """_summary_
 
     Parameters
@@ -51,6 +51,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         _description_
     turbo : int
         _description_
+    N_dummyADC : int
+        _description_
     np : int
         _description_
     nb : int
@@ -76,6 +78,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     export : bool
         _description_
     offset : float
+        _description_
+    export_read : bool
         _description_
 
     Returns
@@ -114,6 +118,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         N_pulse=np,
         N_burst=nb,
         N_adc=turbo,
+        N_dummyADC=N_dummyADC,
         dt_interPulse=dt,
         TR_burst=btr,
         dt_lastBurst=btrlast,
@@ -133,7 +138,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         poolBound_T1D=T1D
     )
 
-    arrays: tuple[NDArray[float64], ...] = SteadyState(system, sequence)
+    arrays: tuple[NDArray[float64], ...] = SteadyState(system, sequence, export_read)
 
     if export:
         Path(outputDir).resolve().mkdir(parents=True, exist_ok=True)
@@ -143,14 +148,16 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
             'MTs': arrays[1],
         }
 
-        for i, MTd in enumerate(arrays[2:]):
+        if export_read:
+            outDict['read'] = arrays[-1]
+
+        for i, MTd in enumerate(arrays[2:-1] if export_read else arrays[2:]):
             suffix: str = ''
             if Modulation.BP in modulation:
                 if i == 0:
                     suffix = 'CM'
                 elif i == 1:
                     suffix = 'ALT'
-                else:
                     error = "`MTds` should not be larger than 2 elements (CM, ALT)"
                     logger.critical(error)
                     RuntimeError(error)

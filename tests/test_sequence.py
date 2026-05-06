@@ -15,6 +15,7 @@ CONFIG_SEQUENCE = {
         'N_pulse': 4,
         'N_burst': 10,
         'N_adc': 80,
+        'N_dummyADC': 3,
         'dt_interPulse': 1.5e-3,
         'TR_burst': 1e-1,
         'dt_lastBurst': 1e-3,
