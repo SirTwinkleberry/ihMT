@@ -1,5 +1,5 @@
 from logging import getLogger, NullHandler
-from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, round, matmul, radians, cos
+from numpy import float64, zeros, kron, eye, diag, array, sum, vstack, hstack, round, radians, cos
 from numpy.typing import NDArray
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
