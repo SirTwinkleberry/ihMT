@@ -82,11 +82,27 @@ DEFAULT: dict[str, bool | int | float | str] = {
     },
 }
 
-CONFIG_STEADYSTATE = {
+CONFIG_SIMULATOR = {
+    'init': {
+        'export_readMatrix': True,
+    },
     'compute': {
-        'CM':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6599520559568383, 0.010208119191059052, 0.0, 1.0]]),
-        'ALT': array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0]]),
-        'BP':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6599520559568383, 0.010208119191059052, 0.0, 1.0], [0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0]]),
+        'CM':  dict(
+            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
+            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
+            MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
+        ),
+        'ALT': dict(
+            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
+            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
+            MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
+        ),
+        'BP':  dict(
+            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
+            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
+            MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
+            MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
+        ),
     }
 }
 
@@ -120,7 +136,7 @@ class TestRun_withoutExport(TestCase):
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
                 str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
-            self.assertEqual(output, str.encode('\n'.join([str(sublist) for sublist in CONFIG_STEADYSTATE['compute']['CM'].tolist()]) + '\n'))
+            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['CM'].items()]) + '\n'))
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
@@ -154,7 +170,7 @@ class TestRun_withoutExport(TestCase):
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
                 str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
-            self.assertEqual(output, str.encode('\n'.join([str(sublist) for sublist in CONFIG_STEADYSTATE['compute']['ALT'].tolist()]) + '\n'))
+            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['ALT'].items()]) + '\n'))
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
@@ -188,7 +204,7 @@ class TestRun_withoutExport(TestCase):
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
                 str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
-            self.assertEqual(output, str.encode('\n'.join([str(sublist) for sublist in CONFIG_STEADYSTATE['compute']['BP'].tolist()]) + '\n'))
+            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['BP'].items()]) + '\n'))
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
@@ -260,7 +276,11 @@ class TestSingleRun(TestCase):
         params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'CM'
         params['export'] = False
-        self.assertTrue((SingleRun(**params) == CONFIG_STEADYSTATE['compute']['CM']).all())
+        out = SingleRun(**params)
+        for key, val in out.items():
+            out[key] = val.tolist()
+        # del out['readout']
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['CM'])
 
     def test_singleRun_CM_checkExport(self):
         params = copy(DEFAULT['run'])
@@ -283,7 +303,11 @@ class TestSingleRun(TestCase):
         params = copy(DEFAULT['run'])
         params['FLAG_Sine_Modulation'] = 'ALT'
         params['export'] = False
-        self.assertTrue((SingleRun(**params) == CONFIG_STEADYSTATE['compute']['ALT']).all())
+        out = SingleRun(**params)
+        for key, val in out.items():
+            out[key] = val.tolist()
+        # del out['readout']
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ALT'])
 
     def test_singleRun_ALT_checkExport(self):
         params = copy(DEFAULT['run'])
@@ -305,7 +329,11 @@ class TestSingleRun(TestCase):
     def test_singleRun_BP_noExport(self):
         params = copy(DEFAULT['run'])
         params['export'] = False
-        self.assertTrue((SingleRun(**params) == CONFIG_STEADYSTATE['compute']['BP']).all())
+        out = SingleRun(**params)
+        for key, val in out.items():
+            out[key] = val.tolist()
+        # del out['readout']
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BP'])
 
     def test_singleRun_BP_checkExport(self):
         params = copy(DEFAULT['run'])

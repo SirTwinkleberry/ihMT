@@ -146,8 +146,10 @@ class System():
         """
         angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
         reduced_R2_square = .25 / (T2 * T2)
+
         # return sqrt( 1. / (2 * pi) ) * quad(lambda theta: sin(theta) * self._Spherical(cos(theta), angular_offset_square, reduced_R2_square, 0), 0, .5 * pi)[0]
-        return sqrt(2 / pi) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
+        return sqrt( 1. / (2 * pi) ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
+        # return quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0] / sqrt(2 * pi)
 
     def PampelSuperLorentzian(self, T2: float) -> float:
         """_summary_

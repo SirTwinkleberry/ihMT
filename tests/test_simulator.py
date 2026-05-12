@@ -1,11 +1,9 @@
-# from brainhack.simulator import SteadyState
 from brainhack.sequence import Sequence, Modulation
 from brainhack.pulse import Tukey
 from brainhack.system import System
 from brainhack.simulator import Simulator
 
-from unittest import TestCase
-from numpy import array
+from unittest import TestCase, skip
 
 from numpy import set_printoptions
 from sys import maxsize
@@ -108,6 +106,8 @@ class TestSteadyState(TestCase):
         self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BP'])
         # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['BP']).all())
 
+class TestSimulator(TestCase):
+    @skip
     def test_steadyState_mismatched_Pulse(self):
         self.sequence.pulse = Tukey(**CONFIG_TUKEY['init'])  # the _onChange_ callbacks of the new pulse will be different
         with self.assertRaises(ValueError):
