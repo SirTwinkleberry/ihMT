@@ -1,22 +1,25 @@
 from logging import getLogger, NullHandler
-from typing import Any
-from collections.abc import Callable
+from abc import ABC
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad
 from operator import le, lt, gt
+from typing import Any
+from collections.abc import Callable
+
+from brainhack.meta import _Event
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 logger.debug('`pulse` module loaded successfully')
 
 
-class Pulse():
+class _Pulse(ABC, _Event):
     """_Abstraction class for pulses_
 
     Raises
     ------
     RuntimeError
-        _raised when user calls `Pulse().value` directly instead of through a daughter class
+        _raised when user calls `_Pulse().value` directly instead of through a daughter class
     """
     _gyromagneticFactor: float       # rad / s / T
 
@@ -29,15 +32,15 @@ class Pulse():
     _b1peak: float
     _omegaRMS: float
 
-    _onChange: dict[str, list[Callable]]
+    _classAttributes: tuple[str] = ('gyromagneticFactor', 'duration', 'flipAngle', 'offset', 'amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS')
 
     def __init__(self, *args: Any, **kwargs: Any):
-        error = "Object `Pulse` should not be instantiated directly. Use daughter classes instead."
+        error = "Object `_Pulse` should not be instantiated directly. Use daughter classes instead."
         logger.critical(error)
         raise NotImplementedError(error)
 
     def value(self, t: float) -> float:
-        error = "Method `Pulse.value` should not be called directly. Use daughter class' `value` method instead."
+        error = "Method `_Pulse.value` should not be called directly. Use daughter class' `value` method instead."
         logger.critical(error)
         raise NotImplementedError(error)
 
@@ -65,41 +68,9 @@ class Pulse():
                     logger.critical(error)
                     raise ValueError(error)
 
-    def onChange(self, attribute: str, callbacks: list[Callable]):
-        if attribute not in ['gyromagneticFactor', 'duration', 'flipAngle', 'offset', 'amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS']:
-            error = f"`attribute` name is not within acceptable values ['duration', 'offset', 'omegaRMS'] for callbacks. Received `{attribute}`."
-            logger.critical(error)
-            raise ValueError(error)
-
-        if attribute not in self._get_onChange.keys():
-            self._get_onChange[attribute] = []
-        self._get_onChange[attribute].extend(callbacks)
-
-    def _changed(self, attribute: str):
-        if attribute in self._get_onChange.keys():
-            for callback in self._get_onChange[attribute]:
-                try:
-                    callback()
-                except Exception as e:
-                    logger.error(e)
-
-    def _resetComputedAttributes(self, attributelist: list[str]):
-        for attribute in attributelist:
-            if hasattr(self, f'_{attribute}'): # prefix `_` to avoid calling getter method
-                delattr(self, f'{attribute}')  # No prefix `_` to ensure calling deleter method
-                logger.debug(f'Called for deletion of `_{attribute}`.')
-            else:
-                logger.debug(f'Called for deletion of `_{attribute}` but attribute was missing.')
-
     #####
     # BELOW: property getters and setters
     #####
-    @property
-    def _get_onChange(self) -> dict[str, list[Callable]]:
-        if not hasattr(self, '_onChange'):
-            self._onChange = dict()
-        return self._onChange
-
     @property
     def gyromagneticFactor(self) -> float:
         if not hasattr(self, '_gyromagneticFactor'):
@@ -229,8 +200,10 @@ class Pulse():
         self._changed('omegaRMS')
 
 
-class Tukey(Pulse):
+class Tukey(_Pulse):
     _shape: float  # r factor for Tukey shape
+    
+    _classAttributes: tuple[str] = ('shape', *_Pulse._get_classAttributes())
 
     def __init__(self, duration: float, shape: float, flipAngle: float, offset: float, *args: Any, **kwargs: Any):
         """_Tukey pulse class_

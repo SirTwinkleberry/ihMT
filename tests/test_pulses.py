@@ -1,4 +1,4 @@
-from brainhack.pulse import Pulse, Tukey
+from brainhack.pulse import _Pulse, Tukey
 
 from unittest import TestCase, skip
 
@@ -25,17 +25,17 @@ CONFIG_TUKEY = {
 class TestPulse(TestCase):
     def test___init__(self):
         with self.assertRaises(NotImplementedError):
-            Pulse()
+            _Pulse()
 
     @skip("Pulse constructor will raise NotImplementedError")
     def test_value(self):
-        mock_pulse = Pulse()
+        mock_pulse = _Pulse()
         with self.assertRaises(NotImplementedError):
             mock_pulse.value(0)
 
     @skip("Pulse constructor will raise NotImplementedError")
     def test_resetComputedAttributes(self):
-        mock_pulse = Pulse()
+        mock_pulse = _Pulse()
         with self.assertRaises(NotImplementedError):
             mock_pulse.resetComputedAttributes()
 

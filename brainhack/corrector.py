@@ -1,9 +1,10 @@
 from logging import getLogger, NullHandler
-from numpy import linspace, array, meshgrid
-from numpy.typing import NDArray, float, int
-from scipy.interpolate import PchipInterpolator, LinearNDInterpolator, RegularGridInterpolator
+from numpy import linspace, array, float64, int64
+from numpy.typing import NDArray
+from scipy.interpolate import PchipInterpolator, RegularGridInterpolator
 from copy import deepcopy
 
+from brainhack.meta import _Event
 from brainhack.simulator import Simulator
 
 logger = getLogger(__name__)
@@ -11,25 +12,27 @@ logger.addHandler(NullHandler())
 logger.debug('`corrector` module loaded successfully')
 
 
-class Corrector():
-    _ranges: dict[str, NDArray[int | float]]
+class Corrector(_Event):
+    _ranges: dict[str, NDArray[int64 | float64]]
     _simulator: Simulator
 
-    _simulated: dict[str, NDArray[int | float]]
+    _simulated: dict[str, NDArray[int64 | float64]]
     _nominals: dict[str, float]
     _interpolants: dict[str, PchipInterpolator]
 
     _correctable = ('MT0', 'MTs', 'MTd_CM', 'MTd_ALT', 'ihMT_CM', 'ihMT_ALT', 'BP', 'BP', 'MTsR', 'MTdR_CM', 'MTdR_ALT', 'ihMTR_CM', 'ihMTR_ALT', 'BPR')
 
+    _classAttributes: tuple[str] = ('ranges', 'simulator', 'simulated', 'nominals', 'interpolants', 'correctable')
+
     @staticmethod
     def simple(simulator: Simulator) -> Corrector:
         return Corrector({'flipAngle': linspace(.1, 1.5, 36)}, simulator)
 
-    def __init__(self, simulator: Simulator, ranges: dict[str, NDArray[int | float]]):
+    def __init__(self, simulator: Simulator, ranges: dict[str, NDArray[int64 | float64]]):
         self.simulator = simulator
         self.ranges = ranges
 
-    def apply(self, data: dict[str, NDArray[int | float]], clean: bool):
+    def apply(self, data: dict[str, NDArray[int64 | float64]], clean: bool):
         shape = None
         for _, dat in data.items():
             if shape is None:
@@ -41,7 +44,7 @@ class Corrector():
 
         parameters = array([data[key].flatten() for key in self.ranges.keys()]).T
 
-        corrected: dict[str, NDArray[int | float]] = dict()
+        corrected: dict[str, NDArray[int64 | float64]] = dict()
         for correctable in self.correctable:
             if correctable in data.keys():
                 if correctable not in self.interpolants.keys():
@@ -71,7 +74,7 @@ class Corrector():
         interpolator = PchipInterpolator if len(self.ranges) == 1 else RegularGridInterpolator
         self.interpolants[correctable] = interpolator(tuple(val for val in self.ranges.values()), self.simulated[correctable])
 
-    def _run(self, simulator: Simulator, ranges: list[str], values: dict[list[int | float]]):
+    def _run(self, simulator: Simulator, ranges: list[str], values: dict[list[int64 | float64]]):
         if len(ranges) == 0:
             for key, val in simulator.SteadyState().items():
                 values[key].append(val)
@@ -129,7 +132,7 @@ class Corrector():
         self._nominals = val
 
     @property
-    def simulated(self) -> dict[str, NDArray[int | float]]:
+    def simulated(self) -> dict[str, NDArray[int64 | float64]]:
         if not hasattr(self, '_simulated'):
             shape = tuple(len(range) for range in self.ranges.values())
             data = {key: [] for key in self.nominals.keys()}
@@ -138,5 +141,5 @@ class Corrector():
         return self._simulated
 
     @simulated.setter
-    def simulated(self, val: dict[str, NDArray[int | float]]):
+    def simulated(self, val: dict[str, NDArray[int64 | float64]]):
         self._simulated = val

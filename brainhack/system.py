@@ -1,21 +1,22 @@
 from logging import getLogger, NullHandler
-from typing import Any
-from collections.abc import Callable
 from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad
 from numpy.typing import NDArray
 from scipy.integrate import quad, dblquad
 from scipy.linalg import block_diag
 from scipy.special import i0
+from typing import Any
+from collections.abc import Callable
 
-from brainhack.pulse import Pulse
+from brainhack.meta import _Event
+from brainhack.pulse import _Pulse
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 logger.debug('`system` module loaded successfully')
 
 
-class System():
-    _pulse: Pulse
+class System(_Event):
+    _pulse: _Pulse
 
     _poolFree_Rrf: NDArray[float64]
     _poolFree_M0: float
@@ -35,12 +36,14 @@ class System():
 
     _N_pools: int
 
-    def __init__(self, pulse: Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, *args: Any, **kwargs: Any):
+    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', 'N_pools')
+
+    def __init__(self, pulse: _Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
         ----------
-        pulse : Pulse
+        pulse : _Pulse
             _description_
         poolFree_M0 : float
             _description_
@@ -78,7 +81,7 @@ class System():
         inv_omegaLocalField = 1. / self.poolBound_omegaLocalField
         angularFrequencyOffset = 2 * pi * self.pulse.offset
 
-        superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
+        superLorentzian: Callable[[_Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
         poolBound_Rrf: float = pi * self.pulse.omegaRMS**2 * superLorentzian(self.poolBound_T2)
         tmp_diag: NDArray[float64] = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocalField)**2 ] )
         tmp_anti: NDArray[float64] = fliplr( diag( [ poolBound_Rrf * angularFrequencyOffset, poolBound_Rrf * angularFrequencyOffset * inv_omegaLocalField**2 ] ) )
@@ -101,7 +104,7 @@ class System():
     def resetComputedAttributes_N_pools(self):
         if hasattr(self, '_N_pools'): del self._N_pools  # noqa: E701
 
-    def Lorentzian(self, T2: float) -> float:
+    def Lorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -116,7 +119,7 @@ class System():
         """
         return T2 / (pi * ( 1 + 4 * pi * pi * self.pulse.offset * self.pulse.offset * T2 * T2))
 
-    def Gaussian(self, T2: float) -> float:
+    def Gaussian(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -131,7 +134,7 @@ class System():
         """
         return sqrt( 1. / (2 * pi) ) * T2 * exp( -2 * pi * pi * self.pulse.offset * self.pulse.offset * T2 * T2 )
 
-    def SuperLorentzian(self, T2: float) -> float:
+    def SuperLorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -151,7 +154,7 @@ class System():
         return sqrt( 1. / (2 * pi) ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
         # return quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0] / sqrt(2 * pi)
 
-    def PampelSuperLorentzian(self, T2: float) -> float:
+    def PampelSuperLorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -168,7 +171,7 @@ class System():
         reduced_R2_square = .25 / (T2 * T2)
         return sqrt( 1. / (2 * pi) ) * quad( lambda theta: sin(theta) * self._Spherical(cos(theta), angular_offset_square, reduced_R2_square, 985.96), 0, .5 * pi)[0]
 
-    def Cylindrical(self, T2: float) -> float:
+    def Cylindrical(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -191,7 +194,7 @@ class System():
         sin_theta = -sin(deg2rad(self.axonal_angle))
         return sqrt( 2 / pi ) * quad( lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, limit=100)[0]
 
-    def DispersedCylindrical(self, T2: float) -> float:
+    def DispersedCylindrical(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """Fiber bundle orientation distribution lineshape
 
         Parameters
@@ -248,7 +251,7 @@ class System():
         return self._pulse
 
     @pulse.setter
-    def pulse(self, val: Pulse):
+    def pulse(self, val: _Pulse):
         offset = None
         omegaRMS = None
         if hasattr(self, '_pulse'):

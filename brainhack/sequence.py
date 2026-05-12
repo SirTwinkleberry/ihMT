@@ -3,7 +3,8 @@ from numpy import round
 from enum import Flag, auto
 from typing import Any
 
-from brainhack.pulse import Pulse
+from brainhack.meta import _Event
+from brainhack.pulse import _Pulse
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -16,10 +17,10 @@ class Modulation(Flag):
     BP = CM | ALT
 
 
-class Sequence():
+class Sequence(_Event):
     _modulation: Modulation
 
-    _pulse: Pulse
+    _pulse: _Pulse
 
     _N_pulsePerOffset: int
     _N_pulse: int
@@ -37,14 +38,16 @@ class Sequence():
     _duration_preparation: float
     _duration_recovery: float
 
-    def __init__(self, modulation: Modulation, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
+    _classAttributes: tuple[str] = ('modulation', 'pulse', 'N_pulsePerOffset', 'N_pulse', 'N_burst', 'N_adc', 'readout_flipAngle', 'dt_interPulse', 'dt_lastBurst', 'TR_burst', 'es', 'tr', 'duration_readout', 'duration_preparation', 'duration_recovery')
+
+    def __init__(self, modulation: Modulation, pulse: _Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
         ----------
         modulation : Modulation
             _Flag(s) corresponding to the type of MT RF modulation_
-        pulse : Pulse
+        pulse : _Pulse
             _MT RF pulse_
         N_pulsePerOffset : int
             _aka `N_altern`, `N_switch`, `N_tauSwitch`, ..._
@@ -178,7 +181,7 @@ class Sequence():
         return self._pulse
 
     @pulse.setter
-    def pulse(self, val: Pulse):
+    def pulse(self, val: _Pulse):
         duration = None
         if hasattr(self, '_pulse'):
             duration = self._pulse.duration
