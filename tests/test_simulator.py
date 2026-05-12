@@ -2,7 +2,7 @@
 from brainhack.sequence import Sequence, Modulation
 from brainhack.pulse import Tukey
 from brainhack.system import System
-from brainhack.simulator import SteadyState
+from brainhack.simulator import Simulator
 
 from unittest import TestCase
 from numpy import array
@@ -50,11 +50,27 @@ CONFIG_SYSTEM = {
     }
 }
 
-CONFIG_STEADYSTATE = {
+CONFIG_SIMULATOR = {
+    'init': {
+        'export_readMatrix': True,
+    },
     'compute': {
-        'CM':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6599520559568383, 0.010208119191059052, 0.0, 1.0]]),
-        'ALT': array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0]]),
-        'BP':  array([[0.9037829677605914, 0.09037837084448297, 0.0, 1.0], [0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0], [0.6599520559568383, 0.010208119191059052, 0.0, 1.0], [0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0]]),
+        'CM':  dict(
+            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
+            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
+            MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
+        ),
+        'ALT': dict(
+            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
+            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
+            MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
+        ),
+        'BP':  dict(
+            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
+            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
+            MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
+            MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
+        ),
     }
 }
 
@@ -64,19 +80,35 @@ class TestSteadyState(TestCase):
         self.pulse = Tukey(**CONFIG_TUKEY['init'])
         self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
         self.system = System(pulse=self.pulse, **CONFIG_SYSTEM['init'])
+        self.simulator = Simulator(system=self.system, sequence=self.sequence, **CONFIG_SIMULATOR['init'])
 
     def test_steadyState_CM(self):
         self.sequence.modulation = Modulation.CM
-        self.assertTrue((array(SteadyState(self.system, self.sequence, False)) == CONFIG_STEADYSTATE['compute']['CM']).all())
+        out = self.simulator.SteadyState()
+        for key, val in out.items():
+            out[key] = val.tolist()
+        del out['readout']
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['CM'])
+        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['CM']).all())
 
     def test_steadyState_ALT(self):
         self.sequence.modulation = Modulation.ALT
-        self.assertTrue((array(SteadyState(self.system, self.sequence, False)) == CONFIG_STEADYSTATE['compute']['ALT']).all())
+        out = self.simulator.SteadyState()
+        for key, val in out.items():
+            out[key] = val.tolist()
+        del out['readout']
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ALT'])
+        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['ALT']).all())
 
     def test_steadyState_BP(self):
-        self.assertTrue((array(SteadyState(self.system, self.sequence, False)) == CONFIG_STEADYSTATE['compute']['BP']).all())
+        out = self.simulator.SteadyState()
+        for key, val in out.items():
+            out[key] = val.tolist()
+        del out['readout']
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BP'])
+        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['BP']).all())
 
     def test_steadyState_mismatched_Pulse(self):
         self.sequence.pulse = Tukey(**CONFIG_TUKEY['init'])  # the _onChange_ callbacks of the new pulse will be different
         with self.assertRaises(ValueError):
-            SteadyState(self.system, self.sequence, False)
+            self.simulator.SteadyState()
