@@ -114,7 +114,7 @@ class System():
         float
             _description_
         """
-        return (T2 / pi) / ( 1 + (2 * pi * self.pulse.offset * T2)**2 )
+        return T2 / (pi * ( 1 + 4 * pi * pi * self.pulse.offset * self.pulse.offset * T2 * T2))
 
     def Gaussian(self, T2: float) -> float:
         """_summary_
@@ -129,7 +129,7 @@ class System():
         float
             _description_
         """
-        return sqrt(1. / (2 * pi) ) * T2 * exp( -.5 * (2 * pi * self.pulse.offset * T2)**2 )
+        return sqrt( 1. / (2 * pi) ) * T2 * exp( -2 * pi * pi * self.pulse.offset * self.pulse.offset * T2 * T2 )
 
     def SuperLorentzian(self, T2: float) -> float:
         """_summary_
@@ -144,7 +144,10 @@ class System():
         float
             _description_
         """
-        return quad(lambda u: sqrt(2 / pi) * (T2 / abs(3 * u * u - 1)) * exp(-2 * ((2 * pi * self.pulse.offset * T2) / (3 * u * u - 1))**2), 0, 1)[0]
+        angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
+        reduced_R2_square = .25 / (T2 * T2)
+        # return sqrt( 1. / (2 * pi) ) * quad(lambda theta: sin(theta) * self._Spherical(cos(theta), angular_offset_square, reduced_R2_square, 0), 0, .5 * pi)[0]
+        return sqrt(2 / pi) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
 
     def PampelSuperLorentzian(self, T2: float) -> float:
         """_summary_
@@ -159,15 +162,9 @@ class System():
         float
             _description_
         """
-        def Spherical(theta: float, offset: float, T2: float) -> float:
-            # This program set up a function for Spherical lineshape integration
-            # include neighboors contribution to remove singularity at the magic angle
-            # see Pampel et al. NeuroImage 114 (2015) 136–146
-            T2_neighboors = 1. / 31.4  # 10000000 would mean virtually no effect of T2_neighboors
-            T2_tmp = 2 * T2 / abs(3 * cos(theta)**2 - 1)
-            T2_eff = 1. / sqrt(1. / (T2_tmp * T2_tmp) + 1. / (T2_neighboors * T2_neighboors))
-            return sin(theta) * T2_eff * exp( -.5 * ( 2 * pi * offset * T2_eff )**2 )
-        return sqrt(1. / (2 * pi)) * quad( lambda theta: Spherical(theta, self.pulse.offset, T2), 0, .5 * pi)[0]
+        angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
+        reduced_R2_square = .25 / (T2 * T2)
+        return sqrt( 1. / (2 * pi) ) * quad( lambda theta: sin(theta) * self._Spherical(cos(theta), angular_offset_square, reduced_R2_square, 985.96), 0, .5 * pi)[0]
 
     def Cylindrical(self, T2: float) -> float:
         """_summary_
@@ -182,16 +179,15 @@ class System():
         float
             _description_
         """
-        if self.axonal_angle == 0:
-            T2_totSquare = 1 / (31.4 * 31.4 + .25 / (T2 * T2))
-            return sqrt(2 * pi * T2_totSquare) * exp(-2 * (pi * self.pulse.offset)**2 * T2_totSquare)
+        angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
+        reduced_R2_square = .25 / (T2 * T2)
 
-        def Spherical(theta: float, phi: float, offset: float, T2: float) -> float:
-            # include neighboors contribution to remove singularity at the magic angle, see Pampel et al. NeuroImage 114 (2015) 136–146
-            # R2_neighboors 31.4
-            T2_totSquare = 1 / (31.4 * 31.4 + (abs(3 * (-sin(theta) * cos(phi))**2 - 1) / (2 * T2))**2)
-            return sqrt(T2_totSquare) * exp( -2 * (pi * offset)**2 * T2_totSquare )
-        return sqrt(2 / pi) * quad( lambda phi: Spherical(deg2rad(self.axonal_angle), phi, self.pulse.offset, T2), 0, pi, limit=100)[0]
+        if self.axonal_angle == 0:
+            T2_totSquare = 1 / (985.96 + reduced_R2_square)
+            return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offset_square * T2_totSquare)
+
+        sin_theta = -sin(deg2rad(self.axonal_angle))
+        return sqrt( 2 / pi ) * quad( lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, limit=100)[0]
 
     def DispersedCylindrical(self, T2: float) -> float:
         """Fiber bundle orientation distribution lineshape
@@ -232,6 +228,15 @@ class System():
 
         norm = 1. / len(self.fibers)
         return norm * sqrt(1. / (2 * pi)**3) * dblquad(lambda theta, phi: sin(theta) * Spherical(theta, phi, self.pulse.offset, T2) * sum(ScaledBingham(theta, phi)), 0, pi, 0, 2 * pi)[0]
+
+    @staticmethod
+    def _Spherical(u: float, angular_offset_square: float, reduced_R2_square: float, R2_neighbors_square: float) -> float:
+        # include neighboors contribution to remove singularity at the magic angle, see Pampel et al. NeuroImage 114 (2015) 136–146
+        # Reduced R2 square = .25 * R2 * R2
+        # angular offset = 2 * pi * offset frequency
+        # u = -sin(theta) * cos(phi_A)  or, simpler, u = cos(theta_n)
+        T2_total_square = 1 / (R2_neighbors_square + reduced_R2_square * (3 * u * u - 1) * (3 * u * u - 1))
+        return sqrt(T2_total_square) * exp( -.5 * angular_offset_square * T2_total_square )
 
     #####
     # BELOW: property getters and setters

@@ -13,14 +13,14 @@ from pathlib import Path
 from brainhack.pulse import Tukey
 from brainhack.sequence import Sequence, Modulation
 from brainhack.system import System
-from brainhack.simulator import SteadyState
+from brainhack.simulator import Simulator
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 logger.debug('`run` module loaded successfully')
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, export_read: bool, *args: Any, **kwargs: Any) -> tuple[NDArray[float64], ...]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
     """_summary_
 
     Parameters
@@ -138,41 +138,17 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         poolBound_T1D=T1D
     )
 
-    arrays: tuple[NDArray[float64], ...] = SteadyState(system, sequence, export_read)
+    simulator = Simulator(
+        system=system, 
+        sequence=sequence, 
+        export_readMatrix=export_read
+    )
+
+    arrays: dict[str, NDArray[float64]] = simulator.SteadyState()
 
     if export:
         Path(outputDir).resolve().mkdir(parents=True, exist_ok=True)
-
-        outDict: dict[str, NDArray[float64]] = {
-            'MT0': arrays[0],
-            'MTs': arrays[1],
-        }
-
-        if export_read:
-            outDict['read'] = arrays[-1]
-
-        for i, MTd in enumerate(arrays[2:-1] if export_read else arrays[2:]):
-            suffix: str = ''
-            if Modulation.BP in modulation:
-                if i == 0:
-                    suffix = 'CM'
-                elif i == 1:
-                    suffix = 'ALT'
-                    error = "`MTds` should not be larger than 2 elements (CM, ALT)"
-                    logger.critical(error)
-                    RuntimeError(error)
-            elif Modulation.ALT in modulation:
-                suffix = 'ALT'
-            elif Modulation.CM in modulation:
-                suffix = 'CM'
-            else:
-                error = "`modulation` has flag enabled outside of implemented list."
-                logger.critical(error)
-                NotImplementedError(error)
-
-            outDict[f'MTd_{suffix}'] = MTd
-
-        savemat(Path(outputDir).resolve() / (filePrefix + 'simulation.mat'), outDict, do_compression=True)
+        savemat(Path(outputDir).resolve() / (filePrefix + 'simulation.mat'), arrays, do_compression=True)
 
     return arrays
 
@@ -218,13 +194,14 @@ if __name__ == '__main__':
         raise ValueError(error)
 
     set_printoptions(precision=maxsize)
-    for output in SingleRun(**config['run']):
-        rootLogger.info(output.tolist())
+    for key, value in SingleRun(**config['run']).items():
+        rootLogger.info(f'{key}: {value.tolist()}')
 
 # Note:
 # This current (incomplete) version has implemented logic for 1 free pool and 1 bound pool only
 # There needs to be a generalization of the construction of the operators in system.py and simulator.py
-# The Simulate function in simulator.py also does not include logic to return signal values on a readout basis
+# A utility function could be designed such that given a steady state vector and a readout matrix, signal value signal computed at each readout even
 # The general nomenclature (variable, function, class, and file names) is open to changes
-# Parameter names in the Main function of main.py should match exactly the names of the parameters in the config files for Main(**config) to work as intended
-# The choice of using json (comments not possible within the file) or yaml (comments possible within the file) config files is left open, my personal favorite is yaml
+# Parameter names in the SingleRun function of run.py should match exactly the names of the parameters in the config files for SingleRun(**config) to work as intended
+# The choice of using json (comments not possible within the file) or yaml (comments possible within the file) config files is left open, my personal favorite is yaml,
+# new python projects tend to favor .toml configuration files...

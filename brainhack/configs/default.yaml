@@ -27,7 +27,7 @@ run:  # mandatory, provides the parameters for simulator.SingleRun
   filePrefix: ''
   export: True
   offset: 7000
-  export_read: False
+  export_read: True
 
 log:  # if `log` category is undefined, no logging will happen
   # https://docs.python.org/3/library/logging.config.html#dictionary-schema-details

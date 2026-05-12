@@ -230,7 +230,7 @@ class Pulse():
 
 
 class Tukey(Pulse):
-    shape: float  # r factor for Tukey shape
+    _shape: float  # r factor for Tukey shape
 
     def __init__(self, duration: float, shape: float, flipAngle: float, offset: float, *args: Any, **kwargs: Any):
         """_Tukey pulse class_
