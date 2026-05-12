@@ -108,6 +108,6 @@ class TestTukey(TestCase):
         pulse.powerIntegral
         pulse.b1peak
         pulse.omegaRMS
-        self.assertDictEqual(pulse.__dict__, {'_onChange': {}, '_gyromagneticFactor': 267513000, '_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0, '_amplitudeIntegral': 0.85, '_powerIntegral': 0.8125, '_b1peak': 2.2950108256258665e-05, '_omegaRMS': 5534.02752670352})
+        self.assertDictEqual(pulse.__dict__, {'_onChanges': {}, '_gyromagneticFactor': 267513000, '_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0, '_amplitudeIntegral': 0.85, '_powerIntegral': 0.8125, '_b1peak': 2.2950108256258665e-05, '_omegaRMS': 5534.02752670352})
         pulse._resetComputedAttributes(['amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS'])
-        self.assertDictEqual(pulse.__dict__, {'_onChange': {}, '_gyromagneticFactor': 267513000, '_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0})
+        self.assertDictEqual(pulse.__dict__, {'_onChanges': {}, '_gyromagneticFactor': 267513000, '_shape': 0.3, '_duration': 0.001, '_flipAngle': 299, '_offset': 7000.0})

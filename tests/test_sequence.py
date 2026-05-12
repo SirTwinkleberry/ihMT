@@ -76,7 +76,7 @@ class TestSequence(TestCase):
         self.assertEqual(self.sequence.modulation, Modulation.BP)
 
     def test___init__pulse(self):
-        self.sequence.pulse.__dict__['_onChange'] = {}
+        self.sequence.pulse.__dict__['_onChanges'] = {}
         self.assertDictEqual(self.sequence.pulse.__dict__, Tukey(**CONFIG_TUKEY['init']).__dict__)
 
     def test___init__N_pulsePerOffset(self):
