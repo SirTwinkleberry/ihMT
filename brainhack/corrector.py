@@ -18,7 +18,7 @@ class Corrector(_Event):
 
     _simulated: dict[str, NDArray[int64 | float64]]
     _nominals: dict[str, float]
-    _interpolants: dict[str, PchipInterpolator]
+    _interpolants: dict[str, PchipInterpolator | RegularGridInterpolator]
 
     _correctable = ('MT0', 'MTs', 'MTd_CM', 'MTd_ALT', 'ihMT_CM', 'ihMT_ALT', 'BP', 'BP', 'MTsR', 'MTdR_CM', 'MTdR_ALT', 'ihMTR_CM', 'ihMTR_ALT', 'BPR')
 
@@ -26,11 +26,14 @@ class Corrector(_Event):
 
     @staticmethod
     def simple(simulator: Simulator) -> Corrector:
-        return Corrector({'flipAngle': linspace(.1, 1.5, 36)}, simulator)
+        return Corrector(simulator=simulator, ranges={'flipAngle': linspace(.1, 1.5, 36)})
 
     def __init__(self, simulator: Simulator, ranges: dict[str, NDArray[int64 | float64]]):
         self.simulator = simulator
         self.ranges = ranges
+
+        self.onChange('ranges', [self._reset_computed_attributes(['simulated', 'nominals', 'interpolants'])])
+        self.onChange('simulator', [self._reset_computed_attributes(['simulated', 'nominals', 'interpolants'])])
 
     def apply(self, data: dict[str, NDArray[int64 | float64]], clean: bool):
         shape = None
@@ -54,25 +57,25 @@ class Corrector(_Event):
                 corrected[correctable] = data[correctable] * corrector.reshape(shape)
 
         if clean:
-            del self.simulated
-            del self.nominals
+            del self._simulated
+            del self._nominals
 
         return corrected
 
     def _create_interpolants(self, correctable: str):
-        if correctable not in self._correctable:
+        if correctable not in self.correctable:
             raise ValueError("Unknown correctable key.")
 
         if 'R' in correctable:
             if 'invMT0' not in self.simulated.keys():
-                self.simulated['invMT0'] = 1. / self.simulated['MT0']
+                self._simulated['invMT0'] = 1. / self.simulated['MT0']
 
         if correctable not in self.simulated.keys():
             self._composite(correctable)
 
         # interpolator = PchipInterpolator if len(self.ranges) == 1 else LinearNDInterpolator
         interpolator = PchipInterpolator if len(self.ranges) == 1 else RegularGridInterpolator
-        self.interpolants[correctable] = interpolator(tuple(val for val in self.ranges.values()), self.simulated[correctable])
+        self._interpolants[correctable] = interpolator(tuple(val for val in self.ranges.values()), self.simulated[correctable])
 
     def _run(self, simulator: Simulator, ranges: list[str], values: dict[list[int64 | float64]]):
         if len(ranges) == 0:
@@ -116,30 +119,48 @@ class Corrector(_Event):
             case 'BPR':
                 data = 100 * self.simulated['BP'] * self.simulated['invMT0']
 
-        self.simulated[composite] = data
+        self._simulated[composite] = data
 
     #####
     # BELOW: property getters and setters
     #####
     @property
-    def nominals(self) -> dict[str, float]:
-        if not hasattr(self, '_nominals'):
-            self.nominals = self.simulator.SteadyState()
-        return self._nominals
+    def ranges(self) -> dict[str, NDArray[int64 | float64]]:
+        return self._ranges
 
-    @nominals.setter
-    def nominals(self, val: dict[str, float]):
-        self._nominals = val
+    @ranges.setter
+    def ranges(self, val: dict[str, NDArray[int64 | float64]]):
+        self._ranges = val
+        self._changed('ranges')
 
     @property
+    def simulator(self) -> Simulator:
+        return self._simulator
+
+    @simulator.setter
+    def simulator(self, val: Simulator):
+        self._simulator = val
+        self._changed('simulator')
+
+    @property  # immutable for the user, so only getter is defined
     def simulated(self) -> dict[str, NDArray[int64 | float64]]:
         if not hasattr(self, '_simulated'):
             shape = tuple(len(range) for range in self.ranges.values())
-            data = {key: [] for key in self.nominals.keys()}
+            data = {key: [] for key in self._nominals.keys()}
             self._run(deepcopy(self.simulator), list(self.ranges.keys()), data)
-            self.simulated = {key: dat.reshape(shape) for key, dat in data.items()}
+            self._simulated = {key: dat.reshape(shape) for key, dat in data.items()}
         return self._simulated
 
-    @simulated.setter
-    def simulated(self, val: dict[str, NDArray[int64 | float64]]):
-        self._simulated = val
+    @property  # immutable for the user, so only getter is defined
+    def nominals(self) -> dict[str, float]:
+        if not hasattr(self, '_nominals'):
+            self._nominals = self.simulator.SteadyState()
+        return self._nominals
+
+    @property  # immutable for the user, so only getter is defined
+    def interpolants(self) -> dict[str, PchipInterpolator | RegularGridInterpolator]:
+        return self._interpolants
+
+    @property  # immutable for the user, so only getter is defined
+    def correctable(self) -> tuple[str]:
+        return self._correctable

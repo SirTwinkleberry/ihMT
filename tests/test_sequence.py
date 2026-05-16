@@ -77,7 +77,9 @@ class TestSequence(TestCase):
 
     def test___init__pulse(self):
         self.sequence.pulse.__dict__['_onChanges'] = {}
-        self.assertDictEqual(self.sequence.pulse.__dict__, Tukey(**CONFIG_TUKEY['init']).__dict__)
+        tmp = Tukey(**CONFIG_TUKEY['init']).__dict__
+        tmp['_onChanges'] = {}
+        self.assertDictEqual(self.sequence.pulse.__dict__, tmp)
 
     def test___init__N_pulsePerOffset(self):
         self.assertEqual(self.sequence.N_pulsePerOffset, CONFIG_SEQUENCE['init']['N_pulsePerOffset'])
@@ -141,3 +143,19 @@ class TestSequence(TestCase):
         tmp['N_pulsePerOffset'] = 4
         with self.assertRaises(ValueError):
             Sequence(pulse=self.pulse, **tmp)
+
+    def test_TR_set_wrong(self):
+            with self.assertRaises(ValueError):
+                self.sequence.tr = self.sequence.duration_preparation + self.sequence.duration_readout - 1e-15
+
+    def test_dt_interPulse_set_wrong(self):
+            with self.assertRaises(ValueError):
+                self.sequence.dt_interPulse = CONFIG_TUKEY['init']['duration'] - 1e-15
+
+    def test_TR_burst_set_wrong(self):
+            with self.assertRaises(ValueError):
+                self.sequence.TR_burst = CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] - 1e-15
+
+    def test_N_pulsePerOffset_Multiplicity_set_wrong(self):
+            with self.assertRaises(ValueError):
+                self.sequence.N_pulsePerOffset = 4

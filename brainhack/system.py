@@ -6,9 +6,10 @@ from scipy.linalg import block_diag
 from scipy.special import i0
 from typing import Any
 from collections.abc import Callable
+from operator import lt
 
-from brainhack.meta import _Event
-from brainhack.pulse import _Pulse
+from brainhack.meta import _Event, check_value_is_valid
+from brainhack.pulse import Pulse
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -16,7 +17,7 @@ logger.debug('`system` module loaded successfully')
 
 
 class System(_Event):
-    _pulse: _Pulse
+    _pulse: Pulse
 
     _poolFree_Rrf: NDArray[float64]
     _poolFree_M0: float
@@ -38,12 +39,12 @@ class System(_Event):
 
     _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', 'N_pools')
 
-    def __init__(self, pulse: _Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, *args: Any, **kwargs: Any):
+    def __init__(self, pulse: Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
         ----------
-        pulse : _Pulse
+        pulse : Pulse
             _description_
         poolFree_M0 : float
             _description_
@@ -75,13 +76,21 @@ class System(_Event):
         self.poolBound_T2 = poolBound_T2
         self.poolBound_T1D = poolBound_T1D
 
+        self.onChange('pulse', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self.onChange('N_pools', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self.onChange('poolFree_T1', [lambda: self._reset_computed_attributes(['N_pools'])])
+        self.onChange('poolFree_T2', [lambda: self._reset_computed_attributes(['N_pools', 'poolFree_Rrf'])])
+        self.onChange('poolBound_T1', [lambda: self._reset_computed_attributes(['N_pools'])])
+        self.onChange('poolBound_T2', [lambda: self._reset_computed_attributes(['N_pools', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
+        self.onChange('poolBound_omegaLocalField', [lambda: self._reset_computed_attributes(['poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+
     def compute_poolBound_RFabsorptionMatrices(self):
         """_summary_
         """
         inv_omegaLocalField = 1. / self.poolBound_omegaLocalField
         angularFrequencyOffset = 2 * pi * self.pulse.offset
 
-        superLorentzian: Callable[[_Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
+        superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
         poolBound_Rrf: float = pi * self.pulse.omegaRMS**2 * superLorentzian(self.poolBound_T2)
         tmp_diag: NDArray[float64] = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocalField)**2 ] )
         tmp_anti: NDArray[float64] = fliplr( diag( [ poolBound_Rrf * angularFrequencyOffset, poolBound_Rrf * angularFrequencyOffset * inv_omegaLocalField**2 ] ) )
@@ -89,20 +98,6 @@ class System(_Event):
         self.poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag ) )
         self.poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag + tmp_anti ) )
         self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag - tmp_anti ) )
-
-    def resetComputedAttributes_poolBound_RFabsorptionMatrices(self):
-        if hasattr(self, '_poolBound_Rrf_dualSat'): del self._poolBound_Rrf_dualSat  # noqa: E701
-        if hasattr(self, '_poolBound_Rrf_singleSat_Positive'): del self._poolBound_Rrf_singleSat_Positive  # noqa: E701
-        if hasattr(self, '_poolBound_Rrf_singleSat_Negative'): del self._poolBound_Rrf_singleSat_Negative  # noqa: E701
-
-    def resetComputedAttributes_poolFree_Rrf(self):
-        if hasattr(self, '_poolFree_Rrf'): del self._poolFree_Rrf  # noqa: E701
-
-    def resetComputedAttributes_poolBound_omegaLocalField(self):
-        if hasattr(self, '_poolBound_omegaLocalField'): del self._poolBound_omegaLocalField  # noqa: E701
-
-    def resetComputedAttributes_N_pools(self):
-        if hasattr(self, '_N_pools'): del self._N_pools  # noqa: E701
 
     def Lorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -149,10 +144,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
         reduced_R2_square = .25 / (T2 * T2)
-
-        # return sqrt( 1. / (2 * pi) ) * quad(lambda theta: sin(theta) * self._Spherical(cos(theta), angular_offset_square, reduced_R2_square, 0), 0, .5 * pi)[0]
         return sqrt( 1. / (2 * pi) ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
-        # return quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0] / sqrt(2 * pi)
 
     def PampelSuperLorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -169,7 +161,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 1. / (2 * pi) ) * quad( lambda theta: sin(theta) * self._Spherical(cos(theta), angular_offset_square, reduced_R2_square, 985.96), 0, .5 * pi)[0]
+        return sqrt( 1. / (2 * pi) ) * quad( lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1)[0]
 
     def Cylindrical(self, T2: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -251,36 +243,27 @@ class System(_Event):
         return self._pulse
 
     @pulse.setter
-    def pulse(self, val: _Pulse):
-        offset = None
-        omegaRMS = None
-        if hasattr(self, '_pulse'):
-            offset = self._pulse.offset
-            omegaRMS = self._pulse.omegaRMS
-
+    def pulse(self, val: Pulse):
         self._pulse = val
-        self._pulse.onChange('omegaRMS', [self.resetComputedAttributes_poolFree_Rrf, self.resetComputedAttributes_poolBound_RFabsorptionMatrices])
-        self._pulse.onChange('offset', [self.resetComputedAttributes_poolBound_RFabsorptionMatrices])
-
-        if (omegaRMS is not None) and (self._pulse.omegaRMS != omegaRMS):
-            self.resetComputedAttributes_poolFree_Rrf()
-            self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
-        elif (offset is not None) and (self._pulse.offset != offset):
-            self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
+        self._pulse.onChange('omegaRMS', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self._pulse.onChange('offset', [lambda: self._reset_computed_attributes(['poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self._changed('pulse')
 
     @property
     def poolFree_Rrf(self):
         if not hasattr(self, '_poolFree_Rrf'):
-            self.poolFree_Rrf = diag( [ -pi * self.pulse.omegaRMS**2 * self.Lorentzian(self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
+            self.poolFree_Rrf = diag( [ -pi * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
         return self._poolFree_Rrf
 
     @poolFree_Rrf.setter
     def poolFree_Rrf(self, val: NDArray[float64]):
-        self._poolFree_Rrf = val
+        self._poolFree_Rrf = array(val, dtype=float64)
+        self._changed('poolFree_Rrf')
 
     @poolFree_Rrf.deleter
     def poolFree_Rrf(self):
         del self._poolFree_Rrf
+        self._changed('poolFree_Rrf')
 
     @property
     def poolFree_M0(self):
@@ -288,7 +271,9 @@ class System(_Event):
 
     @poolFree_M0.setter
     def poolFree_M0(self, val: float):
-        self._poolFree_M0 = val
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFree_M0')
+        self._poolFree_M0 = float(val)
+        self._changed('poolFree_M0')
 
     @property
     def poolFree_T1(self):
@@ -296,8 +281,9 @@ class System(_Event):
 
     @poolFree_T1.setter
     def poolFree_T1(self, val: float):
-        self._poolFree_T1 = val
-        self.resetComputedAttributes_N_pools()
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFree_T1')
+        self._poolFree_T1 = float(val)
+        self._changed('poolFree_T1')
 
     @property
     def poolFree_T2(self):
@@ -305,9 +291,9 @@ class System(_Event):
 
     @poolFree_T2.setter
     def poolFree_T2(self, val: float):
-        self._poolFree_T2 = val
-        self.resetComputedAttributes_N_pools()
-        self.resetComputedAttributes_poolFree_Rrf()
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFree_T2')
+        self._poolFree_T2 = float(val)
+        self._changed('poolFree_T2')
 
     @property
     def poolFreeBound_exchangeRate(self):
@@ -315,7 +301,9 @@ class System(_Event):
 
     @poolFreeBound_exchangeRate.setter
     def poolFreeBound_exchangeRate(self, val: float):
-        self._poolFreeBound_exchangeRate = val
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFreeBound_exchangeRate')
+        self._poolFreeBound_exchangeRate = float(val)
+        self._changed('poolFreeBound_exchangeRate')
 
     @property
     def poolBound_Rrf_singleSat_Positive(self):
@@ -325,11 +313,13 @@ class System(_Event):
 
     @poolBound_Rrf_singleSat_Positive.setter
     def poolBound_Rrf_singleSat_Positive(self, val: NDArray[float64]):
-        self._poolBound_Rrf_singleSat_Positive = val
+        self._poolBound_Rrf_singleSat_Positive = array(val, dtype=float64)
+        self._changed('poolBound_Rrf_singleSat_Positive')
 
     @poolBound_Rrf_singleSat_Positive.deleter
     def poolBound_Rrf_singleSat_Positive(self):
         del self._poolBound_Rrf_singleSat_Positive
+        self._changed('poolBound_Rrf_singleSat_Positive')
 
     @property
     def poolBound_Rrf_singleSat_Negative(self):
@@ -339,11 +329,13 @@ class System(_Event):
 
     @poolBound_Rrf_singleSat_Negative.setter
     def poolBound_Rrf_singleSat_Negative(self, val: NDArray[float64]):
-        self._poolBound_Rrf_singleSat_Negative = val
+        self._poolBound_Rrf_singleSat_Negative = array(val, dtype=float64)
+        self._changed('poolBound_Rrf_singleSat_Negative')
 
     @poolBound_Rrf_singleSat_Negative.deleter
     def poolBound_Rrf_singleSat_Negative(self):
         del self._poolBound_Rrf_singleSat_Negative
+        self._changed('poolBound_Rrf_singleSat_Negative')
 
     @property
     def poolBound_Rrf_dualSat(self):
@@ -353,11 +345,13 @@ class System(_Event):
 
     @poolBound_Rrf_dualSat.setter
     def poolBound_Rrf_dualSat(self, val: NDArray[float64]):
-        self._poolBound_Rrf_dualSat = val
+        self._poolBound_Rrf_dualSat = array(val, dtype=float64)
+        self._changed('poolBound_Rrf_dualSat')
 
     @poolBound_Rrf_dualSat.deleter
     def poolBound_Rrf_dualSat(self):
         del self._poolBound_Rrf_dualSat
+        self._changed('poolBound_Rrf_dualSat')
 
     @property
     def poolBound_M0(self):
@@ -365,7 +359,9 @@ class System(_Event):
 
     @poolBound_M0.setter
     def poolBound_M0(self, val: float):
-        self._poolBound_M0 = val
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_M0')
+        self._poolBound_M0 = float(val)
+        self._changed('poolBound_M0')
 
     @property
     def poolBound_T1(self):
@@ -373,7 +369,9 @@ class System(_Event):
 
     @poolBound_T1.setter
     def poolBound_T1(self, val: float):
-        self._poolBound_T1 = val
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T1')
+        self._poolBound_T1 = float(val)
+        self._changed('poolBound_T1')
 
     @property
     def poolBound_T2(self):
@@ -381,10 +379,9 @@ class System(_Event):
 
     @poolBound_T2.setter
     def poolBound_T2(self, val: float):
-        self._poolBound_T2 = val
-        self.resetComputedAttributes_N_pools()
-        self.resetComputedAttributes_poolBound_omegaLocalField()
-        self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T2')
+        self._poolBound_T2 = float(val)
+        self._changed('poolBound_T2')
 
     @property
     def poolBound_T1D(self):
@@ -392,7 +389,9 @@ class System(_Event):
 
     @poolBound_T1D.setter
     def poolBound_T1D(self, val: float):
-        self._poolBound_T1D = val
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T1D')
+        self._poolBound_T1D = float(val)
+        self._changed('poolBound_T1D')
 
     @property
     def poolBound_omegaLocalField(self):
@@ -402,12 +401,14 @@ class System(_Event):
 
     @poolBound_omegaLocalField.setter
     def poolBound_omegaLocalField(self, val: float):
-        self._poolBound_omegaLocalField = val
-        self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
+        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_omegaLocalField')
+        self._poolBound_omegaLocalField = float(val)
+        self._changed('poolBound_omegaLocalField')
 
     @poolBound_omegaLocalField.deleter
     def poolBound_omegaLocalField(self):
         del self._poolBound_omegaLocalField
+        self._changed('poolBound_omegaLocalField')
 
     @property
     def N_pools(self):
@@ -430,10 +431,11 @@ class System(_Event):
 
     @N_pools.setter
     def N_pools(self, val: int):
-        self._N_pools = val
-        self.resetComputedAttributes_poolFree_Rrf()
-        self.resetComputedAttributes_poolBound_RFabsorptionMatrices()
+        check_value_is_valid(self, val, int, [(lt, 1)], 'N_pools')
+        self._N_pools = int(val)
+        self._changed('N_pools')
 
     @N_pools.deleter
     def N_pools(self):
         del self._N_pools
+        self._changed('N_pools')

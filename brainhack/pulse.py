@@ -3,10 +3,9 @@ from abc import ABC
 from numpy import cos, pi, sqrt, radians
 from scipy.integrate import quad
 from operator import le, lt, gt
-from typing import Any
-from collections.abc import Callable
+from typing import Any, NewType
 
-from brainhack.meta import _Event
+from brainhack.meta import _Event, check_value_is_valid
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -35,38 +34,17 @@ class _Pulse(ABC, _Event):
     _classAttributes: tuple[str] = ('gyromagneticFactor', 'duration', 'flipAngle', 'offset', 'amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS')
 
     def __init__(self, *args: Any, **kwargs: Any):
-        error = "Object `_Pulse` should not be instantiated directly. Use daughter classes instead."
-        logger.critical(error)
-        raise NotImplementedError(error)
+        self.onChange('gyromagneticFactor', [lambda: self._reset_computed_attributes(['b1peak', 'omegaRMS'])])
+        self.onChange('duration', [lambda: self._reset_computed_attributes(['amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS'])])
+        self.onChange('flipAngle', [lambda: self._reset_computed_attributes(['b1peak'])])
+        self.onChange('amplitudeIntegral', [lambda: self._reset_computed_attributes(['b1peak'])])
+        self.onChange('powerIntegral', [lambda: self._reset_computed_attributes(['omegaRMS'])])
+        self.onChange('b1peak', [lambda: self._reset_computed_attributes(['omegaRMS'])])
 
     def value(self, t: float) -> float:
         error = "Method `_Pulse.value` should not be called directly. Use daughter class' `value` method instead."
         logger.critical(error)
         raise NotImplementedError(error)
-
-    def check_type(self, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
-        if type_to_check(val_to_check) != val_to_check:
-            error = f'`{attribute_name}` must be safely castable to integer. Received: {repr(val_to_check)}.'
-            logger.critical(error)
-            raise ValueError(error)
-
-        if operators is not None:
-            for operator, bound in operators:
-                if operator == le:
-                    boundStr = f'less or equal to {bound}'
-                elif operator == lt:
-                    boundStr = f'less than {bound}'
-                elif operator == gt:
-                    boundStr = f'greater than {bound}'
-                else:
-                    error = f"Operator {operator} was not implemented."
-                    logger.critical(error)
-                    raise NotImplementedError(error)
-
-                if operator(val_to_check, bound):
-                    error = f'`{attribute_name}` cannot be {boundStr}. Received: {repr(val_to_check)}.'
-                    logger.critical(error)
-                    raise ValueError(error)
 
     #####
     # BELOW: property getters and setters
@@ -79,10 +57,9 @@ class _Pulse(ABC, _Event):
 
     @gyromagneticFactor.setter
     def gyromagneticFactor(self, val: float):
-        self.check_type(val, float, None, 'gyromagneticFactor')
+        check_value_is_valid(self, val, float, None, 'gyromagneticFactor')
         self._gyromagneticFactor = val
         self._changed('gyromagneticFactor')
-        self._resetComputedAttributes(['b1peak', 'omegaRMS'])
 
     @property
     def duration(self) -> float:
@@ -90,10 +67,9 @@ class _Pulse(ABC, _Event):
 
     @duration.setter
     def duration(self, val: float):
-        self.check_type(val, float, [(le, 0)], 'duration')
+        check_value_is_valid(self, val, float, [(le, 0)], 'duration')
         self._duration = val
         self._changed('duration')
-        self._resetComputedAttributes(['amplitudeIntegral', 'powerIntegral', 'b1peak', 'omegaRMS'])
 
     @property
     def flipAngle(self) -> float:
@@ -101,10 +77,9 @@ class _Pulse(ABC, _Event):
 
     @flipAngle.setter
     def flipAngle(self, val: float):
-        self.check_type(val, float, [(le, 0)], 'flipAngle')
+        check_value_is_valid(self, val, float, [(le, 0)], 'flipAngle')
         self._flipAngle = val
         self._changed('flipAngle')
-        self._resetComputedAttributes(['b1peak'])
 
     @property
     def offset(self) -> float:
@@ -112,7 +87,7 @@ class _Pulse(ABC, _Event):
 
     @offset.setter
     def offset(self, val: float):
-        self.check_type(val, float, None, 'offset')
+        check_value_is_valid(self, val, float, None, 'offset')
         self._offset = val
         self._changed('offset')
 
@@ -124,16 +99,14 @@ class _Pulse(ABC, _Event):
 
     @amplitudeIntegral.setter
     def amplitudeIntegral(self, val: float):
-        self.check_type(val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
+        check_value_is_valid(self, val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
         self._amplitudeIntegral = val
         self._changed('amplitudeIntegral')
-        self._resetComputedAttributes(['b1peak'])
 
     @amplitudeIntegral.deleter
     def amplitudeIntegral(self):
         del self._amplitudeIntegral
         self._changed('amplitudeIntegral')
-        self._resetComputedAttributes(['b1peak'])
 
     @property
     def powerIntegral(self) -> float:
@@ -143,16 +116,14 @@ class _Pulse(ABC, _Event):
 
     @powerIntegral.setter
     def powerIntegral(self, val: float):
-        self.check_type(val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
+        check_value_is_valid(self, val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
         self._powerIntegral = val
         self._changed('powerIntegral')
-        self._resetComputedAttributes(['omegaRMS'])
 
     @powerIntegral.deleter
     def powerIntegral(self):
         del self._powerIntegral
         self._changed('powerIntegral')
-        self._resetComputedAttributes(['omegaRMS'])
 
     @property
     def b1peak(self) -> float:
@@ -162,16 +133,14 @@ class _Pulse(ABC, _Event):
 
     @b1peak.setter
     def b1peak(self, val: float):
-        self.check_type(val, float, [(lt, 0)], 'b1peak')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'b1peak')
         self._b1peak = val
         self._changed('b1peak')
-        self._resetComputedAttributes(['omegaRMS'])
 
     @b1peak.deleter
     def b1peak(self):
         del self._b1peak
         self._changed('b1peak')
-        self._resetComputedAttributes(['omegaRMS'])
 
     @property
     def b1(self):
@@ -190,7 +159,7 @@ class _Pulse(ABC, _Event):
 
     @omegaRMS.setter
     def omegaRMS(self, val: float):
-        self.check_type(val, float, [(lt, 0)], 'omegaRMS')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'omegaRMS')
         self._omegaRMS = val
         self._changed('omegaRMS')
 
@@ -219,10 +188,14 @@ class Tukey(_Pulse):
         offset : float
             _pulse offset frequency in Hertz_
         """
+        super().__init__()
+
         self.shape = shape
         self.duration = duration
         self.flipAngle = flipAngle
         self.offset = offset
+
+        self.onChange('shape', [lambda: self._reset_computed_attributes(['amplitudeIntegral', 'powerIntegral'])])
 
     def value(self, t: float) -> float:
         """_summary_
@@ -262,10 +235,9 @@ class Tukey(_Pulse):
 
     @shape.setter
     def shape(self, val: float):
-        self.check_type(val, float, [(lt, 0), (gt, 1)], 'shape')
+        check_value_is_valid(self, val, float, [(lt, 0), (gt, 1)], 'shape')
         self._shape = val
         self._changed('shape')
-        self._resetComputedAttributes(['amplitudeIntegral', 'powerIntegral'])
 
     @property
     def amplitudeIntegral(self) -> float:
@@ -275,15 +247,14 @@ class Tukey(_Pulse):
 
     @amplitudeIntegral.setter
     def amplitudeIntegral(self, val: float):
-        self.check_type(val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
+        check_value_is_valid(self, val, float, [(lt, 0), (gt, 1)], 'amplitudeIntegral')
         self._amplitudeIntegral = val
         self._changed('amplitudeIntegral')
-        self._resetComputedAttributes(['b1peak'])
 
     @amplitudeIntegral.deleter
     def amplitudeIntegral(self):
         del self._amplitudeIntegral
-        self._resetComputedAttributes(['b1peak'])
+        self._changed('amplitudeIntegral')
 
     @property
     def powerIntegral(self) -> float:
@@ -293,12 +264,14 @@ class Tukey(_Pulse):
 
     @powerIntegral.setter
     def powerIntegral(self, val: float):
-        self.check_type(val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
+        check_value_is_valid(self, val, float, [(lt, 0), (gt, 1)], 'powerIntegral')
         self._powerIntegral = val
         self._changed('powerIntegral')
-        self._resetComputedAttributes(['omegaRMS'])
 
     @powerIntegral.deleter
     def powerIntegral(self):
         del self._powerIntegral
-        self._resetComputedAttributes(['omegaRMS'])
+        self._changed('powerIntegral')
+
+
+Pulse = NewType("Pulse", _Pulse)

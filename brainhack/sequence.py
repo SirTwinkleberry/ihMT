@@ -2,9 +2,10 @@ from logging import getLogger, NullHandler
 from numpy import round
 from enum import Flag, auto
 from typing import Any
+from operator import lt
 
-from brainhack.meta import _Event
-from brainhack.pulse import _Pulse
+from brainhack.meta import _Event, check_value_is_valid
+from brainhack.pulse import Pulse
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -20,7 +21,7 @@ class Modulation(Flag):
 class Sequence(_Event):
     _modulation: Modulation
 
-    _pulse: _Pulse
+    _pulse: Pulse
 
     _N_pulsePerOffset: int
     _N_pulse: int
@@ -38,16 +39,16 @@ class Sequence(_Event):
     _duration_preparation: float
     _duration_recovery: float
 
-    _classAttributes: tuple[str] = ('modulation', 'pulse', 'N_pulsePerOffset', 'N_pulse', 'N_burst', 'N_adc', 'readout_flipAngle', 'dt_interPulse', 'dt_lastBurst', 'TR_burst', 'es', 'tr', 'duration_readout', 'duration_preparation', 'duration_recovery')
+    _classAttributes: tuple[str] = ('modulation', 'pulse', 'N_pulsePerOffset', 'N_pulse', 'N_burst', 'N_adc', 'N_dummyADC', 'readout_flipAngle', 'dt_interPulse', 'dt_lastBurst', 'TR_burst', 'es', 'tr', 'duration_readout', 'duration_preparation', 'duration_recovery')
 
-    def __init__(self, modulation: Modulation, pulse: _Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
+    def __init__(self, modulation: Modulation, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
         ----------
         modulation : Modulation
             _Flag(s) corresponding to the type of MT RF modulation_
-        pulse : _Pulse
+        pulse : Pulse
             _MT RF pulse_
         N_pulsePerOffset : int
             _aka `N_altern`, `N_switch`, `N_tauSwitch`, ..._
@@ -101,64 +102,64 @@ class Sequence(_Event):
 
         self.tr = tr
 
-    def check_against_tr(self):
+        self.onChange('modulation', [self._check_against_N_pulse_multiplicity])
+
+        self.onChange('pulse', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_pulse_duration])
+
+        self.onChange('N_pulsePerOffset', [self._check_against_N_pulse_multiplicity])
+        self.onChange('N_pulse', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_N_pulse_multiplicity, self._check_against_tr_burst, self._check_against_tr])
+        self.onChange('N_burst', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr])
+        self.onChange('dt_interPulse', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_pulse_duration, self._check_against_tr_burst, self._check_against_tr])
+        self.onChange('dt_lastBurst', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr])
+        self.onChange('TR_burst', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr_burst, self._check_against_tr])
+
+        self.onChange('es', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr])
+        self.onChange('N_adc', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_N_dummyADC, self._check_against_tr])
+        self.onChange('N_dummyADC', [self._check_against_N_dummyADC])
+
+        self.onChange('tr', [lambda: self._reset_computed_attributes(['duration_recovery']), self._check_against_tr])
+
+        self._check_against_tr()
+        self._check_against_tr_burst()
+        self._check_against_N_pulse_multiplicity()
+        self._check_against_pulse_duration()
+        self._check_against_N_dummyADC()
+
+    def _check_against_tr(self):
         if (hasattr(self, '_N_adc') and hasattr(self, '_es')  # Readout parameters
             and hasattr(self, '_N_burst') and hasattr(self, '_TR_burst') and hasattr(self, '_dt_lastBurst')  # Prep parameters
                 and hasattr(self, '_tr')):
             if self.tr < round(self.duration_readout + self.duration_preparation, 6):
                 error = 'TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)'
-                logger.critical(error)
                 raise ValueError(error)
 
-    def check_against_tr_burst(self):
+    def _check_against_tr_burst(self):
         if hasattr(self, '_TR_burst') and hasattr(self, '_N_pulse') and hasattr(self, '_dt_interPulse'):
             if self.TR_burst < round(self.N_pulse * self.dt_interPulse, 6):
                 error = 'TR_burst < round(N_pulse * dt_interPulse, 6)'
                 logger.critical(error)
                 raise ValueError(error)
 
-    def check_against_N_pulse_multiplicity(self):
+    def _check_against_N_pulse_multiplicity(self):
         if hasattr(self, '_N_pulse') and hasattr(self, '_N_pulsePerOffset') and hasattr(self, '_modulation'):
             if (self.modulation != Modulation.CM) and (((.5 * self.N_pulse) % self.N_pulsePerOffset) != 0):
                 error = '.5 * N_pulse % N_pulsePerOffset != 0'
                 logger.critical(error)
                 raise ValueError(error)
 
-    def check_against_pulse_duration(self):
+    def _check_against_pulse_duration(self):
         if hasattr(self, '_dt_interPulse') and hasattr(self, '_pulse'):
             if self.dt_interPulse < self.pulse.duration:
                 error = 'dt_interPulse < pulse.duration'
                 logger.critical(error)
                 raise ValueError(error)
 
-    def check_against_N_dummyADC(self):
+    def _check_against_N_dummyADC(self):
         if hasattr(self, '_N_dummyADC') and hasattr(self, '_N_adc'):
             if self.N_adc < self.N_dummyADC:
                 error = 'N_adc < N_dummyADC'
                 logger.critical(error)
                 raise ValueError(error)
-
-    @staticmethod
-    def check_type(val_to_check: Any, type_to_check: type, attribute_name: str):
-        if type_to_check(val_to_check) != val_to_check:
-            error = f'`{attribute_name}` must be safely castable to integer. Received: {repr(val_to_check)}.'
-            logger.critical(error)
-            raise ValueError(error)
-        if val_to_check < 0:
-            error = f'`{attribute_name}` cannot be negative. Received: {repr(val_to_check)}.'
-            logger.critical(error)
-            raise ValueError(error)
-
-    def resetComputedAttributes_Recovery(self):
-        if hasattr(self, '_duration_recovery'): del self._duration_recovery  # noqa: E701
-
-    def resetComputedAttributes_Preparation(self):
-        if hasattr(self, '_duration_preparation'): del self._duration_preparation  # noqa: E701
-        self.resetComputedAttributes_Recovery()
-
-    def resetComputedAttributes_Readout(self):
-        if hasattr(self, '_duration_readout'): del self._duration_readout  # noqa: E701
-        self.resetComputedAttributes_Recovery()
 
     #####
     # BELOW: property getters and setters
@@ -173,25 +174,18 @@ class Sequence(_Event):
             error = f"Value {repr(val)} is not a modulation flag of type `Modulation`."
             logger.critical(error)
             raise TypeError(error)
-        self.check_against_N_pulse_multiplicity()
         self._modulation = val
+        self._changed('modulation')
 
     @property
     def pulse(self):
         return self._pulse
 
     @pulse.setter
-    def pulse(self, val: _Pulse):
-        duration = None
-        if hasattr(self, '_pulse'):
-            duration = self._pulse.duration
-
+    def pulse(self, val: Pulse):
         self._pulse = val
-        self._pulse.onChange('duration', [self.resetComputedAttributes_Preparation, self.check_against_pulse_duration])
-
-        if (duration is not None) and (self._pulse.duration != duration):
-            self.resetComputedAttributes_Preparation()
-            self.check_against_pulse_duration()
+        self._pulse.onChange('duration', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_pulse_duration])
+        self._changed('pulse')
 
     @property
     def N_pulsePerOffset(self):
@@ -199,9 +193,9 @@ class Sequence(_Event):
 
     @N_pulsePerOffset.setter
     def N_pulsePerOffset(self, val: int):
-        self.check_type(val, int, 'N_pulsePerOffset')
+        check_value_is_valid(self, val, int, [(lt, 0)], 'N_pulsePerOffset')
         self._N_pulsePerOffset = val
-        self.check_against_N_pulse_multiplicity()
+        self._changed('N_pulsePerOffset')
 
     @property
     def N_pulse(self):
@@ -209,12 +203,9 @@ class Sequence(_Event):
 
     @N_pulse.setter
     def N_pulse(self, val: int):
-        self.check_type(val, int, 'N_pulse')
+        check_value_is_valid(self, val, int, [(lt, 0)], 'N_pulse')
         self._N_pulse = int(val)
-        self.resetComputedAttributes_Preparation()
-        self.check_against_N_pulse_multiplicity()
-        self.check_against_tr_burst()
-        self.check_against_tr()
+        self._changed('N_pulse')
 
     @property
     def N_burst(self):
@@ -222,10 +213,9 @@ class Sequence(_Event):
 
     @N_burst.setter
     def N_burst(self, val: int):
-        self.check_type(val, int, 'N_burst')
+        check_value_is_valid(self, val, int, [(lt, 0)], 'N_burst')
         self._N_burst = int(val)
-        self.resetComputedAttributes_Preparation()
-        self.check_against_tr()
+        self._changed('N_burst')
 
     @property
     def N_adc(self):
@@ -233,11 +223,9 @@ class Sequence(_Event):
 
     @N_adc.setter
     def N_adc(self, val: int):
-        self.check_type(val, int, 'N_adc')
+        check_value_is_valid(self, val, int, [(lt, 0)], 'N_adc')
         self._N_adc = int(val)
-        self.resetComputedAttributes_Readout()
-        self.check_against_N_dummyADC()
-        self.check_against_tr()
+        self._changed('N_adc')
 
     @property
     def N_dummyADC(self):
@@ -245,9 +233,9 @@ class Sequence(_Event):
 
     @N_dummyADC.setter
     def N_dummyADC(self, val: int):
-        self.check_type(val, int, 'N_dummyADC')
+        check_value_is_valid(self, val, int, [(lt, 0)], 'N_dummyADC')
         self._N_dummyADC = int(val)
-        self.check_against_N_dummyADC()
+        self._changed('N_dummyADC')
 
     @property
     def readout_flipAngle(self):
@@ -255,8 +243,9 @@ class Sequence(_Event):
 
     @readout_flipAngle.setter
     def readout_flipAngle(self, val: float):
-        self.check_type(val, float, 'readout_flipAngle')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'readout_flipAngle')
         self._readout_flipAngle = float(val)
+        self._changed('readout_flipAngle')
 
     @property
     def dt_interPulse(self):
@@ -264,12 +253,9 @@ class Sequence(_Event):
 
     @dt_interPulse.setter
     def dt_interPulse(self, val: float):
-        self.check_type(val, float, 'dt_interPulse')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'dt_interPulse')
         self._dt_interPulse = float(val)
-        self.resetComputedAttributes_Preparation()
-        self.check_against_pulse_duration()
-        self.check_against_tr_burst()
-        self.check_against_tr()
+        self._changed('dt_interPulse')
 
     @property
     def dt_lastBurst(self):
@@ -277,10 +263,9 @@ class Sequence(_Event):
 
     @dt_lastBurst.setter
     def dt_lastBurst(self, val: float):
-        self.check_type(val, float, 'dt_lastBurst')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'dt_lastBurst')
         self._dt_lastBurst = float(val)
-        self.resetComputedAttributes_Preparation()
-        self.check_against_tr()
+        self._changed('dt_lastBurst')
 
     @property
     def TR_burst(self):
@@ -288,11 +273,9 @@ class Sequence(_Event):
 
     @TR_burst.setter
     def TR_burst(self, val: float):
-        self.check_type(val, float, 'TR_burst')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'TR_burst')
         self._TR_burst = float(val)
-        self.resetComputedAttributes_Preparation()
-        self.check_against_tr_burst()
-        self.check_against_tr()
+        self._changed('TR_burst')
 
     @property
     def es(self):
@@ -300,10 +283,9 @@ class Sequence(_Event):
 
     @es.setter
     def es(self, val: float):
-        self.check_type(val, float, 'es')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'es')
         self._es = float(val)
-        self.resetComputedAttributes_Readout()
-        self.check_against_tr()
+        self._changed('es')
 
     @property
     def tr(self):
@@ -311,40 +293,42 @@ class Sequence(_Event):
 
     @tr.setter
     def tr(self, val: float):
-        self.check_type(val, float, 'tr')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'tr')
         self._tr = float(val)
-        self.resetComputedAttributes_Recovery()
-        self.check_against_tr()
+        self._changed('tr')
 
     @property
     def duration_readout(self):
         if not hasattr(self, '_duration_readout'):
-            self._duration_readout = self.N_adc * self.es
+            self.duration_readout = self.N_adc * self.es
         return self._duration_readout
 
     @duration_readout.setter
     def duration_readout(self, val: float):
-        self.check_type(val, float, 'duration_readout')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'duration_readout')
         self._duration_readout = float(val)
+        self._changed('duration_readout')
 
     @property
     def duration_preparation(self):
         if not hasattr(self, '_duration_preparation'):
-            self._duration_preparation = (self.N_burst - 1) * self.TR_burst + self.N_pulse * self.dt_interPulse + self.dt_lastBurst
+            self.duration_preparation = (self.N_burst - 1) * self.TR_burst + self.N_pulse * self.dt_interPulse + self.dt_lastBurst
         return self._duration_preparation
 
     @duration_preparation.setter
     def duration_preparation(self, val: float):
-        self.check_type(val, float, 'duration_preparation')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'duration_preparation')
         self._duration_preparation = float(val)
+        self._changed('duration_preparation')
 
     @property
     def duration_recovery(self):
         if not hasattr(self, '_duration_recovery'):
-            self._duration_recovery = self.tr - self.duration_readout - self.duration_preparation
+            self.duration_recovery = self.tr - self.duration_readout - self.duration_preparation
         return self._duration_recovery
 
     @duration_recovery.setter
     def duration_recovery(self, val: float):
-        self.check_type(val, float, 'duration_recovery')
+        check_value_is_valid(self, val, float, [(lt, 0)], 'duration_recovery')
         self._duration_recovery = float(val)
+        self._changed('duration_recovery')

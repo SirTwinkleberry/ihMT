@@ -4,8 +4,8 @@ from numpy.typing import NDArray
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
 
-from brainhack.meta import _Event
-from brainhack.pulse import _Pulse
+from brainhack.meta import _Event, check_value_is_valid
+from brainhack.pulse import Pulse
 from brainhack.system import System
 from brainhack.sequence import Sequence, Modulation
 
@@ -19,7 +19,7 @@ class Simulator(_Event):
     _system: System
     _sequence: Sequence
 
-    _pulse: _Pulse
+    _pulse: Pulse
 
     _classAttributes: tuple[str] = ('export_readMatrix', 'system', 'sequence', 'pulse')
 
@@ -43,13 +43,17 @@ class Simulator(_Event):
         self.system = system
         self.sequence = sequence
         self.export_readMatrix = export_readMatrix
+        self.pulse = sequence.pulse
 
-        if sequence.pulse != system.pulse:
-            error = f'Mismatched RF pulse between sequence and system. Received {sequence.pulse} (sequence) and {system.pulse} (system).'
+        self.onChange('pulse', [lambda: setattr(self.sequence, 'pulse', self.pulse), lambda: setattr(self.system, 'pulse', self.pulse), self._check_pulse_match])
+
+        self._check_pulse_match()
+
+    def _check_pulse_match(self):
+        if self.sequence.pulse != self.system.pulse:
+            error = f'Mismatched RF pulse between sequence and system. Received {self.sequence.pulse} (sequence) and {self.system.pulse} (system).'
             logger.critical(error)
             raise ValueError(error)
-
-        self.pulse = sequence.pulse
 
     def SteadyState(self) -> dict[str, NDArray[float64]]:
         """_summary_
@@ -59,6 +63,7 @@ class Simulator(_Event):
         tuple[NDArray[float64], ...]
             _description_
         """
+        self._check_pulse_match()
 
         sys = self.system
         seq = self.sequence
@@ -174,3 +179,39 @@ class Simulator(_Event):
     #####
     # BELOW: property getters and setters
     #####
+    @property
+    def export_readMatrix(self) -> bool:
+        return self._export_readMatrix
+
+    @export_readMatrix.setter
+    def export_readMatrix(self, val: bool):
+        check_value_is_valid(self, val, bool, None, 'export_readMatrix')
+        self._export_readMatrix = val
+        self._changed('export_readMatrix')
+
+    @property
+    def system(self) -> System:
+        return self._system
+
+    @system.setter
+    def system(self, val: System):
+        self._system = val
+        self._changed('system')
+
+    @property
+    def sequence(self) -> Sequence:
+        return self._sequence
+
+    @sequence.setter
+    def sequence(self, val: Sequence):
+        self._sequence = val
+        self._changed('sequence')
+
+    @property
+    def pulse(self) -> Pulse:
+        return self._pulse
+
+    @pulse.setter
+    def pulse(self, val: Pulse):
+        self._pulse = val
+        self._changed('pulse')
