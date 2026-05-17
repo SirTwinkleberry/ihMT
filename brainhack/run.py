@@ -20,7 +20,7 @@ logger.addHandler(NullHandler())
 logger.debug('`run` module loaded successfully')
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
     """_summary_
 
     Parameters
@@ -140,7 +140,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
     simulator = Simulator(
         system=system, 
-        sequence=sequence, 
+        sequence=sequence,
+        output_vectorSlice=slice(None) if output_fullVector else slice(1),
         export_readMatrix=export_read
     )
 

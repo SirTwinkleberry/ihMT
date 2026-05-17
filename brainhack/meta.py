@@ -16,8 +16,16 @@ _deg2rad = pi / 180.
 
 
 def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
-    if type_to_check(val_to_check) != val_to_check:
-        error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
+    error = None
+    match type_to_check.__name__:
+        case slice.__name__:
+            if type(val_to_check) is not slice:
+                error = f'`{attribute_name}` of `{obj}` must be of type {slice}. Received: `{repr(val_to_check)}` of type `{type(val_to_check)}`.'
+        case _:
+            if type_to_check(val_to_check) != val_to_check:
+                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'    
+
+    if error is not None:
         logger.critical(error)
         raise ValueError(error)
 

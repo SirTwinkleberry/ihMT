@@ -15,15 +15,16 @@ logger.debug('`simulator` module loaded successfully')
 
 
 class Simulator(_Event):
+    _output_vectorSlice: bool
     _export_readMatrix: bool
     _system: System
     _sequence: Sequence
 
     _pulse: Pulse
 
-    _classAttributes: tuple[str] = ('export_readMatrix', 'system', 'sequence', 'pulse')
+    _classAttributes: tuple[str] = ('output_vectorSlice', 'export_readMatrix', 'system', 'sequence', 'pulse')
 
-    def __init__(self, system: System, sequence: Sequence, export_readMatrix: bool):
+    def __init__(self, system: System, sequence: Sequence, output_vectorSlice: slice, export_readMatrix: bool):
         """_summary_
 
         Parameters
@@ -42,6 +43,7 @@ class Simulator(_Event):
         """
         self.system = system
         self.sequence = sequence
+        self.output_vectorSlice = output_vectorSlice
         self.export_readMatrix = export_readMatrix
         self.pulse = sequence.pulse
 
@@ -70,7 +72,6 @@ class Simulator(_Event):
 
         HomogenizeCol: NDArray[float64] = zeros(1 + 2 * (sys.N_pools - 1))
         HomogenizeCol[0] = sys.poolFree_M0 / sys.poolFree_T1
-        # print(sys.poolBound_M0)
         HomogenizeCol[1::2] = sys.poolBound_M0 / sys.poolBound_T1
         HomogenizeCol = array([HomogenizeCol]).T
 
@@ -132,8 +133,8 @@ class Simulator(_Event):
         v_MTs = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
 
         output: dict[str, NDArray[float64]] = {
-            'MT0': v_MT0 / v_MT0[-1],
-            'MTs': v_MTs / v_MTs[-1],
+            'MT0': v_MT0[self.output_vectorSlice] / v_MT0[-1],
+            'MTs': v_MTs[self.output_vectorSlice] / v_MTs[-1],
         }
 
         if Modulation.CM in seq.modulation:
@@ -148,9 +149,7 @@ class Simulator(_Event):
                 @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse), seq.N_burst - 1)
 
             v_MTd_CM = eig(round(evol_dummyRAGE @ (evol_MTsat_dual_CM @ evol_RAGE), 16))[1][:, -1]
-            MTd_CM = v_MTd_CM / v_MTd_CM[-1]
-
-            output['MTd_CM'] = MTd_CM
+            output['MTd_CM'] = v_MTd_CM[self.output_vectorSlice] / v_MTd_CM[-1]
 
         if Modulation.ALT in seq.modulation:
             evol_MTsat_dual_ALT: NDArray[float64] = evol_relax_lastBurst @ matrix_power(
@@ -167,9 +166,7 @@ class Simulator(_Event):
                 )
 
             v_MTd_ALT = eig(round(evol_dummyRAGE @ (evol_MTsat_dual_ALT @ evol_RAGE), 16))[1][:, -1]
-            MTd_ALT = v_MTd_ALT / v_MTd_ALT[-1]
-
-            output['MTd_ALT'] = MTd_ALT
+            output['MTd_ALT'] = v_MTd_ALT[self.output_vectorSlice] / v_MTd_ALT[-1]
 
         if self.export_readMatrix:
             output['readout'] = read
@@ -179,6 +176,16 @@ class Simulator(_Event):
     #####
     # BELOW: property getters and setters
     #####
+    @property
+    def output_vectorSlice(self) -> slice:
+        return self._output_vectorSlice
+
+    @output_vectorSlice.setter
+    def output_vectorSlice(self, val: slice):
+        check_value_is_valid(self, val, slice, None, 'output_vectorSlice')
+        self._output_vectorSlice = val
+        self._changed('output_vectorSlice')
+
     @property
     def export_readMatrix(self) -> bool:
         return self._export_readMatrix

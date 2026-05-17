@@ -50,6 +50,7 @@ CONFIG_SYSTEM = {
 
 CONFIG_SIMULATOR = {
     'init': {
+        'output_vectorSlice': slice(None),
         'export_readMatrix': True,
     },
     'compute': {

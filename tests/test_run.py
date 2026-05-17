@@ -42,6 +42,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'filePrefix': '',
         'export': True,
         'offset': 7000,
+        'output_fullVector': True,
         'export_read': False,
     },
 
@@ -84,6 +85,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
 
 CONFIG_SIMULATOR = {
     'init': {
+        'output_vectorSlice': slice(None),
         'export_readMatrix': True,
     },
     'compute': {
