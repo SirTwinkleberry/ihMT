@@ -224,3 +224,4 @@ if __name__ == '__main__':
 # 1. Corrector - Find a way to deep copy the full simulator object and subobjects
 # 2. Generic - Apply NDarray.setflags(write=False) where necessary
 # 3. Generic - Write tests
+# 4. Notebook - Detail how-tos
