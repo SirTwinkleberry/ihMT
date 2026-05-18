@@ -3,6 +3,7 @@ from numpy import linspace, array, float64, int64, meshgrid, vstack
 from numpy.typing import NDArray
 from scipy.interpolate import PchipInterpolator, RegularGridInterpolator
 from enum import Flag, auto
+from copy import deepcopy
 
 from brainhack.meta import _Event
 from brainhack.simulator import Simulator
@@ -62,6 +63,9 @@ class Corrector(_Event):
         self.onChange('ranges', [lambda: self._reset_computed_attributes(['simulated', 'nominals', 'interpolants'])])
         self.onChange('simulator', [lambda: self._reset_computed_attributes(['simulated', 'nominals', 'interpolants'])])
 
+    def copy(self) -> Corrector:
+        return Corrector(self.simulator.copy(), deepcopy(self.ranges))
+
     def apply(self, parameter_maps: dict[str, NDArray[int64 | float64]], data_maps: dict[Correctable, NDArray[int64 | float64]]):
         for key in self.ranges.keys():
             if key not in parameter_maps.keys():
@@ -116,10 +120,10 @@ class Corrector(_Event):
             tmp = dict()
             shape = tuple(len(range) for range in self.ranges.values())
             data = {key: [] for key in Correctable.keys()}
-            # TODO: Find a way to deep copy the full simulator object and subobjects
-            # and send that to _simulate instead to avoid changing object attributes
-            self.simulator.export_readMatrix = False
-            ManyRuns(self.simulator, list(self.ranges.keys()), self.ranges, data)
+
+            sim = self.simulator.copy()
+            sim.export_readMatrix = False
+            ManyRuns(sim, list(self.ranges.keys()), self.ranges, data)
 
             for key, dat in data.items():
                 if len(dat) > 0:

@@ -84,6 +84,9 @@ class System(_Event):
         self.onChange('poolBound_T2', [lambda: self._reset_computed_attributes(['N_pools', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
         self.onChange('poolBound_omegaLocalField', [lambda: self._reset_computed_attributes(['poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
+    def copy(self) -> System:
+        return System(self.pulse.copy(), self.poolFree_M0, self.poolFree_T1, self.poolFree_T2, self.poolFreeBound_exchangeRate, self.poolBound_M0, self.poolBound_T1, self.poolBound_T2, self.poolBound_T1D)
+
     def compute_poolBound_RFabsorptionMatrices(self):
         """_summary_
         """

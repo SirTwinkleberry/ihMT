@@ -197,6 +197,9 @@ class Tukey(_Pulse):
 
         self.onChange('shape', [lambda: self._reset_computed_attributes(['amplitudeIntegral', 'powerIntegral'])])
 
+    def copy(self) -> Tukey:
+        return Tukey(self.duration, self.shape, self.flipAngle, self.offset)
+
     def value(self, t: float) -> float:
         """_summary_
 

@@ -125,6 +125,9 @@ class Sequence(_Event):
         self._check_against_pulse_duration()
         self._check_against_N_dummyADC()
 
+    def copy(self) -> Sequence:
+        return Sequence(self.modulation, self.pulse.copy(), self.N_pulsePerOffset, self.N_pulse, self.N_burst, self.N_adc, self.N_dummyADC, self.dt_interPulse, self.TR_burst, self.dt_lastBurst, self.es, self.tr, self.readout_flipAngle)
+
     def _check_against_tr(self):
         if (hasattr(self, '_N_adc') and hasattr(self, '_es')  # Readout parameters
             and hasattr(self, '_N_burst') and hasattr(self, '_TR_burst') and hasattr(self, '_dt_lastBurst')  # Prep parameters

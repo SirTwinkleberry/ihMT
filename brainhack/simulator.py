@@ -3,6 +3,7 @@ from numpy import zeros, kron, eye, diag, array, sum, vstack, hstack, round, deg
 from numpy.typing import NDArray
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
+from typing import Any
 
 from brainhack.meta import _Event, check_value_is_valid
 from brainhack.pulse import Pulse
@@ -24,7 +25,7 @@ class Simulator(_Event):
 
     _classAttributes: tuple[str] = ('output_vectorSlice', 'export_readMatrix', 'system', 'sequence', 'pulse')
 
-    def __init__(self, system: System, sequence: Sequence, output_vectorSlice: slice, export_readMatrix: bool):
+    def __init__(self, system: System, sequence: Sequence, output_vectorSlice: slice, export_readMatrix: bool, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
@@ -50,6 +51,12 @@ class Simulator(_Event):
         self.onChange('pulse', [lambda: setattr(self.sequence, 'pulse', self.pulse), lambda: setattr(self.system, 'pulse', self.pulse), self._check_pulse_match])
 
         self._check_pulse_match()
+
+    def copy(self) -> Simulator:
+        system = self.system.copy()
+        sequence = self.sequence.copy()
+        sequence.pulse = system.pulse
+        return Simulator(system, sequence, self.output_vectorSlice, self.export_readMatrix)
 
     def _check_pulse_match(self):
         if self.sequence.pulse != self.system.pulse:

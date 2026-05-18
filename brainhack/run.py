@@ -162,7 +162,15 @@ def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDAr
         return
     attribute = range_keys.pop(0)
 
-    path = simulator.pulse if hasattr(simulator.pulse, attribute) else simulator.system
+    if hasattr(simulator.pulse, attribute):
+        path = simulator.pulse
+    elif hasattr(simulator.system, attribute):
+        path = simulator.system
+    elif hasattr(simulator.sequence, attribute):
+        path = simulator.sequence
+    else:
+        raise AttributeError(f"Attribute could not be found in the simulator's pulse, system, or sequence. Received `{attribute}`.")
+
     for val in ranges[attribute]:
         setattr(path, attribute, val)
         ManyRuns(simulator, deepcopy(range_keys), ranges, data)
@@ -221,7 +229,7 @@ if __name__ == '__main__':
 # The choice of using json (comments not possible within the file) or yaml (comments possible within the file) config files is left open, my personal favorite is yaml,
 # new python projects tend to favor .toml configuration files...
 # TODO:
-# 1. Corrector - Find a way to deep copy the full simulator object and subobjects
 # 2. Generic - Apply NDarray.setflags(write=False) where necessary
 # 3. Generic - Write tests
 # 4. Notebook - Detail how-tos
+# 5. Generic - Allow for variable number of water / macromolecular pools
