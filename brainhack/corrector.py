@@ -2,44 +2,15 @@ from logging import getLogger, NullHandler
 from numpy import linspace, array, float64, int64, meshgrid, vstack
 from numpy.typing import NDArray
 from scipy.interpolate import PchipInterpolator, RegularGridInterpolator
-from enum import Flag, auto
 from copy import deepcopy
 
-from brainhack.meta import _Event
+from brainhack.meta import _Event, Signal, CompositeDictionary
 from brainhack.simulator import Simulator
 from brainhack.run import ManyRuns
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 logger.debug('`corrector` module loaded successfully')
-
-
-class Correctable(Flag):
-    MT0       = auto()
-    MTs       = auto()
-    MTd_CM    = auto()
-    MTd_ALT   = auto()
-    ihMT_CM   = MTs      | MTd_CM
-    ihMT_ALT  = MTs      | MTd_ALT
-    BP        = MTd_CM   | MTd_ALT
-    MTsR      = MTs      | MT0
-    MTdR_CM   = MTd_CM   | MT0
-    MTdR_ALT  = MTd_ALT  | MT0
-    ihMTR_CM  = ihMT_CM  | MT0
-    ihMTR_ALT = ihMT_ALT | MT0
-    BPR       = BP       | MT0
-
-    @classmethod
-    def values(cls):
-        return cls._member_map_.values()
-
-    @classmethod
-    def keys(cls):
-        return cls._member_map_.keys()
-
-    @classmethod
-    def items(cls):
-        return cls._member_map_.items()
 
 
 class Corrector(_Event):
@@ -54,7 +25,7 @@ class Corrector(_Event):
 
     @staticmethod
     def Simple(simulator: Simulator) -> Corrector:
-        return Corrector(simulator=simulator, ranges={'poolFree_T1': array([1., 1.5, 2.]), 'flipAngle': simulator.pulse.flipAngle * linspace(.1, 1.5, 141)})
+        return Corrector(simulator=simulator, ranges={'flipAngle': simulator.pulse.flipAngle * linspace(.1, 1.5, 141)})
 
     def __init__(self, simulator: Simulator, ranges: dict[str, NDArray[int64 | float64]]):
         self.simulator = simulator
@@ -66,14 +37,14 @@ class Corrector(_Event):
     def copy(self) -> Corrector:
         return Corrector(self.simulator.copy(), deepcopy(self.ranges))
 
-    def apply(self, parameter_maps: dict[str, NDArray[int64 | float64]], data_maps: dict[Correctable, NDArray[int64 | float64]]):
+    def apply(self, parameter_maps: dict[str, NDArray[int64 | float64]], data_maps: dict[Signal, NDArray[int64 | float64]]):
         for key in self.ranges.keys():
             if key not in parameter_maps.keys():
                 raise KeyError(f"Missing key `{key}` in parameter map dictionary.")
 
         for key in data_maps.keys():
-            if type(key) != Correctable:
-                raise TypeError(f"Accepting `{type(Correctable)}` flags only. Received `{type(key)}`.")
+            if type(key) != Signal:
+                raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(key)}`.")
 
         shape = None
         for key, val in (parameter_maps | data_maps).items():
@@ -85,7 +56,7 @@ class Corrector(_Event):
 
         parameters = vstack([parameter_maps[key].flatten() for key in self.ranges.keys()]).T
 
-        corrected: dict[Correctable, NDArray[int64 | float64]] = dict()
+        corrected: dict[Signal, NDArray[int64 | float64]] = dict()
         for key, value in data_maps.items():
             corrector = self.nominals[key] / self.interpolants[key](parameters)
             corrected[key] = value * corrector.reshape(shape)
@@ -119,11 +90,11 @@ class Corrector(_Event):
         if not hasattr(self, '_simulated'):
             tmp = dict()
             shape = tuple(len(range) for range in self.ranges.values())
-            data = {key: [] for key in Correctable.keys()}
+            data = {key: [] for key in Signal.keys()}
 
             sim = self.simulator.copy()
             sim.export_readMatrix = False
-            ManyRuns(sim, list(self.ranges.keys()), self.ranges, data)
+            ManyRuns(sim, list(self.ranges.keys()), self.ranges, data, safe=True)
 
             for key, dat in data.items():
                 if len(dat) > 0:
@@ -162,59 +133,20 @@ class Corrector(_Event):
 
 
 class InterpolantDictionary(dict):
-    def __init__(self, interpolator: PchipInterpolator | RegularGridInterpolator, ranges: dict[str, NDArray[int64 | float64]], simulated: dict[str, NDArray[int64 | float64]]):
+    def __init__(self, interpolator: PchipInterpolator | RegularGridInterpolator, ranges: dict[str, NDArray[int64 | float64]], simulated: CompositeDictionary[str, NDArray[int64 | float64]]):
         self._interpolator = interpolator
         self._ranges = tuple(ranges.values())
         self._simulated = simulated
+
+        if len(self._ranges) == 1:
+            self._ranges = tuple(self._ranges[0].tolist())
+
         super().__init__()
 
-    def __getitem__(self, subscript: Correctable):
-        if type(subscript) != Correctable:
-            raise TypeError(f"Accepting `{type(Correctable)}` flags only. Received `{type(subscript)}`.")
+    def __getitem__(self, subscript: Signal):
+        if type(subscript) != Signal:
+            raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`.")
         name = subscript.name
-        if (name not in self.keys()) and (name in Correctable.keys()):
+        if (name not in self.keys()) and (name in Signal.keys()):
             dict.__setitem__(self, name, self._interpolator(self._ranges, self._simulated[subscript]))
         return dict.__getitem__(self, name)
-
-
-class CompositeDictionary(dict):
-    def __getitem__(self, subscript: Correctable):
-        if type(subscript) != Correctable:
-            raise TypeError(f"Accepting `{type(Correctable)}` flags only. Received `{type(subscript)}`.")
-        subscript = subscript.name
-        if (subscript not in self.keys()) and (subscript in Correctable.keys()):
-            self._composite(subscript)
-        return dict.__getitem__(self, subscript)
-
-    def _composite(self, composite: str):
-        match composite:
-            case Correctable.ihMT_CM.name:
-                data = 2 * (self[Correctable.MTs] - self[Correctable.MTd_CM])
-            case Correctable.ihMT_ALT.name:
-                data = 2 * (self[Correctable.MTs] - self[Correctable.MTd_ALT])
-            case Correctable.BP.name:
-                data = 2 * (self[Correctable.MTd_ALT] - self[Correctable.MTd_CM])
-            case Correctable.MTsR.name:
-                data = 100 - 100 * self[Correctable.MTs] * self._invMT0
-            case Correctable.MTdR_CM.name:
-                data = 100 - 100 * self[Correctable.MTd_CM] * self._invMT0
-            case Correctable.MTdR_ALT.name:
-                data = 100 - 100 * self[Correctable.MTd_ALT] * self._invMT0
-            case Correctable.ihMTR_CM.name:
-                data = 100 * self[Correctable.ihMT_CM] * self._invMT0
-            case Correctable.ihMTR_ALT.name:
-                data = 100 * self[Correctable.ihMT_ALT] * self._invMT0
-            case Correctable.BPR.name:
-                data = 100 * self[Correctable.BP] * self._invMT0
-        data.setflags(write=False)
-        dict.__setitem__(self, composite, data)
-
-    #####
-    # BELOW: property getters and setters
-    #####
-    @property
-    def _invMT0(self):
-        if not hasattr(self, '__invMT0'):
-            self.__invMT0 = 1. / self[Correctable.MT0]
-            self.__invMT0.setflags(write=False)
-        return self.__invMT0

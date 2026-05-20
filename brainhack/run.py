@@ -143,7 +143,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         system=system, 
         sequence=sequence,
         output_vectorSlice=slice(None) if output_fullVector else slice(1),
-        export_readMatrix=export_read
+        export_readMatrix=export_read,
+        output_fullVector=output_fullVector
     )
 
     arrays: dict[str, NDArray[float64]] = simulator.SteadyState()
@@ -155,7 +156,11 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     return arrays
 
 
-def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[int64 | float64]], data: dict[list[int64 | float64]]):
+def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[int64 | float64]], data: dict[list[int64 | float64]], safe=False):
+    if not safe:
+        simulator = simulator.copy()
+        simulator.export_readMatrix = False
+
     if len(range_keys) == 0:
         for key, val in simulator.SteadyState().items():
             data[key].append(val[0])
@@ -173,7 +178,7 @@ def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDAr
 
     for val in ranges[attribute]:
         setattr(path, attribute, val)
-        ManyRuns(simulator, deepcopy(range_keys), ranges, data)
+        ManyRuns(simulator, deepcopy(range_keys), ranges, data, True)
 
 
 if __name__ == '__main__':

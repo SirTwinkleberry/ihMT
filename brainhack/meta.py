@@ -2,8 +2,8 @@ from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq
 from typing import Any
 from collections.abc import Callable
-
-from numpy import pi, cos, sin, tan
+from numpy import pi, cos, sin, tan, array
+from enum import Flag, auto
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -13,6 +13,34 @@ _2pi = 2. * pi
 _inv_2pi = 1. / _2pi
 _rad2deg = 180. / pi
 _deg2rad = pi / 180.
+
+
+class Signal(Flag):
+    MT0       = auto()
+    MTs       = auto()
+    MTd_CM    = auto()
+    MTd_ALT   = auto()
+    ihMT_CM   = MTs      | MTd_CM
+    ihMT_ALT  = MTs      | MTd_ALT
+    BP        = MTd_CM   | MTd_ALT
+    MTsR      = MTs      | MT0
+    MTdR_CM   = MTd_CM   | MT0
+    MTdR_ALT  = MTd_ALT  | MT0
+    ihMTR_CM  = ihMT_CM  | MT0
+    ihMTR_ALT = ihMT_ALT | MT0
+    BPR       = BP       | MT0
+
+    @classmethod
+    def values(cls):
+        return cls._member_map_.values()
+
+    @classmethod
+    def keys(cls):
+        return cls._member_map_.keys()
+
+    @classmethod
+    def items(cls):
+        return cls._member_map_.items()
 
 
 def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
@@ -51,6 +79,59 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
                 error = f'`{attribute_name}` of `{obj}` cannot be {boundStr}. Received: `{repr(val_to_check)}`.'
                 logger.critical(error)
                 raise ValueError(error)
+
+
+class CompositeDictionary(dict):
+    def __init__(self, mapping: Any, /):
+        super().__init__(mapping)
+        tmp = list()
+        for key, value in self.items():
+            dict.__setitem__(self, key, value := array(value))
+            if not value.size:
+                tmp.append(key)
+
+        [dict.__delitem__(self, key) for key in tmp]        
+
+    def __getitem__(self, subscript: Signal):
+        if type(subscript) != Signal:
+            raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`.")
+        subscript = subscript.name
+        if (subscript not in self.keys()) and (subscript in Signal.keys()):
+            self._composite(subscript)
+        return dict.__getitem__(self, subscript)
+
+    def _composite(self, composite: str):
+        match composite:
+            case Signal.ihMT_CM.name:
+                data = 2 * (self[Signal.MTs] - self[Signal.MTd_CM])
+            case Signal.ihMT_ALT.name:
+                data = 2 * (self[Signal.MTs] - self[Signal.MTd_ALT])
+            case Signal.BP.name:
+                data = 2 * (self[Signal.MTd_ALT] - self[Signal.MTd_CM])
+            case Signal.MTsR.name:
+                data = 100 - 100 * self[Signal.MTs] * self._invMT0
+            case Signal.MTdR_CM.name:
+                data = 100 - 100 * self[Signal.MTd_CM] * self._invMT0
+            case Signal.MTdR_ALT.name:
+                data = 100 - 100 * self[Signal.MTd_ALT] * self._invMT0
+            case Signal.ihMTR_CM.name:
+                data = 100 * self[Signal.ihMT_CM] * self._invMT0
+            case Signal.ihMTR_ALT.name:
+                data = 100 * self[Signal.ihMT_ALT] * self._invMT0
+            case Signal.BPR.name:
+                data = 100 * self[Signal.BP] * self._invMT0
+        data.setflags(write=False)
+        dict.__setitem__(self, composite, data)
+
+    #####
+    # BELOW: property getters and setters
+    #####
+    @property
+    def _invMT0(self):
+        if not hasattr(self, '__invMT0'):
+            self.__invMT0 = 1. / self[Signal.MT0]
+            self.__invMT0.setflags(write=False)
+        return self.__invMT0
 
 
 class _Event():
