@@ -224,17 +224,3 @@ if __name__ == '__main__':
     set_printoptions(precision=maxsize)
     for key, value in SingleRun(**config['run']).items():
         rootLogger.info(f'{key}: {value.tolist()}')
-
-# Note:
-# This current (incomplete) version has implemented logic for 1 free pool and 1 bound pool only
-# There needs to be a generalization of the construction of the operators in system.py and simulator.py
-# A utility function could be designed such that given a steady state vector and a readout matrix, signal value signal computed at each readout even
-# The general nomenclature (variable, function, class, and file names) is open to changes
-# Parameter names in the SingleRun function of run.py should match exactly the names of the parameters in the config files for SingleRun(**config) to work as intended
-# The choice of using json (comments not possible within the file) or yaml (comments possible within the file) config files is left open, my personal favorite is yaml,
-# new python projects tend to favor .toml configuration files...
-# TODO:
-# 2. Generic - Apply NDarray.setflags(write=False) where necessary
-# 3. Generic - Write tests
-# 4. Notebook - Detail how-tos
-# 5. Generic - Allow for variable number of water / macromolecular pools
