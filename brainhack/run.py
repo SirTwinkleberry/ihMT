@@ -85,7 +85,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
     Returns
     -------
-    tuple[NDArray[float64], ...]
+    dict[str, NDArray[float64]]
         _description_
 
     Raises
