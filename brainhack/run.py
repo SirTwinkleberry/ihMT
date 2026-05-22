@@ -4,15 +4,16 @@ from datetime import datetime
 from sys import maxsize
 from typing import Any
 from scipy.io import savemat
-from numpy import int64, float64, set_printoptions
+from numpy import int64, float64, set_printoptions, array
 from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
 from pathlib import Path
 from copy import deepcopy
 
+from brainhack.meta import Signal
 from brainhack.pulse import Tukey
-from brainhack.sequence import Sequence, Modulation
+from brainhack.sequence import Sequence
 from brainhack.system import System
 from brainhack.simulator import Simulator
 
@@ -21,7 +22,7 @@ logger.addHandler(NullHandler())
 logger.debug('`run` module loaded successfully')
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Sine_Modulation: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Signal: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
     """_summary_
 
     Parameters
@@ -66,7 +67,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         _description_
     fa_rage : float
         _description_
-    FLAG_Sine_Modulation : str
+    FLAG_Signal : str
         _description_
     N_altern : int
         _description_
@@ -95,16 +96,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     """
     logger.debug(locals())
 
-    if FLAG_Sine_Modulation.upper() == "CM":
-        modulation = Modulation.CM
-    elif FLAG_Sine_Modulation.upper() == "ALT":
-        modulation = Modulation.ALT
-    elif FLAG_Sine_Modulation.upper() == "BP":
-        modulation = Modulation.BP
-    else:
-        error = f"Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`. Received `{repr(FLAG_Sine_Modulation)}`."
-        logger.critical(error)
-        raise ValueError(error)
+    signal = Signal.from_str(FLAG_Signal)
 
     pulse = Tukey(
         duration=pw,
@@ -113,7 +105,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         offset=offset
     )
     sequence = Sequence(
-        modulation=modulation,
+        signal=signal,
         pulse=pulse,
         N_pulsePerOffset=N_altern,
         N_pulse=np,
@@ -156,29 +148,42 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     return arrays
 
 
-def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[int64 | float64]], data: dict[list[int64 | float64]], safe=False):
+def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[int64 | float64]], safe: bool = False) -> dict[str, NDArray[int64 | float64]]:
+    def _runs(range_keys):
+        if len(range_keys) == 0:
+            for key, val in simulator.SteadyState().items():
+                data[key].append(val)
+            return
+        attribute = range_keys.pop(0)
+
+        if hasattr(simulator.pulse, attribute):
+            path = simulator.pulse
+        elif hasattr(simulator.system, attribute):
+            path = simulator.system
+        elif hasattr(simulator.sequence, attribute):
+            path = simulator.sequence
+        else:
+            raise AttributeError(f"Attribute could not be found in the simulator's pulse, system, or sequence. Received `{attribute}`.")
+
+        for val in ranges[attribute]:
+            setattr(path, attribute, val)
+            _runs(deepcopy(range_keys))
+
     if not safe:
         simulator = simulator.copy()
-        simulator.export_readMatrix = False
 
-    if len(range_keys) == 0:
-        for key, val in simulator.SteadyState().items():
-            data[key].append(val[0])
-        return
-    attribute = range_keys.pop(0)
+    data: dict[list[int64 | float64]] = {key: [] for key in Signal.keys() | {'readout'}}
+    _runs(range_keys.copy())
+    data = {key: array(val) for key, val in data.items() if val}
 
-    if hasattr(simulator.pulse, attribute):
-        path = simulator.pulse
-    elif hasattr(simulator.system, attribute):
-        path = simulator.system
-    elif hasattr(simulator.sequence, attribute):
-        path = simulator.sequence
-    else:
-        raise AttributeError(f"Attribute could not be found in the simulator's pulse, system, or sequence. Received `{attribute}`.")
+    # Get (shape of ranges, shape of output vector)
+    shape = list(len(ranges[key]) for key in range_keys)
+    for key in data.keys():
+        data[key] = data[key].reshape(shape + list(data[key].shape[1:]))
+        if key != 'readout':
+            data[key] = data[key].transpose((-1, *range(len(shape))))
 
-    for val in ranges[attribute]:
-        setattr(path, attribute, val)
-        ManyRuns(simulator, deepcopy(range_keys), ranges, data, True)
+    return data
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-from brainhack.sequence import Sequence, Modulation
+from brainhack.sequence import Sequence
 from brainhack.pulse import Tukey
 from brainhack.system import System
 from brainhack.simulator import Simulator

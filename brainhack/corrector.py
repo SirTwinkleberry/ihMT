@@ -1,6 +1,7 @@
 from logging import getLogger, NullHandler
-from numpy import linspace, array, float64, int64, meshgrid, vstack
+from numpy import linspace, array, float64, int64, meshgrid, vstack, nan, ones
 from numpy.typing import NDArray
+from functools import partial
 from scipy.interpolate import PchipInterpolator, RegularGridInterpolator
 from copy import deepcopy
 
@@ -37,7 +38,7 @@ class Corrector(_Event):
     def copy(self) -> Corrector:
         return Corrector(self.simulator.copy(), deepcopy(self.ranges))
 
-    def apply(self, parameter_maps: dict[str, NDArray[int64 | float64]], data_maps: dict[Signal, NDArray[int64 | float64]]):
+    def apply(self, parameter_maps: dict[str, NDArray[int64 | float64]], data_maps: dict[Signal, NDArray[int64 | float64]]) -> CompositeDictionary[Signal, NDArray[int64 | float64]]:
         for key in self.ranges.keys():
             if key not in parameter_maps.keys():
                 raise KeyError(f"Missing key `{key}` in parameter map dictionary.")
@@ -54,15 +55,16 @@ class Corrector(_Event):
             if val.shape != shape:
                 raise ValueError(f'Arrays need to match shape. Received shape `{val.shape}` for array `{key}` while trying to match shape `{shape}`.')
 
-        parameters = vstack([parameter_maps[key].flatten() for key in self.ranges.keys()]).T
+        mask = ones(shape).astype(bool) if 'mask' not in parameter_maps.keys() else parameter_maps['mask'].astype(bool)
+
+        parameters = vstack([parameter_maps[key][mask].flatten() for key in self.ranges.keys()]).T
 
         corrected: dict[Signal, NDArray[int64 | float64]] = dict()
         for key, value in data_maps.items():
-            corrector = self.nominals[key] / self.interpolants[key](parameters)
-            corrected[key] = value * corrector.reshape(shape)
-            corrected[key].setflags(write=False)
+            corrected[key] = value.copy().astype(float64)
+            corrected[key][mask] *= (self.nominals[key] / self.interpolants[key](parameters)).squeeze()
 
-        return corrected
+        return CompositeDictionary(corrected)
 
     #####
     # BELOW: property getters and setters
@@ -88,20 +90,10 @@ class Corrector(_Event):
     @property  # immutable for the user, so only getter is defined
     def simulated(self) -> CompositeDictionary[str, NDArray[int64 | float64]]:
         if not hasattr(self, '_simulated'):
-            tmp = dict()
-            shape = tuple(len(range) for range in self.ranges.values())
-            data = {key: [] for key in Signal.keys()}
-
             sim = self.simulator.copy()
+            sim.output_vectorSlice = slice(1)
             sim.export_readMatrix = False
-            ManyRuns(sim, list(self.ranges.keys()), self.ranges, data, safe=True)
-
-            for key, dat in data.items():
-                if len(dat) > 0:
-                    tmp[key] = array(dat).reshape(shape)
-                    tmp[key].setflags(write=False)
-            self._simulated = CompositeDictionary(tmp)
-
+            self._simulated = CompositeDictionary(ManyRuns(sim, list(self.ranges.keys()), self.ranges, safe=True)).squeeze()
         return self._simulated
 
     @property  # immutable for the user, so only getter is defined
@@ -125,7 +117,7 @@ class Corrector(_Event):
     def interpolants(self):
         if not hasattr(self, '_interpolants'):
             self._interpolants = InterpolantDictionary(
-                interpolator=PchipInterpolator if len(self.ranges) == 1 else RegularGridInterpolator,
+                interpolator=PchipInterpolator if len(self.ranges) == 1 else partial(RegularGridInterpolator, bounds_error=False, fill_value=nan),
                 ranges=self.ranges,
                 simulated=self.simulated
             )

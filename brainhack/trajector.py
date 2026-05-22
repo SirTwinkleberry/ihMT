@@ -3,7 +3,7 @@ from numpy import float64
 from numpy.linalg import matrix_power, inv
 from numpy.typing import NDArray
 
-from brainhack.meta import _Event, Signal, CompositeDictionary
+from brainhack.meta import _Event, CompositeDictionary
 from brainhack.simulator import Simulator
 
 logger = getLogger(__name__)
@@ -40,10 +40,10 @@ class Trajector(_Event):
         simulator.export_readMatrix, simulator.output_vectorSlice = tmp
 
         if stable:
-            readouts = {key: [] for key in data.keys()}
+            readouts = {key: [] for key in data.keys() if key != 'readout'}
             for adc in range(simulator.sequence.N_adc):
                 readoutMatrix = matrix_power(data['readout'], adc - simulator.sequence.N_dummyADC)
-                for key in data.keys():
+                for key in readouts.keys():
                     readouts[key].append(readoutMatrix @ data[key])
         else:
             invReadout = inv(data['readout'])
@@ -53,7 +53,7 @@ class Trajector(_Event):
                 for _ in range(1, simulator.sequence.N_adc):
                     readouts[key].append(data['readout'] @ readouts[key][-1])
 
-        return CompositeDictionary(readouts)
+        return CompositeDictionary(readouts).T
 
 
     def VectorialPointSpreadFunction(self) -> NDArray[float64]:

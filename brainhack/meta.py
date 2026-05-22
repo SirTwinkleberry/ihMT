@@ -1,8 +1,8 @@
 from logging import getLogger, NullHandler
-from operator import le, lt, gt, ge, eq
+from operator import le, lt, gt, ge, eq, add, sub, mul, truediv 
 from typing import Any
 from collections.abc import Callable
-from numpy import pi, cos, sin, tan, array
+from numpy import pi, cos, sin, tan, array, array_equal, errstate
 from enum import Flag, auto
 
 logger = getLogger(__name__)
@@ -29,6 +29,7 @@ class Signal(Flag):
     ihMTR_CM  = ihMT_CM  | MT0
     ihMTR_ALT = ihMT_ALT | MT0
     BPR       = BP       | MT0
+    ALL       = BP | MTs | MT0
 
     @classmethod
     def values(cls):
@@ -41,6 +42,42 @@ class Signal(Flag):
     @classmethod
     def items(cls):
         return cls._member_map_.items()
+
+    @classmethod
+    def from_str(cls, key: str):
+        match key.upper():
+            case 'MT0':
+                return cls.MT0
+            case 'MTS':
+                return cls.MTs
+            case 'MTD_CM':
+                return cls.MTd_CM
+            case 'MTD_ALT':
+                return cls.MTd_ALT
+            case 'IHMT_CM':
+                return cls.ihMT_CM
+            case 'IHMT_ALT':
+                return cls.ihMT_ALT
+            case 'BP':
+                return cls.BP
+            case 'MTSR':
+                return cls.MTsR
+            case 'MTDR_CM':
+                return cls.MTdR_CM
+            case 'MTDR_ALT':
+                return cls.MTdR_ALT
+            case 'IHMTR_CM':
+                return cls.ihMTR_CM
+            case 'IHMTR_ALT':
+                return cls.ihMTR_ALT
+            case 'BPR':
+                return cls.BPR
+            case 'ALL':
+                return cls.ALL
+            case _:
+                error = f"Incorrect signal flag. Must be any one or combinations of {tuple(cls.keys())}. Received `{repr(key)}`."
+                logger.critical(error)
+                raise ValueError(error)
 
 
 def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
@@ -83,49 +120,111 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
 
 class CompositeDictionary(dict):
     def __init__(self, mapping: Any, /):
-        super().__init__(mapping)
-        tmp = list()
-        for key, value in self.items():
-            dict.__setitem__(self, key, value := array(value))
-            if not value.size:
-                tmp.append(key)
-
-        [dict.__delitem__(self, key) for key in tmp]        
+        data = dict()
+        for key, value in dict(mapping).items():
+            if key == 'readout':
+                continue
+            value = array(value)
+            if value.size:
+                value.setflags(write=False)
+                if not isinstance(key, Signal):
+                    key = Signal.from_str(key)
+                data[key] = value
+        super().__init__(data)
 
     def __getitem__(self, subscript: Signal):
         if type(subscript) != Signal:
             raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`.")
-        subscript = subscript.name
-        if (subscript not in self.keys()) and (subscript in Signal.keys()):
+
+        if subscript == Signal.ALL:
+            with errstate(divide='ignore', invalid='ignore'):
+                for subscript in Signal.values():
+                    if subscript not in self.keys():
+                        try:
+                            self._composite(subscript)
+                        except Exception as _:
+                            pass
+            return self
+
+        elif (subscript not in self.keys()) and (subscript in Signal.values()):
             self._composite(subscript)
+
         return dict.__getitem__(self, subscript)
 
     def _composite(self, composite: str):
         match composite:
-            case Signal.ihMT_CM.name:
+            case Signal.ihMT_CM:
                 data = 2 * (self[Signal.MTs] - self[Signal.MTd_CM])
-            case Signal.ihMT_ALT.name:
+            case Signal.ihMT_ALT:
                 data = 2 * (self[Signal.MTs] - self[Signal.MTd_ALT])
-            case Signal.BP.name:
+            case Signal.BP:
                 data = 2 * (self[Signal.MTd_ALT] - self[Signal.MTd_CM])
-            case Signal.MTsR.name:
+            case Signal.MTsR:
                 data = 100 - 100 * self[Signal.MTs] * self._invMT0
-            case Signal.MTdR_CM.name:
+            case Signal.MTdR_CM:
                 data = 100 - 100 * self[Signal.MTd_CM] * self._invMT0
-            case Signal.MTdR_ALT.name:
+            case Signal.MTdR_ALT:
                 data = 100 - 100 * self[Signal.MTd_ALT] * self._invMT0
-            case Signal.ihMTR_CM.name:
+            case Signal.ihMTR_CM:
                 data = 100 * self[Signal.ihMT_CM] * self._invMT0
-            case Signal.ihMTR_ALT.name:
+            case Signal.ihMTR_ALT:
                 data = 100 * self[Signal.ihMT_ALT] * self._invMT0
-            case Signal.BPR.name:
+            case Signal.BPR:
                 data = 100 * self[Signal.BP] * self._invMT0
+            case _:
+                error = f"Incorrect signal flag. Must be any one or combinations of {tuple(Signal.keys())}. Received `{repr(composite)}`."
+                logger.critical(error)
+                raise ValueError(error)
+
         data.setflags(write=False)
         dict.__setitem__(self, composite, data)
+
+    def _math(self, other: Any, operator: Callable) -> CompositeDictionary:
+        if not isinstance(other, CompositeDictionary):
+            try:
+                other = CompositeDictionary(other)
+            except Exception as _:
+                pass
+        with errstate(invalid='ignore', divide='ignore'):
+            if isinstance(other, CompositeDictionary):
+                return CompositeDictionary({key: operator(self[key], other[key]) for key in self.keys() | other.keys()})
+            else:
+                return CompositeDictionary({key: operator(self[key], other) for key in self.keys()})
+
+    def __eq__(self, other):
+        if not isinstance(other, CompositeDictionary):
+            try:
+                other = CompositeDictionary(other)
+            except Exception as _:
+                return False
+        for key in self.keys() | other.keys():
+            key = Signal.from_str(key)
+            if not array_equal(self[key], other[key]):
+                return False
+        return True
+
+    def __add__(self, other) -> CompositeDictionary:
+        return self._math(other, add)
+
+    def __sub__(self, other) -> CompositeDictionary:
+        return self._math(other, sub)
+
+    def __mul__(self, other) -> CompositeDictionary:
+        return self._math(other, mul)
+
+    def __truediv__(self, other) -> CompositeDictionary:
+        return self._math(other, truediv)
+    
+    def squeeze(self):
+        return CompositeDictionary({key: val.squeeze() for key, val in self.items()})
 
     #####
     # BELOW: property getters and setters
     #####
+    @property
+    def T(self) -> CompositeDictionary:
+        return CompositeDictionary({key: val.T for key, val in self.items()})
+
     @property
     def _invMT0(self):
         if not hasattr(self, '__invMT0'):
@@ -210,7 +309,7 @@ class Angle():
         return Angle(label, value, is_radians=False)
 
     def __eq__(self, other):
-        return isinstance(self, Angle) and (self.degrees == other.degrees)
+        return isinstance(other, Angle) and (self.degrees == other.degrees)
 
     def __str__(self):
         return f'{self.label if self.label is not None else "Angle"} = {self.degrees}°'
@@ -291,8 +390,26 @@ class Frequency():
     def from_linear(value: int | float, label: str | None = None) -> Frequency:
         return Frequency(label, value, is_angular=False)
 
+    def as_hertz(self):
+        return self.linear
+
+    def as_kilohertz(self):
+        return 1e-3 * self.linear
+
+    def as_megahertz(self):
+        return 1e-6 * self.linear
+
+    def as_angularHertz(self):
+        return self.angular
+
+    def as_angularKilohertz(self):
+        return 1e-3 * self.angular
+
+    def as_angularMegahertz(self):
+        return 1e-6 * self.angular
+
     def __eq__(self, other):
-        return isinstance(self, Frequency) and (self.linear == other.linear)
+        return isinstance(other, Frequency) and (self.linear == other.linear)
 
     def __str__(self):
         return f'{self.label if self.label is not None else "Frequency"} = {self.linear} Hz'
@@ -316,7 +433,63 @@ class Frequency():
         return self.__angular
 
     @property
-    def period(self) -> float:
+    def period(self) -> Duration:
         if not hasattr(self, '__period'):
-            self.__period = 1. / self.linear
+            self.__period = Duration.from_seconds(1. / self.linear, self.label)
         return self.__period
+
+
+# Immutable class
+class Duration():
+    def __init__(self, label: str, value: int | float):
+        check_value_is_valid(self, val_to_check=value, type_to_check=float, operators=None, attribute_name='Duration')
+
+        self.__label = str(label)
+        self.__value = float(value)
+
+    @staticmethod
+    def from_microseconds(value: int | float, label: str | None = None) -> Duration:
+        return Duration(label, 1e-6 * value)
+
+    @staticmethod
+    def from_miliseconds(value: int | float, label: str | None = None) -> Duration:
+        return Duration(label, 1e-3 * value)
+
+    @staticmethod
+    def from_seconds(value: int | float, label: str | None = None) -> Duration:
+        return Duration(label, value)
+
+    def as_microseconds(self) -> float:
+        return 1e6 * self.value
+
+    def as_miliseconds(self) -> float:
+        return 1e3 * self.value
+
+    def as_seconds(self) -> float:
+        return self.value
+
+    def __eq__(self, other):
+        return isinstance(other, Duration) and (self.value == other.value)
+
+    def __str__(self):
+        return f'{self.label if self.label is not None else "Duration"} = {self.value} s'
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({repr(self.label)}, {repr(self.value)} s)'
+
+    #####
+    # BELOW: property getters
+    #####
+    @property
+    def label(self) -> str:
+        return self.__label
+
+    @property
+    def value(self) -> float:
+        return self.__value
+
+    @property
+    def rate(self) -> Frequency:
+        if not hasattr(self, '__rate'):
+            self.__rate = Frequency.from_linear(1. / self.linear, self.label)
+        return self.__rate

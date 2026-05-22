@@ -1,10 +1,9 @@
 from logging import getLogger, NullHandler
 from numpy import round
-from enum import Flag, auto
 from typing import Any
 from operator import lt
 
-from brainhack.meta import _Event, check_value_is_valid
+from brainhack.meta import _Event, Signal, check_value_is_valid
 from brainhack.pulse import Pulse
 
 logger = getLogger(__name__)
@@ -12,14 +11,8 @@ logger.addHandler(NullHandler())
 logger.debug('`sequence` module loaded successfully')
 
 
-class Modulation(Flag):
-    CM = auto()
-    ALT = auto()
-    BP = CM | ALT
-
-
 class Sequence(_Event):
-    _modulation: Modulation
+    _signal: Signal
 
     _pulse: Pulse
 
@@ -39,15 +32,15 @@ class Sequence(_Event):
     _duration_preparation: float
     _duration_recovery: float
 
-    _classAttributes: tuple[str] = ('modulation', 'pulse', 'N_pulsePerOffset', 'N_pulse', 'N_burst', 'N_adc', 'N_dummyADC', 'readout_flipAngle', 'dt_interPulse', 'dt_lastBurst', 'TR_burst', 'es', 'tr', 'duration_readout', 'duration_preparation', 'duration_recovery')
+    _classAttributes: tuple[str] = ('signal', 'pulse', 'N_pulsePerOffset', 'N_pulse', 'N_burst', 'N_adc', 'N_dummyADC', 'readout_flipAngle', 'dt_interPulse', 'dt_lastBurst', 'TR_burst', 'es', 'tr', 'duration_readout', 'duration_preparation', 'duration_recovery')
 
-    def __init__(self, modulation: Modulation, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
+    def __init__(self, signal: Signal, pulse: Pulse, N_pulsePerOffset: int, N_pulse: int, N_burst: int, N_adc: int, N_dummyADC: int, dt_interPulse: float, TR_burst: float, dt_lastBurst: float, es: float, tr: float, readout_flipAngle: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
         ----------
-        modulation : Modulation
-            _Flag(s) corresponding to the type of MT RF modulation_
+        signal : Signal
+            _Flag(s) corresponding to the type of MT RF signal_
         pulse : Pulse
             _MT RF pulse_
         N_pulsePerOffset : int
@@ -84,7 +77,7 @@ class Sequence(_Event):
         ValueError
             _description_
         """
-        self.modulation = modulation
+        self.signal = signal
 
         self.pulse = pulse
         self.readout_flipAngle = readout_flipAngle
@@ -102,7 +95,7 @@ class Sequence(_Event):
 
         self.tr = tr
 
-        self.onChange('modulation', [self._check_against_N_pulse_multiplicity])
+        self.onChange('signal', [self._check_against_N_pulse_multiplicity])
 
         self.onChange('pulse', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_pulse_duration])
 
@@ -126,7 +119,7 @@ class Sequence(_Event):
         self._check_against_N_dummyADC()
 
     def copy(self) -> Sequence:
-        return Sequence(self.modulation, self.pulse.copy(), self.N_pulsePerOffset, self.N_pulse, self.N_burst, self.N_adc, self.N_dummyADC, self.dt_interPulse, self.TR_burst, self.dt_lastBurst, self.es, self.tr, self.readout_flipAngle)
+        return Sequence(self.signal, self.pulse.copy(), self.N_pulsePerOffset, self.N_pulse, self.N_burst, self.N_adc, self.N_dummyADC, self.dt_interPulse, self.TR_burst, self.dt_lastBurst, self.es, self.tr, self.readout_flipAngle)
 
     def _check_against_tr(self):
         if (hasattr(self, '_N_adc') and hasattr(self, '_es')  # Readout parameters
@@ -144,8 +137,8 @@ class Sequence(_Event):
                 raise ValueError(error)
 
     def _check_against_N_pulse_multiplicity(self):
-        if hasattr(self, '_N_pulse') and hasattr(self, '_N_pulsePerOffset') and hasattr(self, '_modulation'):
-            if (self.modulation != Modulation.CM) and (((.5 * self.N_pulse) % self.N_pulsePerOffset) != 0):
+        if hasattr(self, '_N_pulse') and hasattr(self, '_N_pulsePerOffset') and hasattr(self, '_signal'):
+            if (Signal.MTd_ALT in self.signal) and (((.5 * self.N_pulse) % self.N_pulsePerOffset) != 0):
                 error = '.5 * N_pulse % N_pulsePerOffset != 0'
                 logger.critical(error)
                 raise ValueError(error)
@@ -168,17 +161,17 @@ class Sequence(_Event):
     # BELOW: property getters and setters
     #####
     @property
-    def modulation(self):
-        return self._modulation
+    def signal(self):
+        return self._signal
 
-    @modulation.setter
-    def modulation(self, val: Modulation):
-        if type(val) is not Modulation:
-            error = f"Value {repr(val)} is not a modulation flag of type `Modulation`."
+    @signal.setter
+    def signal(self, val: Signal):
+        if type(val) is not Signal:
+            error = f"Value {repr(val)} is not a signal flag of type `Signal`."
             logger.critical(error)
             raise TypeError(error)
-        self._modulation = val
-        self._changed('modulation')
+        self._signal = val
+        self._changed('signal')
 
     @property
     def pulse(self):

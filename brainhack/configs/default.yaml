@@ -4,7 +4,7 @@ run:  # mandatory, provides the parameters for simulator.SingleRun
   fa_sat: 200
   offset: 7000
 
-  FLAG_Sine_Modulation: BP
+  FLAG_Signal: ALL
   N_altern: 1
   np: 4
   nb: 10

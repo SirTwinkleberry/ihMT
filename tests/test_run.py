@@ -35,7 +35,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'btrlast': 1.0e-3,
         'fa_sat': 299,
         'fa_rage': 5,
-        'FLAG_Sine_Modulation': "BP",
+        'FLAG_Signal': "ALL",
         'N_altern': 1,
         'r_tukey': 0.3,
         'outputDir': str(Path(__file__).parent / 'output'),
@@ -89,19 +89,18 @@ CONFIG_SIMULATOR = {
         'export_readMatrix': True,
     },
     'compute': {
-        'CM':  dict(
+        'ihMTR_CM':  dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
             MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
             MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
         ),
-        'ALT': dict(
+        'ihMTR_ALT': dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
             MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
             MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
         ),
-        'BP':  dict(
+        'BPR':  dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
             MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
             MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
         ),
@@ -109,10 +108,10 @@ CONFIG_SIMULATOR = {
 }
 
 
-def dumpConfig(export: bool, modulation: str):
+def dumpConfig(export: bool, signal: str):
     tmp = copy(DEFAULT)
     tmp['run']['export'] = export
-    tmp['run']['FLAG_Sine_Modulation'] = modulation
+    tmp['run']['FLAG_Signal'] = signal
     with open(Path(tmp['run']['outputDir']) / 'config.yaml', 'w') as file:
         dump(tmp, file)
 
@@ -131,19 +130,19 @@ class TestRun_withoutExport(TestCase):
         (Path(DEFAULT['run']['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
 
     def test_run_SingleRun_CM_noExport(self):
-        dumpConfig(export=False, modulation='CM')
+        dumpConfig(export=False, signal='CM')
         try:
             output = check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
                 str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
-            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['CM'].items()]) + '\n'))
+            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['ihMTR_CM'].items()]) + '\n'))
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_SingleRun_CM_checkExport(self):
-        dumpConfig(export=True, modulation='CM')
+        dumpConfig(export=True, signal='ihMTR_CM')
         try:
             check_output([
                 'python',
@@ -165,19 +164,19 @@ class TestRun_withoutExport(TestCase):
             raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_SingleRun_ALT_noExport(self):
-        dumpConfig(export=False, modulation='ALT')
+        dumpConfig(export=False, signal='ALT')
         try:
             output = check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
                 str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
-            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['ALT'].items()]) + '\n'))
+            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['ihMTR_ALT'].items()]) + '\n'))
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_SingleRun_ALT_checkExport(self):
-        dumpConfig(export=True, modulation='ALT')
+        dumpConfig(export=True, signal='ihMTR_ALT')
         try:
             check_output([
                 'python',
@@ -199,19 +198,19 @@ class TestRun_withoutExport(TestCase):
             raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_SingleRun_BP_noExport(self):
-        dumpConfig(export=False, modulation='BP')
+        dumpConfig(export=False, signal='BPR')
         try:
             output = check_output([
                 'python',
                 str(Path(__file__).parents[1] / 'brainhack' / 'run.py'),
                 str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
             ], stderr=STDOUT)
-            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['BP'].items()]) + '\n'))
+            self.assertEqual(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['BPR'].items()]) + '\n'))
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_SingleRun_BP_checkExport(self):
-        dumpConfig(export=True, modulation='BP')
+        dumpConfig(export=True, signal='BPR')
         try:
             check_output([
                 'python',
@@ -233,8 +232,8 @@ class TestRun_withoutExport(TestCase):
         except CalledProcessError as e:
             raise RuntimeError(e.output.decode('utf-8'))
 
-    def test_run_SingleRun_wrongModulation(self):
-        dumpConfig(export=False, modulation='None')
+    def test_run_SingleRun_wrongSignal(self):
+        dumpConfig(export=False, signal='None')
         with self.assertRaises(ValueError):
             try:
                 check_output([
@@ -243,8 +242,8 @@ class TestRun_withoutExport(TestCase):
                     str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
                 ], stderr=STDOUT)
             except CalledProcessError as e:
-                if "Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`." in str(e.output):
-                    raise ValueError("Incorrect `FLAG_Sine_Modulation` variable. Must be any one of `CM`, `ALT`, or `BP`")
+                if "Incorrect `FLAG_Signal` variable. Must be any one of `CM`, `ALT`, or `BP`." in str(e.output):
+                    raise ValueError("Incorrect `FLAG_Signal` variable. Must be any one of `CM`, `ALT`, or `BP`")
                 raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_wrongNumberOfArguments(self):
@@ -276,17 +275,17 @@ class TestSingleRun(TestCase):
 
     def test_singleRun_CM_noExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Sine_Modulation'] = 'CM'
+        params['FLAG_Signal'] = 'CM'
         params['export'] = False
         out = SingleRun(**params)
         for key, val in out.items():
             out[key] = val.tolist()
         # del out['readout']
-        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['CM'])
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ihMTR_CM'])
 
     def test_singleRun_CM_checkExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Sine_Modulation'] = 'CM'
+        params['FLAG_Signal'] = 'CM'
 
         SingleRun(**params)
         # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_CM_checkExport.mat')
@@ -303,17 +302,17 @@ class TestSingleRun(TestCase):
 
     def test_singleRun_ALT_noExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Sine_Modulation'] = 'ALT'
+        params['FLAG_Signal'] = 'ALT'
         params['export'] = False
         out = SingleRun(**params)
         for key, val in out.items():
             out[key] = val.tolist()
         # del out['readout']
-        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ALT'])
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ihMTR_ALT'])
 
     def test_singleRun_ALT_checkExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Sine_Modulation'] = 'ALT'
+        params['FLAG_Signal'] = 'ALT'
 
         SingleRun(**params)
         # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_ALT_checkExport.mat')
@@ -335,7 +334,7 @@ class TestSingleRun(TestCase):
         for key, val in out.items():
             out[key] = val.tolist()
         # del out['readout']
-        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BP'])
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BPR'])
 
     def test_singleRun_BP_checkExport(self):
         params = copy(DEFAULT['run'])
@@ -354,9 +353,9 @@ class TestSingleRun(TestCase):
 
         self.assertDictEqual(mat, base)
 
-    def test_singleRun_wrongModulation(self):
+    def test_singleRun_wrongSignal(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Sine_Modulation'] = 'None'
+        params['FLAG_Signal'] = 'None'
 
         with self.assertRaises(ValueError):
             SingleRun(**params)

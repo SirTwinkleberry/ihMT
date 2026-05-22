@@ -1,4 +1,5 @@
-from brainhack.sequence import Sequence, Modulation
+from brainhack.meta import Signal
+from brainhack.sequence import Sequence
 from brainhack.pulse import Tukey
 from brainhack.system import System
 from brainhack.simulator import Simulator
@@ -20,7 +21,7 @@ CONFIG_TUKEY = {
 
 CONFIG_SEQUENCE = {
     'init': {
-        'modulation': Modulation.BP,
+        'signal': Signal.BPR,
         'N_pulsePerOffset': 1,
         'N_pulse': 4,
         'N_burst': 10,
@@ -54,19 +55,18 @@ CONFIG_SIMULATOR = {
         'export_readMatrix': True,
     },
     'compute': {
-        'CM':  dict(
+        'ihMTR_CM':  dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
             MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
             MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
         ),
-        'ALT': dict(
+        'ihMTR_ALT': dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
             MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
             MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
         ),
-        'BP':  dict(
+        'BPR':  dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
             MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
             MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
         ),
@@ -82,30 +82,30 @@ class TestSteadyState(TestCase):
         self.simulator = Simulator(system=self.system, sequence=self.sequence, **CONFIG_SIMULATOR['init'])
 
     def test_steadyState_CM(self):
-        self.sequence.modulation = Modulation.CM
+        self.sequence.signal = Signal.ihMTR_CM
         out = self.simulator.SteadyState()
         for key, val in out.items():
             out[key] = val.tolist()
         del out['readout']
-        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['CM'])
-        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['CM']).all())
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ihMTR_CM'])
+        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['ihMTR_CM']).all())
 
     def test_steadyState_ALT(self):
-        self.sequence.modulation = Modulation.ALT
+        self.sequence.signal = Signal.ihMTR_ALT
         out = self.simulator.SteadyState()
         for key, val in out.items():
             out[key] = val.tolist()
         del out['readout']
-        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ALT'])
-        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['ALT']).all())
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['ihMTR_ALT'])
+        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['ihMTR_ALT']).all())
 
     def test_steadyState_BP(self):
         out = self.simulator.SteadyState()
         for key, val in out.items():
             out[key] = val.tolist()
         del out['readout']
-        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BP'])
-        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['BP']).all())
+        self.assertDictEqual(out, CONFIG_SIMULATOR['compute']['BPR'])
+        # self.assertTrue((array(out) == CONFIG_SIMULATOR['compute']['BPR']).all())
 
 class TestSimulator(TestCase):
     @skip

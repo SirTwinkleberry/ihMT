@@ -1,4 +1,5 @@
-from brainhack.sequence import Modulation, Sequence
+from brainhack.meta import Signal
+from brainhack.sequence import Sequence
 from brainhack.pulse import Tukey
 
 from copy import deepcopy as copy
@@ -10,7 +11,7 @@ set_printoptions(precision=maxsize)
 
 CONFIG_SEQUENCE = {
     'init': {
-        'modulation': Modulation.BP,
+        'signal': Signal.ALL,
         'N_pulsePerOffset': 1,
         'N_pulse': 4,
         'N_burst': 10,
@@ -35,45 +36,25 @@ CONFIG_TUKEY = {
 }
 
 
-class TestModulation(TestCase):
-    def test_CM_in_ALT(self):
-        self.assertFalse(Modulation.CM in Modulation.ALT)
-
-    def test_ALT_in_CM(self):
-        self.assertFalse(Modulation.ALT in Modulation.CM)
-
-    def test_BP_in_ALT(self):
-        self.assertFalse(Modulation.BP in Modulation.ALT)
-
-    def test_BP_in_CM(self):
-        self.assertFalse(Modulation.BP in Modulation.CM)
-
-    def test_ALT_in_BP(self):
-        self.assertTrue(Modulation.ALT in Modulation.BP)
-
-    def test_CM_in_BP(self):
-        self.assertTrue(Modulation.CM in Modulation.BP)
-
-
 class TestSequence(TestCase):
     def setUp(self):
         self.pulse = Tukey(**CONFIG_TUKEY['init'])
         self.sequence = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
 
-    def test___init__modulation_CM(self):
+    def test___init__signal_CM(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
-        tmp['modulation'] = Modulation.CM
+        tmp['signal'] = Signal.CM
         self.sequence = Sequence(pulse=self.pulse, **tmp)
-        self.assertEqual(self.sequence.modulation, Modulation.CM)
+        self.assertEqual(self.sequence.signal, Signal.CM)
 
-    def test___init__modulation_ALT(self):
+    def test___init__signal_ALT(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
-        tmp['modulation'] = Modulation.ALT
+        tmp['signal'] = Signal.ALT
         self.sequence = Sequence(pulse=self.pulse, **tmp)
-        self.assertEqual(self.sequence.modulation, Modulation.ALT)
+        self.assertEqual(self.sequence.signal, Signal.ALT)
 
-    def test___init__modulation_BP(self):
-        self.assertEqual(self.sequence.modulation, Modulation.BP)
+    def test___init__signal_BP(self):
+        self.assertEqual(self.sequence.signal, Signal.BP)
 
     def test___init__pulse(self):
         self.sequence.pulse.__dict__['_onChanges'] = {}
