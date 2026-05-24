@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from brainhack.meta import _Event, Signal, CompositeDictionary
 from brainhack.simulator import Simulator
-from brainhack.run import ManyRuns
+from brainhack.run import GridRuns
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -93,7 +93,7 @@ class Corrector(_Event):
             sim = self.simulator.copy()
             sim.output_vectorSlice = slice(1)
             sim.export_readMatrix = False
-            self._simulated = CompositeDictionary(ManyRuns(sim, list(self.ranges.keys()), self.ranges, safe=True)).squeeze()
+            self._simulated = CompositeDictionary(GridRuns(sim, list(self.ranges.keys()), self.ranges, safe=True)).squeeze()
         return self._simulated
 
     @property  # immutable for the user, so only getter is defined

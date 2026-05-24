@@ -151,7 +151,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     return arrays
 
 
-def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[int64 | float64]], safe: bool = False) -> dict[str, NDArray[int64 | float64]]:
+def GridRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[int64 | float64]], safe: bool = False) -> dict[str, NDArray[int64 | float64]]:
     def _runs(range_keys):
         if len(range_keys) == 0:
             for key, val in simulator.SteadyState().items():
@@ -187,6 +187,10 @@ def ManyRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDAr
             data[key] = data[key].transpose((-1, *range(len(shape))))
 
     return data
+
+
+def SampledRuns(simulator: Simulator, samplers: dict[str, NDArray[int64 | float64]], grids: dict[str, NDArray[int64 | float64]], safe: bool = False) -> dict[str, NDArray[int64 | float64]]:
+    raise NotImplementedError
 
 
 if __name__ == '__main__':
