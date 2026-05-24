@@ -141,11 +141,20 @@ class Simulator(_Event):
                     ]) * seq.pulse.duration
                 )
 
-                if Signal.MTs in seq.signal:
+                if Signal.MTs_Positive in seq.signal:
                     evol_MTsat_single: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse)) \
                         @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse), seq.N_burst - 1)
-                    v_MTs = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
-                    output['MTs'] = v_MTs[self.output_vectorSlice] / v_MTs[-1]
+                    v_MTs_Positive = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
+                    output['MTs_Positive'] = v_MTs_Positive[self.output_vectorSlice] / v_MTs_Positive[-1]
+
+                if Signal.MTs_Negative in seq.signal:
+                    if sys.poolBound_lineshapeAsymmetry != 0:
+                        evol_MTsat_single: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse)) \
+                            @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse), seq.N_burst - 1)
+                        v_MTs_Negative = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
+                        output['MTs_Negative'] = v_MTs_Negative[self.output_vectorSlice] / v_MTs_Negative[-1]
+                    else:
+                        output['MTs_Negative'] = output['MTs_Positive']
 
                 if Signal.MTd_ALT in seq.signal:
                     evol_MTsat_dual_ALT: NDArray[float64] = evol_relax_lastBurst @ matrix_power(

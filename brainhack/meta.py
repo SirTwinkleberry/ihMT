@@ -16,20 +16,24 @@ _deg2rad = pi / 180.
 
 
 class Signal(Flag):
-    MT0       = auto()
-    MTs       = auto()
-    MTd_CM    = auto()
-    MTd_ALT   = auto()
-    ihMT_CM   = MTs      | MTd_CM
-    ihMT_ALT  = MTs      | MTd_ALT
-    BP        = MTd_CM   | MTd_ALT
-    MTsR      = MTs      | MT0
-    MTdR_CM   = MTd_CM   | MT0
-    MTdR_ALT  = MTd_ALT  | MT0
-    ihMTR_CM  = ihMT_CM  | MT0
-    ihMTR_ALT = ihMT_ALT | MT0
-    BPR       = BP       | MT0
-    ALL       = BP | MTs | MT0
+    MT0           = auto()
+    MTs_Positive  = auto()
+    MTs_Negative  = auto()
+    MTd_CM        = auto()
+    MTd_ALT       = auto()
+    MTs           = MTs_Positive | MTs_Negative
+    ihMT_CM       = MTs          | MTd_CM
+    ihMT_ALT      = MTs          | MTd_ALT
+    BP            = MTd_CM       | MTd_ALT
+    MTsR_Positive = MTs_Positive | MT0
+    MTsR_Negative = MTs_Negative | MT0
+    MTsR          = MTs          | MT0
+    MTdR_CM       = MTd_CM       | MT0
+    MTdR_ALT      = MTd_ALT      | MT0
+    ihMTR_CM      = ihMT_CM      | MT0
+    ihMTR_ALT     = ihMT_ALT     | MT0
+    BPR           = BP           | MT0
+    ALL           = BP   | MTs   | MT0
 
     @classmethod
     def values(cls):
@@ -48,6 +52,10 @@ class Signal(Flag):
         match key.upper():
             case 'MT0':
                 return cls.MT0
+            case 'MTS_POSITIVE':
+                return cls.MTs_Positive
+            case 'MTS_NEGATIVE':
+                return cls.MTs_Negative
             case 'MTS':
                 return cls.MTs
             case 'MTD_CM':
@@ -60,6 +68,10 @@ class Signal(Flag):
                 return cls.ihMT_ALT
             case 'BP':
                 return cls.BP
+            case 'MTSR_POSITIVE':
+                return cls.MTsR_Positive
+            case 'MTSR_NEGATIVE':
+                return cls.MTsR_Negative
             case 'MTSR':
                 return cls.MTsR
             case 'MTDR_CM':
@@ -153,12 +165,18 @@ class CompositeDictionary(dict):
 
     def _composite(self, composite: str):
         match composite:
+            case Signal.MTs:
+                data = .5 * (self[Signal.MTs_Positive] + self[Signal.MTs_Negative])
             case Signal.ihMT_CM:
                 data = 2 * (self[Signal.MTs] - self[Signal.MTd_CM])
             case Signal.ihMT_ALT:
                 data = 2 * (self[Signal.MTs] - self[Signal.MTd_ALT])
             case Signal.BP:
                 data = 2 * (self[Signal.MTd_ALT] - self[Signal.MTd_CM])
+            case Signal.MTsR_Positive:
+                data = 100 - 100 * self[Signal.MTs_Positive] * self._invMT0
+            case Signal.MTsR_Negative:
+                data = 100 - 100 * self[Signal.MTs_Negative] * self._invMT0
             case Signal.MTsR:
                 data = 100 - 100 * self[Signal.MTs] * self._invMT0
             case Signal.MTdR_CM:

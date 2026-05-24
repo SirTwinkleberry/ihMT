@@ -22,7 +22,7 @@ logger.addHandler(NullHandler())
 logger.debug('`run` module loaded successfully')
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Signal: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, poolBound_lineshapeAsymmetry: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Signal: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[float64]]:
     """_summary_
 
     Parameters
@@ -42,6 +42,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     T1D : float
         _description_
     T2b : float
+        _description_
+    poolBound_lineshapeAsymmetry: float
         _description_
     pw : float
         _description_
@@ -102,7 +104,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         duration=pw,
         shape=r_tukey,
         flipAngle=fa_sat,
-        offset=offset
+        offset=offset,
     )
     sequence = Sequence(
         signal=signal,
@@ -117,7 +119,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         dt_lastBurst=btrlast,
         es=es,
         tr=tr,
-        readout_flipAngle=fa_rage
+        readout_flipAngle=fa_rage,
     )
     system = System(
         pulse=pulse,
@@ -128,7 +130,8 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         poolBound_M0=M0b,
         poolBound_T1=T1b,
         poolBound_T2=T2b,
-        poolBound_T1D=T1D
+        poolBound_T1D=T1D,
+        poolBound_lineshapeAsymmetry=poolBound_lineshapeAsymmetry,
     )
 
     simulator = Simulator(
@@ -136,7 +139,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         sequence=sequence,
         output_vectorSlice=slice(None) if output_fullVector else slice(1),
         export_readMatrix=export_read,
-        output_fullVector=output_fullVector
+        output_fullVector=output_fullVector,
     )
 
     arrays: dict[str, NDArray[float64]] = simulator.SteadyState()

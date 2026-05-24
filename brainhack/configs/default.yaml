@@ -25,6 +25,7 @@ run:  # mandatory, provides the parameters for simulator.SingleRun
   T1D: 0.01
   T2b: 1.e-5
   R: 10
+  poolBound_lineshapeAsymmetry: -84.83271246049932743790124386571
 
   export_read: True
   output_fullVector: True

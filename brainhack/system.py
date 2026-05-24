@@ -29,6 +29,7 @@ class System(_Event):
     _poolBound_Rrf_singleSat_Positive: NDArray[float64]
     _poolBound_Rrf_singleSat_Negative: NDArray[float64]
     _poolBound_Rrf_dualSat: NDArray[float64]
+    _poolBound_lineshapeAsymmetry: float
     _poolBound_M0: float
     _poolBound_T1: float
     _poolBound_T2: float
@@ -37,9 +38,9 @@ class System(_Event):
 
     _N_pools: int
 
-    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', 'N_pools')
+    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_lineshapeAsymmetry', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', 'N_pools')
 
-    def __init__(self, pulse: Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, *args: Any, **kwargs: Any):
+    def __init__(self, pulse: Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, poolBound_lineshapeAsymmetry: float, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
@@ -75,6 +76,7 @@ class System(_Event):
         self.poolBound_T1 = poolBound_T1
         self.poolBound_T2 = poolBound_T2
         self.poolBound_T1D = poolBound_T1D
+        self.poolBound_lineshapeAsymmetry = poolBound_lineshapeAsymmetry
 
         self.onChange('pulse', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
         self.onChange('N_pools', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
@@ -83,26 +85,43 @@ class System(_Event):
         self.onChange('poolBound_T1', [lambda: self._reset_computed_attributes(['N_pools'])])
         self.onChange('poolBound_T2', [lambda: self._reset_computed_attributes(['N_pools', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
         self.onChange('poolBound_omegaLocalField', [lambda: self._reset_computed_attributes(['poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._reset_computed_attributes(['poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
     def copy(self) -> System:
-        return System(self.pulse.copy(), self.poolFree_M0, self.poolFree_T1, self.poolFree_T2, self.poolFreeBound_exchangeRate, self.poolBound_M0, self.poolBound_T1, self.poolBound_T2, self.poolBound_T1D)
+        return System(self.pulse.copy(), self.poolFree_M0, self.poolFree_T1, self.poolFree_T2, self.poolFreeBound_exchangeRate, self.poolBound_M0, self.poolBound_T1, self.poolBound_T2, self.poolBound_T1D, self.poolBound_lineshapeAsymmetry)
 
-    def compute_poolBound_RFabsorptionMatrices(self):
+    def _compute_poolBound_RFabsorptionMatrices(self):
         """_summary_
         """
         inv_omegaLocalField = 1. / self.poolBound_omegaLocalField
         angularFrequencyOffset = 2 * pi * self.pulse.offset
+        norm_A = pi * self.pulse.omegaRMS * self.pulse.omegaRMS
+        norm_B = angularFrequencyOffset * inv_omegaLocalField
 
-        superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
-        poolBound_Rrf: float = pi * self.pulse.omegaRMS**2 * superLorentzian(self.poolBound_T2)
-        tmp_diag: NDArray[float64] = diag( [ -poolBound_Rrf, -poolBound_Rrf * (angularFrequencyOffset * inv_omegaLocalField)**2 ] )
-        tmp_anti: NDArray[float64] = fliplr( diag( [ poolBound_Rrf * angularFrequencyOffset, poolBound_Rrf * angularFrequencyOffset * inv_omegaLocalField**2 ] ) )
+        superLorentzian: Callable[[Pulse, float], float] = self.PampelSuperLorentzian
+        # superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
 
-        self.poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag ) )
-        self.poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag + tmp_anti ) )
-        self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag - tmp_anti ) )
+        if self.poolBound_lineshapeAsymmetry != 0:
+            poolBound_Rrf_Positive: float = norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset - self.poolBound_lineshapeAsymmetry)
+            poolBound_Rrf_Negative: float = norm_A * superLorentzian(self.poolBound_T2, -self.pulse.offset - self.poolBound_lineshapeAsymmetry)
+        else:
+            poolBound_Rrf_Positive: float = norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
+            poolBound_Rrf_Negative: float = poolBound_Rrf_Positive
 
-    def Lorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
+        tmp_diag: NDArray[float64] = diag( [ 1, norm_B * norm_B] )
+        tmp_anti: NDArray[float64] = fliplr( diag( [ angularFrequencyOffset, norm_B * inv_omegaLocalField ] ) )
+
+        tmp_diag_Positive: NDArray[float64] = -poolBound_Rrf_Positive * tmp_diag
+        tmp_anti_Positive: NDArray[float64] =  poolBound_Rrf_Positive * tmp_anti
+
+        tmp_diag_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_diag
+        tmp_anti_Negative: NDArray[float64] =  poolBound_Rrf_Negative * tmp_anti
+
+        self.poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), .5 * (tmp_diag_Positive + tmp_diag_Negative) ) )
+        self.poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Positive + tmp_anti_Positive ) )
+        self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Negative - tmp_anti_Negative ) )
+
+    def Lorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -115,9 +134,9 @@ class System(_Event):
         float
             _description_
         """
-        return T2 / (pi * ( 1 + 4 * pi * pi * self.pulse.offset * self.pulse.offset * T2 * T2))
+        return T2 / (pi * ( 1 + 4 * pi * pi * offset * offset * T2 * T2))
 
-    def Gaussian(self, T2: float, *args: Any, **kwargs: Any) -> float:
+    def Gaussian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -130,9 +149,9 @@ class System(_Event):
         float
             _description_
         """
-        return sqrt( 1. / (2 * pi) ) * T2 * exp( -2 * pi * pi * self.pulse.offset * self.pulse.offset * T2 * T2 )
+        return sqrt( 1. / (2 * pi) ) * T2 * exp( -2 * pi * pi * offset * offset * T2 * T2 )
 
-    def SuperLorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
+    def SuperLorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -145,11 +164,11 @@ class System(_Event):
         float
             _description_
         """
-        angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
+        angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
         return sqrt( 1. / (2 * pi) ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
 
-    def PampelSuperLorentzian(self, T2: float, *args: Any, **kwargs: Any) -> float:
+    def PampelSuperLorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -162,11 +181,11 @@ class System(_Event):
         float
             _description_
         """
-        angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
+        angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
         return sqrt( 1. / (2 * pi) ) * quad( lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1)[0]
 
-    def Cylindrical(self, T2: float, *args: Any, **kwargs: Any) -> float:
+    def Cylindrical(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
 
         Parameters
@@ -179,7 +198,7 @@ class System(_Event):
         float
             _description_
         """
-        angular_offset_square = 4 * pi * pi * self.pulse.offset * self.pulse.offset
+        angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
 
         if self.axonal_angle == 0:
@@ -189,7 +208,7 @@ class System(_Event):
         sin_theta = -sin(deg2rad(self.axonal_angle))
         return sqrt( 2 / pi ) * quad( lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, limit=100)[0]
 
-    def DispersedCylindrical(self, T2: float, *args: Any, **kwargs: Any) -> float:
+    def DispersedCylindrical(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """Fiber bundle orientation distribution lineshape
 
         Parameters
@@ -255,7 +274,7 @@ class System(_Event):
     @property
     def poolFree_Rrf(self):
         if not hasattr(self, '_poolFree_Rrf'):
-            self.poolFree_Rrf = diag( [ -pi * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2), *zeros(2 * (self.N_pools - 1)) ] )
+            self.poolFree_Rrf = diag( [ -pi * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset), *zeros(2 * (self.N_pools - 1)) ] )
         return self._poolFree_Rrf
 
     @poolFree_Rrf.setter
@@ -311,7 +330,7 @@ class System(_Event):
     @property
     def poolBound_Rrf_singleSat_Positive(self):
         if not hasattr(self, '_poolBound_Rrf_singleSat_Positive'):
-            self.compute_poolBound_RFabsorptionMatrices()
+            self._compute_poolBound_RFabsorptionMatrices()
         return self._poolBound_Rrf_singleSat_Positive
 
     @poolBound_Rrf_singleSat_Positive.setter
@@ -327,7 +346,7 @@ class System(_Event):
     @property
     def poolBound_Rrf_singleSat_Negative(self):
         if not hasattr(self, '_poolBound_Rrf_singleSat_Negative'):
-            self.compute_poolBound_RFabsorptionMatrices()
+            self._compute_poolBound_RFabsorptionMatrices()
         return self._poolBound_Rrf_singleSat_Negative
 
     @poolBound_Rrf_singleSat_Negative.setter
@@ -343,7 +362,7 @@ class System(_Event):
     @property
     def poolBound_Rrf_dualSat(self):
         if not hasattr(self, '_poolBound_Rrf_dualSat'):
-            self.compute_poolBound_RFabsorptionMatrices()
+            self._compute_poolBound_RFabsorptionMatrices()
         return self._poolBound_Rrf_dualSat
 
     @poolBound_Rrf_dualSat.setter
@@ -395,6 +414,16 @@ class System(_Event):
         check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T1D')
         self._poolBound_T1D = float(val)
         self._changed('poolBound_T1D')
+
+    @property
+    def poolBound_lineshapeAsymmetry(self):
+        return self._poolBound_lineshapeAsymmetry
+
+    @poolBound_lineshapeAsymmetry.setter
+    def poolBound_lineshapeAsymmetry(self, val: float):
+        check_value_is_valid(self, val, float, None, 'poolBound_lineshapeAsymmetry')
+        self._poolBound_lineshapeAsymmetry = float(val)
+        self._changed('poolBound_lineshapeAsymmetry')
 
     @property
     def poolBound_omegaLocalField(self):
