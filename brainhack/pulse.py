@@ -1,11 +1,11 @@
 from logging import getLogger, NullHandler
 from abc import ABC
-from numpy import cos, pi, sqrt, radians
+from numpy import cos, pi, sqrt
 from scipy.integrate import quad
 from operator import le, lt, gt
 from typing import Any, NewType
 
-from brainhack.meta import _Event, check_value_is_valid
+from brainhack.meta import _Event, check_value_is_valid, _deg2rad
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -20,11 +20,11 @@ class _Pulse(ABC, _Event):
     RuntimeError
         _raised when user calls `_Pulse().value` directly instead of through a daughter class
     """
-    _gyromagneticFactor: float       # rad / s / T
+    _gyromagneticFactor: float  # rad / s / T
 
-    _duration: float                 # s
-    _flipAngle: float                # °
-    _offset: float                   # Hz
+    _duration: float            # s
+    _flipAngle: float           # °
+    _offset: float              # Hz
 
     _amplitudeIntegral: float
     _powerIntegral: float
@@ -46,19 +46,22 @@ class _Pulse(ABC, _Event):
         logger.critical(error)
         raise NotImplementedError(error)
 
+    def copy(self):
+        return self(**self.__dict__)
+
     #####
     # BELOW: property getters and setters
     #####
     @property
     def gyromagneticFactor(self) -> float:
         if not hasattr(self, '_gyromagneticFactor'):
-            self._gyromagneticFactor = 267513000
+            self._gyromagneticFactor = 267513000.
         return self._gyromagneticFactor
 
     @gyromagneticFactor.setter
     def gyromagneticFactor(self, val: float):
         check_value_is_valid(self, val, float, None, 'gyromagneticFactor')
-        self._gyromagneticFactor = val
+        self._gyromagneticFactor = float(val)
         self._changed('gyromagneticFactor')
 
     @property
@@ -68,7 +71,7 @@ class _Pulse(ABC, _Event):
     @duration.setter
     def duration(self, val: float):
         check_value_is_valid(self, val, float, [(le, 0)], 'duration')
-        self._duration = val
+        self._duration = float(val)
         self._changed('duration')
 
     @property
@@ -78,7 +81,7 @@ class _Pulse(ABC, _Event):
     @flipAngle.setter
     def flipAngle(self, val: float):
         check_value_is_valid(self, val, float, [(le, 0)], 'flipAngle')
-        self._flipAngle = val
+        self._flipAngle = float(val)
         self._changed('flipAngle')
 
     @property
@@ -88,7 +91,7 @@ class _Pulse(ABC, _Event):
     @offset.setter
     def offset(self, val: float):
         check_value_is_valid(self, val, float, None, 'offset')
-        self._offset = val
+        self._offset = float(val)
         self._changed('offset')
 
     @property
@@ -128,7 +131,7 @@ class _Pulse(ABC, _Event):
     @property
     def b1peak(self) -> float:
         if not hasattr(self, '_b1peak'):
-            self.b1peak = radians(self.flipAngle) / (self.gyromagneticFactor * self.amplitudeIntegral * self.duration)
+            self.b1peak = _deg2rad * self.flipAngle / (self.gyromagneticFactor * self.amplitudeIntegral * self.duration)
         return self._b1peak
 
     @b1peak.setter

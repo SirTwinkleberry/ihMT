@@ -16,6 +16,9 @@ logger.addHandler(NullHandler())
 logger.debug('`system` module loaded successfully')
 
 
+_sqrt15 = sqrt(15)
+
+
 class System(_Event):
     _pulse: Pulse
 
@@ -95,17 +98,17 @@ class System(_Event):
         """
         inv_omegaLocalField = 1. / self.poolBound_omegaLocalField
         angularFrequencyOffset = 2 * pi * self.pulse.offset
-        norm_A = pi * self.pulse.omegaRMS * self.pulse.omegaRMS
+        norm_A = self.pulse.omegaRMS * self.pulse.omegaRMS
         norm_B = angularFrequencyOffset * inv_omegaLocalField
 
         superLorentzian: Callable[[Pulse, float], float] = self.PampelSuperLorentzian
         # superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
 
         if self.poolBound_lineshapeAsymmetry != 0:
-            poolBound_Rrf_Positive: float = norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset - self.poolBound_lineshapeAsymmetry)
-            poolBound_Rrf_Negative: float = norm_A * superLorentzian(self.poolBound_T2, -self.pulse.offset - self.poolBound_lineshapeAsymmetry)
+            poolBound_Rrf_Positive: float = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset - self.poolBound_lineshapeAsymmetry)
+            poolBound_Rrf_Negative: float = .5 * norm_A * superLorentzian(self.poolBound_T2, -self.pulse.offset - self.poolBound_lineshapeAsymmetry)
         else:
-            poolBound_Rrf_Positive: float = norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
+            poolBound_Rrf_Positive: float = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
             poolBound_Rrf_Negative: float = poolBound_Rrf_Positive
 
         tmp_diag: NDArray[float64] = diag( [ 1, norm_B * norm_B] )
@@ -115,11 +118,11 @@ class System(_Event):
         tmp_anti_Positive: NDArray[float64] =  poolBound_Rrf_Positive * tmp_anti
 
         tmp_diag_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_diag
-        tmp_anti_Negative: NDArray[float64] =  poolBound_Rrf_Negative * tmp_anti
+        tmp_anti_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_anti
 
         self.poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), .5 * (tmp_diag_Positive + tmp_diag_Negative) ) )
         self.poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Positive + tmp_anti_Positive ) )
-        self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Negative - tmp_anti_Negative ) )
+        self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Negative + tmp_anti_Negative ) )
 
     def Lorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -134,7 +137,7 @@ class System(_Event):
         float
             _description_
         """
-        return T2 / (pi * ( 1 + 4 * pi * pi * offset * offset * T2 * T2))
+        return 2 * T2 / ( 1 + 4 * pi * pi * offset * offset * T2 * T2)
 
     def Gaussian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -149,7 +152,7 @@ class System(_Event):
         float
             _description_
         """
-        return sqrt( 1. / (2 * pi) ) * T2 * exp( -2 * pi * pi * offset * offset * T2 * T2 )
+        return sqrt(2 * pi) * T2 * exp( -2 * pi * pi * offset * offset * T2 * T2 )
 
     def SuperLorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -166,7 +169,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 1. / (2 * pi) ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
+        return sqrt( 2 * pi ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
 
     def PampelSuperLorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -183,7 +186,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 1. / (2 * pi) ) * quad( lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1)[0]
+        return sqrt( 2 * pi ) * quad( lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1)[0]
 
     def Cylindrical(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -274,7 +277,7 @@ class System(_Event):
     @property
     def poolFree_Rrf(self):
         if not hasattr(self, '_poolFree_Rrf'):
-            self.poolFree_Rrf = diag( [ -pi * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset), *zeros(2 * (self.N_pools - 1)) ] )
+            self.poolFree_Rrf = diag( [ -.5 * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset), *zeros(2 * (self.N_pools - 1)) ] )
         return self._poolFree_Rrf
 
     @poolFree_Rrf.setter
@@ -428,7 +431,7 @@ class System(_Event):
     @property
     def poolBound_omegaLocalField(self):
         if not hasattr(self, '_poolBound_omegaLocalField'):
-            self._poolBound_omegaLocalField = 1. / ( sqrt(15) * self.poolBound_T2 )
+            self._poolBound_omegaLocalField = 1. / ( _sqrt15 * self.poolBound_T2 )
         return self._poolBound_omegaLocalField
 
     @poolBound_omegaLocalField.setter

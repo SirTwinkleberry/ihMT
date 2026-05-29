@@ -2,7 +2,7 @@ from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq, add, sub, mul, truediv 
 from typing import Any
 from collections.abc import Callable
-from numpy import pi, cos, sin, tan, array, array_equal, errstate
+from numpy import pi, cos, sin, tan, array, array_equal, errstate, round
 from enum import Flag, auto
 
 logger = getLogger(__name__)
@@ -95,9 +95,9 @@ class Signal(Flag):
 def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
     error = None
     match type_to_check.__name__:
-        case slice.__name__:
-            if type(val_to_check) is not slice:
-                error = f'`{attribute_name}` of `{obj}` must be of type {slice}. Received: `{repr(val_to_check)}` of type `{type(val_to_check)}`.'
+        case slice.__name__ | Frequency.__name__ | AngularFrequency.__name__ | Duration.__name__ | Angle.__name__:
+            if type(val_to_check) is not type_to_check:
+                error = f'`{attribute_name}` of `{obj}` must be of type `{type_to_check}`. Received: `{repr(val_to_check)}` of type `{type(val_to_check)}`.'
         case _:
             if type_to_check(val_to_check) != val_to_check:
                 error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'    
@@ -306,34 +306,35 @@ class _Event():
 
 
 # Immutable class
-class Angle():
-    def __init__(self, label: str, value: int | float, is_radians: bool):
-        check_value_is_valid(self, val_to_check=value, type_to_check=float, operators=None, attribute_name='Angle')
+class _BaseUnit(float):
+    _unit = None
 
-        self.__label = str(label)
-        if is_radians:
-            self.__radians = float(value)
-            self.__degrees = _rad2deg * float(value)
-        else:
-            self.__degrees = float(value)
-            self.__radians = _deg2rad * float(value)
+    def __new__(cls, value: int | float, label: None | str = None, *args, **kwargs) -> _BaseUnit:
+        instance = super().__new__(cls, value)
+        instance.__label = label
+        return instance
 
-    @staticmethod
-    def from_radians(value: int | float, label: str | None = None) -> Angle:
-        return Angle(label, value, is_radians=True)
+    @classmethod
+    def from_micro(cls, value: int | float, label: str | None = None):
+        return cls(1e-6 * value, label)
 
-    @staticmethod
-    def from_degrees(value: int | float, label: str | None = None) -> Angle:
-        return Angle(label, value, is_radians=False)
+    @classmethod
+    def from_milli(cls, value: int | float, label: str | None = None):
+        return cls(1e-3 * value, label)
 
-    def __eq__(self, other):
-        return isinstance(other, Angle) and (self.degrees == other.degrees)
+    @classmethod
+    def from_kilo(cls, value: int | float, label: str | None = None):
+        return cls(1e3 * value, label)
+
+    @classmethod
+    def from_mega(cls, value: int | float, label: str | None = None):
+        return cls(1e6 * value, label)
 
     def __str__(self):
-        return f'{self.label if self.label is not None else "Angle"} = {self.degrees}°'
+        return f'{float(self)} {self._unit}'
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({repr(self.label)}, {repr(self.degrees)}°)'
+        return f'{self.__class__.__name__}(value={float.__repr__(self)}, unit={self._unit}, label={repr(self.label)})'
 
     #####
     # BELOW: property getters
@@ -342,172 +343,119 @@ class Angle():
     def label(self) -> str:
         return self.__label
 
-    @property
-    def degrees(self) -> float:
-        return self.__degrees
+
+class Frequency(_BaseUnit):
+    _unit = 'Hz'
+
+    @staticmethod
+    def from_hertz(value: int | float, label: str | None = None) -> Frequency:
+        return Frequency(value, label)
 
     @property
-    def radians(self) -> float:
+    def angular(self):
+        if not hasattr(self, '__angular'):
+            self.__angular = AngularFrequency(_2pi * self, self.label)
+        return self.__angular
+    
+    @property
+    def period(self):
+        if not hasattr(self, '__period'):
+            self.__period = Duration(1. / self, self.label)
+            self.__period.__rate = self
+        return self.__period
+
+
+class AngularFrequency(_BaseUnit):
+    _unit = 'rad • Hz'
+
+    @staticmethod
+    def from_radHertz(value: int | float, label: str | None = None) -> AngularFrequency:
+        return AngularFrequency(value, label)
+
+    @property
+    def frequency(self):
+        if not hasattr(self, '__frequency'):
+            self.__frequency = Frequency(_inv_2pi * self, self.label)
+            self.__frequency.__angular = self
+        return self.__frequency
+
+    @property
+    def period(self):
+        return self.frequency.period
+
+
+class Duration(_BaseUnit):
+    _unit = 's'
+
+    @staticmethod
+    def from_seconds(value: int | float, label: str | None = None) -> Duration:
+        return Duration(value, label)
+
+    @property
+    def rate(self):
+        if not hasattr(self, '__rate'):
+            self.__rate = Frequency(1. / self, self.label)
+            self.__rate.__period = self
+        return self.__rate
+
+    @property
+    def angular_rate(self):
+        return self.rate.angular
+
+
+class Angle(_BaseUnit):
+    _unit = '°'
+
+    @staticmethod
+    def from_radians(value: int | float, label: str | None = None) -> Angle:
+        return Angle(_rad2deg * value, label)
+
+    @staticmethod
+    def from_degrees(value: int | float, label: str | None = None) -> Angle:
+        return Angle(value, label)
+
+    @property
+    def rad(self) -> float:
+        if not hasattr(self, '__radians'):
+            self.__radians = _deg2rad * self
         return self.__radians
 
     @property
-    def cos(self):
+    def deg(self) -> float:
+        return float(self)
+
+    @property
+    def cos(self) -> float:
         if not hasattr(self, '__cos'):
-            self.__cos = cos(self.__radians)
+            self.__cos = round(cos(self.rad), 15)
         return self.__cos
 
     @property
-    def sin(self):
+    def sin(self) -> float:
         if not hasattr(self, '__sin'):
-            self.__sin = sin(self.__radians)
+            self.__sin = round(sin(self.rad), 15)
         return self.__sin
 
     @property
-    def tan(self):
+    def tan(self) -> float:
         if not hasattr(self, '__tan'):
-            self.__tan = tan(self.__radians)
+            self.__tan = round(tan(self.rad), 15)
         return self.__tan
 
     @property
-    def sec(self):
+    def sec(self) -> float:
         if not hasattr(self, '__sec'):
             self.__sec = 1. / self.cos
         return self.__sec
 
     @property
-    def csc(self):
+    def csc(self) -> float:
         if not hasattr(self, '__csc'):
             self.__csc = 1. / self.sin
         return self.__csc
 
     @property
-    def cot(self):
+    def cot(self) -> float:
         if not hasattr(self, '__cot'):
             self.__cot = 1. / self.tan
         return self.__cot
-
-
-# Immutable class
-class Frequency():
-    def __init__(self, label: str, value: int | float, is_angular: bool):
-        check_value_is_valid(self, val_to_check=value, type_to_check=float, operators=None, attribute_name='Frequency')
-
-        self.__label = str(label)
-        if is_angular:
-            self.__angular = float(value)
-            self.__linear = _inv_2pi * float(value)
-        else:
-            self.__linear = float(value)
-            self.__angular = _2pi * float(value)
-
-    @staticmethod
-    def from_angular(value: int | float, label: str | None = None) -> Frequency:
-        return Frequency(label, value, is_angular=True)
-
-    @staticmethod
-    def from_linear(value: int | float, label: str | None = None) -> Frequency:
-        return Frequency(label, value, is_angular=False)
-
-    def as_hertz(self):
-        return self.linear
-
-    def as_kilohertz(self):
-        return 1e-3 * self.linear
-
-    def as_megahertz(self):
-        return 1e-6 * self.linear
-
-    def as_angularHertz(self):
-        return self.angular
-
-    def as_angularKilohertz(self):
-        return 1e-3 * self.angular
-
-    def as_angularMegahertz(self):
-        return 1e-6 * self.angular
-
-    def __eq__(self, other):
-        return isinstance(other, Frequency) and (self.linear == other.linear)
-
-    def __str__(self):
-        return f'{self.label if self.label is not None else "Frequency"} = {self.linear} Hz'
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({repr(self.label)}, {repr(self.linear)} Hz)'
-
-    #####
-    # BELOW: property getters
-    #####
-    @property
-    def label(self) -> str:
-        return self.__label
-
-    @property
-    def linear(self) -> float:
-        return self.__linear
-
-    @property
-    def angular(self) -> float:
-        return self.__angular
-
-    @property
-    def period(self) -> Duration:
-        if not hasattr(self, '__period'):
-            self.__period = Duration.from_seconds(1. / self.linear, self.label)
-        return self.__period
-
-
-# Immutable class
-class Duration():
-    def __init__(self, label: str, value: int | float):
-        check_value_is_valid(self, val_to_check=value, type_to_check=float, operators=None, attribute_name='Duration')
-
-        self.__label = str(label)
-        self.__value = float(value)
-
-    @staticmethod
-    def from_microseconds(value: int | float, label: str | None = None) -> Duration:
-        return Duration(label, 1e-6 * value)
-
-    @staticmethod
-    def from_miliseconds(value: int | float, label: str | None = None) -> Duration:
-        return Duration(label, 1e-3 * value)
-
-    @staticmethod
-    def from_seconds(value: int | float, label: str | None = None) -> Duration:
-        return Duration(label, value)
-
-    def as_microseconds(self) -> float:
-        return 1e6 * self.value
-
-    def as_miliseconds(self) -> float:
-        return 1e3 * self.value
-
-    def as_seconds(self) -> float:
-        return self.value
-
-    def __eq__(self, other):
-        return isinstance(other, Duration) and (self.value == other.value)
-
-    def __str__(self):
-        return f'{self.label if self.label is not None else "Duration"} = {self.value} s'
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({repr(self.label)}, {repr(self.value)} s)'
-
-    #####
-    # BELOW: property getters
-    #####
-    @property
-    def label(self) -> str:
-        return self.__label
-
-    @property
-    def value(self) -> float:
-        return self.__value
-
-    @property
-    def rate(self) -> Frequency:
-        if not hasattr(self, '__rate'):
-            self.__rate = Frequency.from_linear(1. / self.linear, self.label)
-        return self.__rate
