@@ -186,6 +186,8 @@ def GridRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDAr
         if key != 'readout':
             data[key] = data[key].transpose((-1, *range(len(shape))))
 
+    [value.setflags(write=False) for value in data.values()]
+
     return data
 
 

@@ -151,7 +151,7 @@ class CompositeDictionary(dict):
         if subscript == Signal.ALL:
             with errstate(divide='ignore', invalid='ignore'):
                 for subscript in Signal.values():
-                    if subscript not in self.keys():
+                    if (subscript != Signal.ALL) and (subscript not in self.keys()):
                         try:
                             self._composite(subscript)
                         except Exception as _:
@@ -232,7 +232,7 @@ class CompositeDictionary(dict):
 
     def __truediv__(self, other) -> CompositeDictionary:
         return self._math(other, truediv)
-    
+
     def squeeze(self):
         return CompositeDictionary({key: val.squeeze() for key, val in self.items()})
 

@@ -190,6 +190,8 @@ class Simulator(_Event):
         if self.export_readMatrix:
             output['readout'] = read
 
+        [value.setflags(write=False) for value in output.values()]
+
         return output
 
     #####

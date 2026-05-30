@@ -75,7 +75,9 @@ class Corrector(_Event):
 
     @ranges.setter
     def ranges(self, val: dict[str, NDArray[int64 | float64]]):
-        self._ranges = val
+        self._ranges = deepcopy(val)
+        for val in self._ranges.values():
+            val.setflags(write=False)
         self._changed('ranges')
 
     @property
@@ -110,7 +112,10 @@ class Corrector(_Event):
     @property  # immutable for the user, so only getter is defined
     def nominals(self) -> CompositeDictionary[str, float]:
         if not hasattr(self, '_nominals'):
+            tmp = self.simulator.output_vectorSlice
+            self.simulator.output_vectorSlice = slice(1)
             self._nominals = CompositeDictionary(self.simulator.SteadyState())
+            self.simulator.output_vectorSlice = tmp
         return self._nominals
 
     @property  # immutable for the user, so only getter is defined
@@ -138,7 +143,17 @@ class InterpolantDictionary(dict):
     def __getitem__(self, subscript: Signal):
         if type(subscript) != Signal:
             raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`.")
-        name = subscript.name
-        if (name not in self.keys()) and (name in Signal.keys()):
-            dict.__setitem__(self, name, self._interpolator(self._ranges, self._simulated[subscript]))
-        return dict.__getitem__(self, name)
+
+        if subscript == Signal.ALL:
+            for subscript in Signal.values():
+                if (subscript != Signal.ALL) and (subscript not in self.keys()):
+                    try:
+                        dict.__setitem__(self, subscript, self._interpolator(self._ranges, self._simulated[subscript]))
+                    except Exception as _:
+                        pass
+            return self
+
+        elif (subscript not in self.keys()) and (subscript in Signal.values()):
+            dict.__setitem__(self, subscript, self._interpolator(self._ranges, self._simulated[subscript]))
+
+        return dict.__getitem__(self, subscript)

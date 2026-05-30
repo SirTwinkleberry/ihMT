@@ -120,9 +120,16 @@ class System(_Event):
         tmp_diag_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_diag
         tmp_anti_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_anti
 
-        self.poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), .5 * (tmp_diag_Positive + tmp_diag_Negative) ) )
-        self.poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Positive + tmp_anti_Positive ) )
-        self.poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Negative + tmp_anti_Negative ) )
+        # Setters aren't defined to avoid having to deepcopy to prevent user messing with referenced arrays
+        # so we need to call the vars with a leading underscore
+        self._poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), .5 * (tmp_diag_Positive + tmp_diag_Negative) ) )
+        self._poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Positive + tmp_anti_Positive ) )
+        self._poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Negative + tmp_anti_Negative ) )
+
+        # But getters are defined, so no need for the leading underscore in the var name
+        self.poolBound_Rrf_dualSat.setflags(write=False)
+        self.poolBound_Rrf_singleSat_Positive.setflags(write=False)
+        self.poolBound_Rrf_singleSat_Negative.setflags(write=False)
 
     def Lorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """_summary_
@@ -209,7 +216,7 @@ class System(_Event):
             return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offset_square * T2_totSquare)
 
         sin_theta = -sin(deg2rad(self.axonal_angle))
-        return sqrt( 2 / pi ) * quad( lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, limit=100)[0]
+        return sqrt( .5 * pi ) * quad( lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, limit=100)[0]
 
     def DispersedCylindrical(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
         """Fiber bundle orientation distribution lineshape
@@ -277,13 +284,10 @@ class System(_Event):
     @property
     def poolFree_Rrf(self):
         if not hasattr(self, '_poolFree_Rrf'):
-            self.poolFree_Rrf = diag( [ -.5 * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset), *zeros(2 * (self.N_pools - 1)) ] )
+            self._poolFree_Rrf = diag( [ -.5 * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset), *zeros(2 * (self.N_pools - 1)) ] )
+            self._poolFree_Rrf.setflags(write=False)
+            self._changed('poolFree_Rrf')
         return self._poolFree_Rrf
-
-    @poolFree_Rrf.setter
-    def poolFree_Rrf(self, val: NDArray[float64]):
-        self._poolFree_Rrf = array(val, dtype=float64)
-        self._changed('poolFree_Rrf')
 
     @poolFree_Rrf.deleter
     def poolFree_Rrf(self):
@@ -334,12 +338,8 @@ class System(_Event):
     def poolBound_Rrf_singleSat_Positive(self):
         if not hasattr(self, '_poolBound_Rrf_singleSat_Positive'):
             self._compute_poolBound_RFabsorptionMatrices()
+            self._changed('poolBound_Rrf_singleSat_Positive')
         return self._poolBound_Rrf_singleSat_Positive
-
-    @poolBound_Rrf_singleSat_Positive.setter
-    def poolBound_Rrf_singleSat_Positive(self, val: NDArray[float64]):
-        self._poolBound_Rrf_singleSat_Positive = array(val, dtype=float64)
-        self._changed('poolBound_Rrf_singleSat_Positive')
 
     @poolBound_Rrf_singleSat_Positive.deleter
     def poolBound_Rrf_singleSat_Positive(self):
@@ -350,12 +350,8 @@ class System(_Event):
     def poolBound_Rrf_singleSat_Negative(self):
         if not hasattr(self, '_poolBound_Rrf_singleSat_Negative'):
             self._compute_poolBound_RFabsorptionMatrices()
+            self._changed('poolBound_Rrf_singleSat_Negative')
         return self._poolBound_Rrf_singleSat_Negative
-
-    @poolBound_Rrf_singleSat_Negative.setter
-    def poolBound_Rrf_singleSat_Negative(self, val: NDArray[float64]):
-        self._poolBound_Rrf_singleSat_Negative = array(val, dtype=float64)
-        self._changed('poolBound_Rrf_singleSat_Negative')
 
     @poolBound_Rrf_singleSat_Negative.deleter
     def poolBound_Rrf_singleSat_Negative(self):
@@ -366,12 +362,8 @@ class System(_Event):
     def poolBound_Rrf_dualSat(self):
         if not hasattr(self, '_poolBound_Rrf_dualSat'):
             self._compute_poolBound_RFabsorptionMatrices()
+            self._changed('poolBound_Rrf_dualSat')
         return self._poolBound_Rrf_dualSat
-
-    @poolBound_Rrf_dualSat.setter
-    def poolBound_Rrf_dualSat(self, val: NDArray[float64]):
-        self._poolBound_Rrf_dualSat = array(val, dtype=float64)
-        self._changed('poolBound_Rrf_dualSat')
 
     @poolBound_Rrf_dualSat.deleter
     def poolBound_Rrf_dualSat(self):

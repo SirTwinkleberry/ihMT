@@ -12,7 +12,7 @@ logger.debug('`trajector` module loaded successfully')
 
 
 class Trajector(_Event):
-    def __init__(self, trajectory: tuple[tuple[int]], simulator: Simulator, *args, **kwargs):
+    def __init__(self, N_readoutDirection: int, N_inPlaneDirection: tuple[int, int], trajectory: tuple[tuple[int, int, int]], simulator: Simulator, *args, **kwargs):
         raise NotImplementedError
 
     @staticmethod
@@ -24,6 +24,8 @@ class Trajector(_Event):
     @staticmethod
     def CentricOut_Linear(simulator: Simulator, *args, **kwargs) -> Trajector:
         raise NotImplementedError
+        N = (simulator.sequence.N_adc - simulator.sequence.N_dummyADC)
+        dims = (N, N)
         trajectory = None
         return Trajector(trajectory, simulator)
 
@@ -32,10 +34,6 @@ class Trajector(_Event):
         raise NotImplementedError
         trajectory = None
         return Trajector(trajectory, simulator)
-
-    @staticmethod
-    def check_integer_only(array: NDArray[float64]):
-        return equal(mod(array, 1), 0).all()
 
     @staticmethod
     def readouts(simulator: Simulator, stable: bool = True, *args, **kwargs) -> CompositeDictionary[str, NDArray[float64]]:
@@ -62,6 +60,9 @@ class Trajector(_Event):
 
         return CompositeDictionary(readouts).T
 
+    @staticmethod
+    def _check_integer_only(array: NDArray[float64]):
+        return equal(mod(array, 1), 0).all()
 
     def VectorialPointSpreadFunction(self) -> NDArray[float64]:
         # D?
