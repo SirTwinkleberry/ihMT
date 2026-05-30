@@ -24,6 +24,7 @@ CONFIG_SYSTEM = {
         'poolFree_T1': 1,
         'poolFree_T2': .1,
         'poolFreeBound_exchangeRate': 10,
+        'poolBound_lineshapeAsymmetry': 0,
         'poolBound_M0': .1,
         'poolBound_T1': 1,
         'poolBound_T2': 1e-5,
@@ -33,9 +34,9 @@ CONFIG_SYSTEM = {
         'poolBound_omegaLocalField': 1. / ( sqrt(15) * 1e-5 ),
         'N_pools': 2,
         'poolFree_Rrf': array( [[-0.15831672264766541, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
-        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.4495893133308, 0.0], [0.0, 0.0, -1045.9034867989642]] ),
-        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.4495893133308, -15853400.944867052], [0.0, -0.02378010141730058, -1045.9034867989642]] ),
-        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.4495893133308,  15853400.944867052], [0.0,  0.02378010141730058, -1045.9034867989642]] ),
+        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835, -0.0], [0.0, -0.0, -1045.903901038725]] ),
+        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835, -15853407.223753296], [0.0, -0.023780110835629947, -1045.903901038725]] ),
+        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835,  15853407.223753296], [0.0,  0.023780110835629947, -1045.903901038725]] ),
     }
 }
 
@@ -124,13 +125,13 @@ class TestLineshapes(TestCase):
         self.system = System(**CONFIG_SYSTEM['init'])
 
     def test_Lorentzian(self):
-        self.assertEqual(self.system.Lorentzian(self.system.poolBound_T2), 2.6671533855137817e-06)
+        self.assertEqual(self.system.Lorentzian(self.system.poolBound_T2, self.system.pulse.offset), 1.6758218963854485e-05)
 
     def test_Gaussian(self):
-        self.assertEqual(self.system.Gaussian(self.system.poolBound_T2), 3.621630854421752e-06)
+        self.assertEqual(self.system.Gaussian(self.system.poolBound_T2, self.system.pulse.offset), 2.2755377772531e-05)
 
     def test_SuperLorentzian(self):
-        self.assertEqual(self.system.SuperLorentzian(self.system.poolBound_T2), 3.7463817768960933e-06)
+        self.assertEqual(self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset), 2.3539210935678883e-05)
 
     def test_PampelSuperLorentzian(self):
-        self.assertEqual(self.system.PampelSuperLorentzian(self.system.poolBound_T2), 3.746383260685287e-06)
+        self.assertEqual(self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset), 2.3539220258601342e-05)

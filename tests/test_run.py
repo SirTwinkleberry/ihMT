@@ -1,3 +1,4 @@
+from brainhack.meta import Signal
 from brainhack.run import SingleRun
 
 from pathlib import Path
@@ -19,6 +20,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'T1f': 1,
         'T2f': 0.1,
         'R': 10,
+        'poolBound_lineshapeAsymmetry': 0,
         'M0b': 0.1,
         'T1b': 1,
         'T1D': 1.0e-2,
@@ -35,7 +37,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'btrlast': 1.0e-3,
         'fa_sat': 299,
         'fa_rage': 5,
-        'FLAG_Signal': "ALL",
+        'FLAG_Signal': "BPR",
         'N_altern': 1,
         'r_tukey': 0.3,
         'outputDir': str(Path(__file__).parent / 'output'),
@@ -91,22 +93,23 @@ CONFIG_SIMULATOR = {
     'compute': {
         'ihMTR_CM':  dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
-            MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
+            MTs_Positive=[0.76762525270985, 0.04541092351421086, 1.5267491866078584e-06, 1.0],
+            MTs_Negative=[0.76762525270985, 0.04541092351421086, 1.5267491866078584e-06, 1.0],
+            MTd_CM=[0.6599520300832797, 0.010208111186669097, 0.0, 1.0],
         ),
         'ihMTR_ALT': dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTs=[0.7676252578552804, 0.045410925120816445, 1.52674916515777e-06, 1.0],
-            MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
+            MTs_Positive=[0.76762525270985, 0.04541092351421086, 1.5267491866078584e-06, 1.0],
+            MTs_Negative=[0.76762525270985, 0.04541092351421086, 1.5267491866078584e-06, 1.0],
+            MTd_ALT=[0.6700714097373646, 0.01328009025363687, -2.7246882836319824e-07, 1.0],
         ),
         'BPR':  dict(
             MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTd_CM=[0.6599520559568383, 0.010208119191059052, 0.0, 1.0],
-            MTd_ALT=[0.6700714322545925, 0.013280097321291226, -2.724688446800882e-07, 1.0],
+            MTd_ALT=[0.6700714097373646, 0.01328009025363687, -2.7246882836319824e-07, 1.0],
+            MTd_CM=[0.6599520300832797, 0.010208111186669097, 0.0, 1.0],
         ),
     }
 }
-
 
 def dumpConfig(export: bool, signal: str):
     tmp = copy(DEFAULT)
@@ -130,7 +133,7 @@ class TestRun_withoutExport(TestCase):
         (Path(DEFAULT['run']['outputDir']) / 'simulation.mat').unlink(missing_ok=True)
 
     def test_run_SingleRun_CM_noExport(self):
-        dumpConfig(export=False, signal='CM')
+        dumpConfig(export=False, signal='ihMTR_CM')
         try:
             output = check_output([
                 'python',
@@ -164,7 +167,7 @@ class TestRun_withoutExport(TestCase):
             raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_SingleRun_ALT_noExport(self):
-        dumpConfig(export=False, signal='ALT')
+        dumpConfig(export=False, signal='ihMTR_ALT')
         try:
             output = check_output([
                 'python',
@@ -242,8 +245,8 @@ class TestRun_withoutExport(TestCase):
                     str(Path(DEFAULT['run']['outputDir']) / 'config.yaml'),
                 ], stderr=STDOUT)
             except CalledProcessError as e:
-                if "Incorrect `FLAG_Signal` variable. Must be any one of `CM`, `ALT`, or `BP`." in str(e.output):
-                    raise ValueError("Incorrect `FLAG_Signal` variable. Must be any one of `CM`, `ALT`, or `BP`")
+                if "Incorrect signal flag. Must be any one or combinations of" in str(e.output):
+                    raise ValueError("Incorrect signal flag. Must be any one or combinations of ...")
                 raise RuntimeError(e.output.decode('utf-8'))
 
     def test_run_wrongNumberOfArguments(self):
@@ -275,7 +278,7 @@ class TestSingleRun(TestCase):
 
     def test_singleRun_CM_noExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Signal'] = 'CM'
+        params['FLAG_Signal'] = 'ihMTR_CM'
         params['export'] = False
         out = SingleRun(**params)
         for key, val in out.items():
@@ -285,7 +288,7 @@ class TestSingleRun(TestCase):
 
     def test_singleRun_CM_checkExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Signal'] = 'CM'
+        params['FLAG_Signal'] = 'ihMTR_CM'
 
         SingleRun(**params)
         # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_CM_checkExport.mat')
@@ -293,7 +296,8 @@ class TestSingleRun(TestCase):
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_CM_checkExport.mat')
 
         self.assertTrue((mat['MT0'] == base['MT0']).all())
-        self.assertTrue((mat['MTs'] == base['MTs']).all())
+        self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
+        self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
         del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_CM']
         del base['__header__'], base['MT0'], base['MTs'], base['MTd_CM']
@@ -302,7 +306,7 @@ class TestSingleRun(TestCase):
 
     def test_singleRun_ALT_noExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Signal'] = 'ALT'
+        params['FLAG_Signal'] = 'ihMTR_ALT'
         params['export'] = False
         out = SingleRun(**params)
         for key, val in out.items():
@@ -312,7 +316,7 @@ class TestSingleRun(TestCase):
 
     def test_singleRun_ALT_checkExport(self):
         params = copy(DEFAULT['run'])
-        params['FLAG_Signal'] = 'ALT'
+        params['FLAG_Signal'] = 'ihMTR_ALT'
 
         SingleRun(**params)
         # (Path(params['outputDir']).resolve() / (params['filePrefix'] + 'simulation.mat')).copy(Path(params['outputDir']).resolve().parent / 'simulator_test_singleRun_ALT_checkExport.mat')
@@ -320,7 +324,8 @@ class TestSingleRun(TestCase):
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_ALT_checkExport.mat')
 
         self.assertTrue((mat['MT0'] == base['MT0']).all())
-        self.assertTrue((mat['MTs'] == base['MTs']).all())
+        self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
+        self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
         del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_ALT']
         del base['__header__'], base['MT0'], base['MTs'], base['MTd_ALT']
@@ -345,7 +350,8 @@ class TestSingleRun(TestCase):
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_BP_checkExport.mat')
 
         self.assertTrue((mat['MT0'] == base['MT0']).all())
-        self.assertTrue((mat['MTs'] == base['MTs']).all())
+        self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
+        self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
         self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
         del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_CM'], mat['MTd_ALT']

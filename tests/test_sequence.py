@@ -43,18 +43,9 @@ class TestSequence(TestCase):
 
     def test___init__signal_CM(self):
         tmp = copy(CONFIG_SEQUENCE['init'])
-        tmp['signal'] = Signal.CM
+        tmp['signal'] = Signal.ihMTR_CM
         self.sequence = Sequence(pulse=self.pulse, **tmp)
-        self.assertEqual(self.sequence.signal, Signal.CM)
-
-    def test___init__signal_ALT(self):
-        tmp = copy(CONFIG_SEQUENCE['init'])
-        tmp['signal'] = Signal.ALT
-        self.sequence = Sequence(pulse=self.pulse, **tmp)
-        self.assertEqual(self.sequence.signal, Signal.ALT)
-
-    def test___init__signal_BP(self):
-        self.assertEqual(self.sequence.signal, Signal.BP)
+        self.assertEqual(self.sequence.signal, Signal.ihMTR_CM)
 
     def test___init__pulse(self):
         self.sequence.pulse.__dict__['_onChanges'] = {}
