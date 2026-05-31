@@ -46,7 +46,7 @@ class _Pulse(ABC, _Event):
         logger.critical(error)
         raise NotImplementedError(error)
 
-    def copy(self):
+    def copy(self) -> _Pulse:
         return self(**self.__dict__)
 
     #####

@@ -2,7 +2,8 @@ from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq, add, sub, mul, truediv 
 from typing import Any
 from collections.abc import Callable
-from numpy import pi, cos, sin, tan, array, array_equal, errstate, round
+from numpy import pi, cos, sin, tan, array, array_equal, errstate, round, number
+from numpy.typing import NDArray
 from enum import Flag, auto
 
 logger = getLogger(__name__)
@@ -92,7 +93,7 @@ class Signal(Flag):
                 raise ValueError(error)
 
 
-def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str):
+def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, operators: None | list[tuple[Callable, int | float]], attribute_name: str) -> bool:
     error = None
     match type_to_check.__name__:
         case slice.__name__ | Frequency.__name__ | AngularFrequency.__name__ | Duration.__name__ | Angle.__name__:
@@ -129,6 +130,7 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
                 logger.critical(error)
                 raise ValueError(error)
 
+    return True
 
 class CompositeDictionary(dict):
     def __init__(self, mapping: Any, /):
@@ -144,7 +146,7 @@ class CompositeDictionary(dict):
                 data[key] = value
         super().__init__(data)
 
-    def __getitem__(self, subscript: Signal):
+    def __getitem__(self, subscript: Signal) -> CompositeDictionary | NDArray[number]:
         if type(subscript) != Signal:
             raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`.")
 
@@ -244,7 +246,7 @@ class CompositeDictionary(dict):
         return CompositeDictionary({key: val.T for key, val in self.items()})
 
     @property
-    def _invMT0(self):
+    def _invMT0(self) -> NDArray[number]:
         if not hasattr(self, '__invMT0'):
             self.__invMT0 = 1. / self[Signal.MT0]
             self.__invMT0.setflags(write=False)
@@ -299,7 +301,7 @@ class _Event():
         return self._onChanges
 
     @classmethod
-    def _get_classAttributes(cls) -> tuple[str]:
+    def _get_classAttributes(cls) -> tuple[str, ...]:
         if not hasattr(cls, '_classAttributes'):
             return tuple()
         return cls._classAttributes
@@ -352,13 +354,13 @@ class Frequency(_BaseUnit):
         return Frequency(value, label)
 
     @property
-    def angular(self):
+    def angular(self) -> AngularFrequency:
         if not hasattr(self, '__angular'):
             self.__angular = AngularFrequency(_2pi * self, self.label)
         return self.__angular
     
     @property
-    def period(self):
+    def period(self) -> Duration:
         if not hasattr(self, '__period'):
             self.__period = Duration(1. / self, self.label)
             self.__period.__rate = self
@@ -373,14 +375,14 @@ class AngularFrequency(_BaseUnit):
         return AngularFrequency(value, label)
 
     @property
-    def frequency(self):
+    def frequency(self) -> Frequency:
         if not hasattr(self, '__frequency'):
             self.__frequency = Frequency(_inv_2pi * self, self.label)
             self.__frequency.__angular = self
         return self.__frequency
 
     @property
-    def period(self):
+    def period(self) -> Duration:
         return self.frequency.period
 
 
@@ -392,14 +394,14 @@ class Duration(_BaseUnit):
         return Duration(value, label)
 
     @property
-    def rate(self):
+    def rate(self) -> Frequency:
         if not hasattr(self, '__rate'):
             self.__rate = Frequency(1. / self, self.label)
             self.__rate.__period = self
         return self.__rate
 
     @property
-    def angular_rate(self):
+    def angular_rate(self) -> AngularFrequency:
         return self.rate.angular
 
 

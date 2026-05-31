@@ -1,5 +1,5 @@
 from logging import getLogger, NullHandler
-from numpy import float64, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad
+from numpy import number, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad
 from numpy.typing import NDArray
 from scipy.integrate import quad, dblquad
 from scipy.linalg import block_diag
@@ -22,16 +22,16 @@ _sqrt15 = sqrt(15)
 class System(_Event):
     _pulse: Pulse
 
-    _poolFree_Rrf: NDArray[float64]
+    _poolFree_Rrf: NDArray[number]
     _poolFree_M0: float
     _poolFree_T1: float
     _poolFree_T2: float
 
     _poolFreeBound_exchangeRate: float
 
-    _poolBound_Rrf_singleSat_Positive: NDArray[float64]
-    _poolBound_Rrf_singleSat_Negative: NDArray[float64]
-    _poolBound_Rrf_dualSat: NDArray[float64]
+    _poolBound_Rrf_singleSat_Positive: NDArray[number]
+    _poolBound_Rrf_singleSat_Negative: NDArray[number]
+    _poolBound_Rrf_dualSat: NDArray[number]
     _poolBound_lineshapeAsymmetry: float
     _poolBound_M0: float
     _poolBound_T1: float
@@ -111,14 +111,14 @@ class System(_Event):
             poolBound_Rrf_Positive: float = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
             poolBound_Rrf_Negative: float = poolBound_Rrf_Positive
 
-        tmp_diag: NDArray[float64] = diag( [ 1, norm_B * norm_B] )
-        tmp_anti: NDArray[float64] = fliplr( diag( [ angularFrequencyOffset, norm_B * inv_omegaLocalField ] ) )
+        tmp_diag: NDArray[number] = diag( [ 1, norm_B * norm_B] )
+        tmp_anti: NDArray[number] = fliplr( diag( [ angularFrequencyOffset, norm_B * inv_omegaLocalField ] ) )
 
-        tmp_diag_Positive: NDArray[float64] = -poolBound_Rrf_Positive * tmp_diag
-        tmp_anti_Positive: NDArray[float64] =  poolBound_Rrf_Positive * tmp_anti
+        tmp_diag_Positive: NDArray[number] = -poolBound_Rrf_Positive * tmp_diag
+        tmp_anti_Positive: NDArray[number] =  poolBound_Rrf_Positive * tmp_anti
 
-        tmp_diag_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_diag
-        tmp_anti_Negative: NDArray[float64] = -poolBound_Rrf_Negative * tmp_anti
+        tmp_diag_Negative: NDArray[number] = -poolBound_Rrf_Negative * tmp_diag
+        tmp_anti_Negative: NDArray[number] = -poolBound_Rrf_Negative * tmp_anti
 
         # Setters aren't defined to avoid having to deepcopy to prevent user messing with referenced arrays
         # so we need to call the vars with a leading underscore

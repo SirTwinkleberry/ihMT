@@ -1,5 +1,5 @@
 from logging import getLogger, NullHandler
-from numpy import zeros, kron, eye, diag, array, sum, vstack, hstack, round, deg2rad, cos, float64
+from numpy import zeros, kron, eye, diag, array, sum, vstack, hstack, round, deg2rad, cos, number
 from numpy.typing import NDArray
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm, block_diag
@@ -64,7 +64,7 @@ class Simulator(_Event):
             logger.critical(error)
             raise ValueError(error)
 
-    def SteadyState(self) -> dict[str, NDArray[float64]]:
+    def SteadyState(self) -> dict[str, NDArray[number]]:
         """_summary_
 
         Array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
@@ -77,16 +77,16 @@ class Simulator(_Event):
 
         Returns
         -------
-        tuple[NDArray[float64], ...]
+        tuple[NDArray[number], ...]
             _description_
         """
         self._check_pulse_match()
 
         sys = self.system
         seq = self.sequence
-        output: dict[str, NDArray[float64]] = dict()
+        output: dict[str, NDArray[number]] = dict()
 
-        HomogenizeCol: NDArray[float64] = zeros(1 + 2 * (sys.N_pools - 1))
+        HomogenizeCol: NDArray[number] = zeros(1 + 2 * (sys.N_pools - 1))
         HomogenizeCol[0] = sys.poolFree_M0 / sys.poolFree_T1
         HomogenizeCol[1::2] = sys.poolBound_M0 / sys.poolBound_T1
         HomogenizeCol = array([HomogenizeCol]).T
@@ -108,33 +108,33 @@ class Simulator(_Event):
         mat_REX = vstack([hstack([REX, HomogenizeCol]), zeros((1, 2 + 2 * (sys.N_pools - 1)))])
 
         # Readout & Recovery
-        evol_relax_interReadRF: NDArray[float64] = expm(mat_REX * seq.es)
-        evol_relax_recovery: NDArray[float64] = expm(mat_REX * seq.duration_recovery)
+        evol_relax_interReadRF: NDArray[number] = expm(mat_REX * seq.es)
+        evol_relax_recovery: NDArray[number] = expm(mat_REX * seq.duration_recovery)
         evol_rf_readoutInstantAction = eye(2 + 2 * (sys.N_pools - 1))
         evol_rf_readoutInstantAction[0, 0] = cos(deg2rad(seq.readout_flipAngle))
-        read: NDArray[float64] = evol_relax_interReadRF @ evol_rf_readoutInstantAction
-        evol_RAGE: NDArray[float64] = evol_relax_recovery @ matrix_power(read, seq.N_adc - seq.N_dummyADC)
-        evol_dummyRAGE: NDArray[float64] = matrix_power(read, seq.N_dummyADC)
+        read: NDArray[number] = evol_relax_interReadRF @ evol_rf_readoutInstantAction
+        evol_RAGE: NDArray[number] = evol_relax_recovery @ matrix_power(read, seq.N_adc - seq.N_dummyADC)
+        evol_dummyRAGE: NDArray[number] = matrix_power(read, seq.N_dummyADC)
 
         if Signal.MT0 in seq.signal:
-            evol_relax_fullPrep: NDArray[float64] = expm(mat_REX * seq.duration_preparation)
+            evol_relax_fullPrep: NDArray[number] = expm(mat_REX * seq.duration_preparation)
             v_MT0 = eig(round(evol_dummyRAGE @ (evol_relax_fullPrep @ evol_RAGE), 16))[1][:, -1]
             output['MT0'] = v_MT0[self.output_vectorSlice] / v_MT0[-1]
 
         if (Signal.MTs in seq.signal) or (Signal.MTd_ALT in seq.signal) or (Signal.MTd_CM in seq.signal):
-            evol_relax_interPulse: NDArray[float64] = expm(mat_REX * (seq.dt_interPulse - seq.pulse.duration))
-            evol_relax_TR_burst: NDArray[float64] = expm(mat_REX * (seq.TR_burst - seq.N_pulse * seq.dt_interPulse))
-            evol_relax_lastBurst: NDArray[float64] = expm(mat_REX * (seq.dt_lastBurst - seq.N_pulse * seq.dt_interPulse))
+            evol_relax_interPulse: NDArray[number] = expm(mat_REX * (seq.dt_interPulse - seq.pulse.duration))
+            evol_relax_TR_burst: NDArray[number] = expm(mat_REX * (seq.TR_burst - seq.N_pulse * seq.dt_interPulse))
+            evol_relax_lastBurst: NDArray[number] = expm(mat_REX * (seq.dt_lastBurst - seq.N_pulse * seq.dt_interPulse))
 
             if (Signal.MTs in seq.signal) or (Signal.MTd_ALT in seq.signal):
-                evol_rf_singleSat_Positive: NDArray[float64] = expm(
+                evol_rf_singleSat_Positive: NDArray[number] = expm(
                     vstack([
                         hstack( [ sys.poolBound_Rrf_singleSat_Positive + sys.poolFree_Rrf + REX, HomogenizeCol ] ),
                         zeros( (1, 2 + 2 * (sys.N_pools - 1)) )
                     ]) * seq.pulse.duration
                 )
 
-                evol_rf_singleSat_Negative: NDArray[float64] = expm(
+                evol_rf_singleSat_Negative: NDArray[number] = expm(
                     vstack([
                         hstack( [ sys.poolBound_Rrf_singleSat_Negative + sys.poolFree_Rrf + REX, HomogenizeCol ] ),
                         zeros( (1, 2 + 2 * (sys.N_pools - 1)) )
@@ -142,14 +142,14 @@ class Simulator(_Event):
                 )
 
                 if Signal.MTs_Positive in seq.signal:
-                    evol_MTsat_single: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse)) \
+                    evol_MTsat_single: NDArray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse)) \
                         @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse), seq.N_burst - 1)
                     v_MTs_Positive = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
                     output['MTs_Positive'] = v_MTs_Positive[self.output_vectorSlice] / v_MTs_Positive[-1]
 
                 if Signal.MTs_Negative in seq.signal:
                     if sys.poolBound_lineshapeAsymmetry != 0:
-                        evol_MTsat_single: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse)) \
+                        evol_MTsat_single: NDArray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse)) \
                             @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse), seq.N_burst - 1)
                         v_MTs_Negative = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
                         output['MTs_Negative'] = v_MTs_Negative[self.output_vectorSlice] / v_MTs_Negative[-1]
@@ -157,7 +157,7 @@ class Simulator(_Event):
                         output['MTs_Negative'] = output['MTs_Positive']
 
                 if Signal.MTd_ALT in seq.signal:
-                    evol_MTsat_dual_ALT: NDArray[float64] = evol_relax_lastBurst @ matrix_power(
+                    evol_MTsat_dual_ALT: NDArray[number] = evol_relax_lastBurst @ matrix_power(
                             matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulsePerOffset)
                             @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulsePerOffset),
                             int(.5 * seq.N_pulse / seq.N_pulsePerOffset)
@@ -174,14 +174,14 @@ class Simulator(_Event):
                     output['MTd_ALT'] = v_MTd_ALT[self.output_vectorSlice] / v_MTd_ALT[-1]
 
             if Signal.MTd_CM in seq.signal:
-                evol_rf_dualSat_SM: NDArray[float64] = expm(
+                evol_rf_dualSat_SM: NDArray[number] = expm(
                     vstack([
                         hstack( [ sys.poolBound_Rrf_dualSat + sys.poolFree_Rrf + REX, HomogenizeCol ] ),
                         zeros( (1, 2 + 2 * (sys.N_pools - 1)) )
                     ]) * seq.pulse.duration
                 )
 
-                evol_MTsat_dual_CM: NDArray[float64] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse)) \
+                evol_MTsat_dual_CM: NDArray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse)) \
                     @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse), seq.N_burst - 1)
 
                 v_MTd_CM = eig(round(evol_dummyRAGE @ (evol_MTsat_dual_CM @ evol_RAGE), 16))[1][:, -1]
