@@ -4,7 +4,6 @@ from brainhack.run import SingleRun
 from pathlib import Path
 from copy import deepcopy as copy
 from unittest import TestCase
-from numpy import array
 from scipy.io import loadmat
 from yaml import dump
 from subprocess import check_output, STDOUT, CalledProcessError
@@ -157,10 +156,11 @@ class TestRun_withoutExport(TestCase):
             base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_CM_checkExport.mat')
 
             self.assertTrue((mat['MT0'] == base['MT0']).all())
-            self.assertTrue((mat['MTs'] == base['MTs']).all())
+            self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
+            self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
             self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
-            del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_CM']
-            del base['__header__'], base['MT0'], base['MTs'], base['MTd_CM']
+            del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_CM']
+            del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_CM']
 
             self.assertDictEqual(mat, base)
         except CalledProcessError as e:
@@ -191,10 +191,11 @@ class TestRun_withoutExport(TestCase):
             base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_ALT_checkExport.mat')
 
             self.assertTrue((mat['MT0'] == base['MT0']).all())
-            self.assertTrue((mat['MTs'] == base['MTs']).all())
+            self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
+            self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
             self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-            del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_ALT']
-            del base['__header__'], base['MT0'], base['MTs'], base['MTd_ALT']
+            del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_ALT']
+            del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_ALT']
 
             self.assertDictEqual(mat, base)
         except CalledProcessError as e:
@@ -225,11 +226,10 @@ class TestRun_withoutExport(TestCase):
             base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_BP_checkExport.mat')
 
             self.assertTrue((mat['MT0'] == base['MT0']).all())
-            self.assertTrue((mat['MTs'] == base['MTs']).all())
             self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
             self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-            del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_CM'], mat['MTd_ALT']
-            del base['__header__'], base['MT0'], base['MTs'], base['MTd_CM'], base['MTd_ALT']
+            del mat['__header__'], mat['MT0'], mat['MTd_CM'], mat['MTd_ALT']
+            del base['__header__'], base['MT0'], base['MTd_CM'], base['MTd_ALT']
 
             self.assertDictEqual(mat, base)
         except CalledProcessError as e:
@@ -299,8 +299,8 @@ class TestSingleRun(TestCase):
         self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
         self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
-        del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_CM']
-        del base['__header__'], base['MT0'], base['MTs'], base['MTd_CM']
+        del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_CM']
+        del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_CM']
 
         self.assertDictEqual(mat, base)
 
@@ -327,8 +327,8 @@ class TestSingleRun(TestCase):
         self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
         self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-        del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_ALT']
-        del base['__header__'], base['MT0'], base['MTs'], base['MTd_ALT']
+        del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_ALT']
+        del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_ALT']
 
         self.assertDictEqual(mat, base)
 
@@ -350,12 +350,10 @@ class TestSingleRun(TestCase):
         base = loadmat(Path(__file__).parent / 'simulator_test_singleRun_BP_checkExport.mat')
 
         self.assertTrue((mat['MT0'] == base['MT0']).all())
-        self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
-        self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
         self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-        del mat['__header__'], mat['MT0'], mat['MTs'], mat['MTd_CM'], mat['MTd_ALT']
-        del base['__header__'], base['MT0'], base['MTs'], base['MTd_CM'], base['MTd_ALT']
+        del mat['__header__'], mat['MT0'], mat['MTd_CM'], mat['MTd_ALT']
+        del base['__header__'], base['MT0'], base['MTd_CM'], base['MTd_ALT']
 
         self.assertDictEqual(mat, base)
 
