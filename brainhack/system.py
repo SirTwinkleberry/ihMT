@@ -104,6 +104,16 @@ class System(_Event):
         self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._check_pool_dimension_compatibility('poolBound_lineshapeAsymmetry', self.poolBound_lineshapeAsymmetry.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
         self.onChange('poolBound_omegaLocalField', [lambda: self._check_pool_dimension_compatibility('poolBound_omegaLocalField', self.poolBound_omegaLocalField.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
+        self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'free')
+        self._check_pool_dimension_compatibility('poolFree_T1', self.poolFree_T1.shape, 'free')
+        self._check_pool_dimension_compatibility('poolFree_T2', self.poolFree_T2.shape, 'free')
+        self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', self.poolFreeBound_exchangeRate.shape, 'both')
+        self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'bound')
+        self._check_pool_dimension_compatibility('poolBound_T1', self.poolBound_T1.shape, 'bound')
+        self._check_pool_dimension_compatibility('poolBound_T2', self.poolBound_T2.shape, 'bound')
+        self._check_pool_dimension_compatibility('poolBound_lineshapeAsymmetry', self.poolBound_lineshapeAsymmetry.shape, 'bound')
+        self._check_pool_dimension_compatibility('poolBound_omegaLocalField', self.poolBound_omegaLocalField.shape, 'bound')
+
     def copy(self) -> System:
         return System(self.pulse.copy(), deepcopy(self.poolFree_M0), deepcopy(self.poolFree_T1), deepcopy(self.poolFree_T2), deepcopy(self.poolFreeBound_exchangeRate), deepcopy(self.poolBound_M0), deepcopy(self.poolBound_T1), deepcopy(self.poolBound_T2), deepcopy(self.poolBound_T1D), deepcopy(self.poolBound_lineshapeAsymmetry))
 
