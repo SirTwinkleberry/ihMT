@@ -1,7 +1,7 @@
 from logging import getLogger, NullHandler
-from numpy import number, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad, atleast_1d, atleast_2d
+from numpy import number, array, diag, fliplr, zeros, pi, sqrt, exp, sin, cos, sum, dot, deg2rad, atleast_1d, atleast_2d, zeros_like, ones_like
 from numpy.typing import NDArray
-from scipy.integrate import quad_vec, dblquad
+from scipy.integrate import cubature, dblquad
 from scipy.linalg import block_diag
 from scipy.special import i0
 from typing import Any
@@ -41,12 +41,13 @@ class System(_Event):
     _poolBound_omegaLocalField: NDArray[number]
 
     _magnetization_recovery: NDArray[number]
+    _relaxation: NDArray[number]
 
     _N_poolFree: int
     _N_poolBound: int
     _N_pools: int
 
-    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_lineshapeAsymmetry', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', '_magnetization_recovery', 'N_poolFree', 'N_poolBound', 'N_pools')
+    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_lineshapeAsymmetry', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', 'magnetization_recovery', 'relaxation', 'N_poolFree', 'N_poolBound', 'N_pools')
 
     def __init__(self, pulse: Pulse, poolFree_M0: ScalarOrVector, poolFree_T1: ScalarOrVector, poolFree_T2: ScalarOrVector, poolFreeBound_exchangeRate: ScalarOrMatrix, poolBound_M0: ScalarOrVector, poolBound_T1: ScalarOrVector, poolBound_T2: ScalarOrVector, poolBound_T1D: ScalarOrVector, poolBound_lineshapeAsymmetry: ScalarOrVector, *args: Any, **kwargs: Any):
         """_summary_
@@ -232,7 +233,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * quad_vec(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1, workers=1)[0]
+        return sqrt( 2 * pi ) * cubature(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), zeros_like(T2), ones_like(T2), workers=1).estimate
 
     def PampelSuperLorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
@@ -251,7 +252,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * quad_vec(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1, workers=1)[0]
+        return sqrt( 2 * pi ) * cubature(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), zeros_like(T2), ones_like(T2), workers=1).estimate
 
     def Cylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
@@ -276,7 +277,7 @@ class System(_Event):
             return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offset_square * T2_totSquare)
 
         sin_theta = -sin(deg2rad(self.axonal_angle))
-        return sqrt( .5 * pi ) * quad_vec(lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, workers=1, limit=100)[0]
+        return sqrt( .5 * pi ) * cubature(lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -ones_like(T2), ones_like(T2), workers=1).estimate
 
     def DispersedCylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """Fiber bundle orientation distribution lineshape
