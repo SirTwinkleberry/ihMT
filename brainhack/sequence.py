@@ -308,7 +308,7 @@ class Sequence(_Event):
     @property
     def duration_preparation(self):
         if not hasattr(self, '_duration_preparation'):
-            self.duration_preparation = (self.N_burst - 1) * self.TR_burst + self.N_pulse * self.dt_interPulse + self.dt_lastBurst
+            self.duration_preparation = (self.N_burst - 1) * self.TR_burst + self.dt_lastBurst
         return self._duration_preparation
 
     @duration_preparation.setter

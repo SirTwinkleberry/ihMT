@@ -1,7 +1,7 @@
 from logging import getLogger, NullHandler
 from numpy import number, array, diag, fliplr, zeros, pi, sqrt, exp, sin, cos, sum, dot, deg2rad, atleast_1d, atleast_2d, zeros_like, ones_like
 from numpy.typing import NDArray
-from scipy.integrate import cubature, dblquad
+from scipy.integrate import quad, dblquad
 from scipy.linalg import block_diag
 from scipy.special import i0
 from typing import Any
@@ -90,7 +90,7 @@ class System(_Event):
         self.onChange('pulse', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
         self.onChange('N_poolFree', [lambda: self._reset_computed_attributes(['N_pools'])])
-        self.onChange('poolBound_M0', [lambda: self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
+        self.onChange('poolFree_M0', [lambda: self._check_pool_dimension_compatibility('poolFree_M0', self.poolFree_M0.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
         self.onChange('poolFree_T1', [lambda: self._check_pool_dimension_compatibility('poolFree_T1', self.poolFree_T1.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
         self.onChange('poolFree_T2', [lambda: self._check_pool_dimension_compatibility('poolFree_T2', self.poolFree_T2.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'poolFree_Rrf'])])
 
@@ -104,7 +104,7 @@ class System(_Event):
         self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._check_pool_dimension_compatibility('poolBound_lineshapeAsymmetry', self.poolBound_lineshapeAsymmetry.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
         self.onChange('poolBound_omegaLocalField', [lambda: self._check_pool_dimension_compatibility('poolBound_omegaLocalField', self.poolBound_omegaLocalField.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
-        self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'free')
+        self._check_pool_dimension_compatibility('poolFree_M0', self.poolFree_M0.shape, 'free')
         self._check_pool_dimension_compatibility('poolFree_T1', self.poolFree_T1.shape, 'free')
         self._check_pool_dimension_compatibility('poolFree_T2', self.poolFree_T2.shape, 'free')
         self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', self.poolFreeBound_exchangeRate.shape, 'both')
@@ -243,7 +243,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * cubature(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), zeros_like(T2), ones_like(T2), workers=1).estimate
+        return sqrt( 2 * pi ) * array(list(quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, rT2sq, 0), 0, 1)[0] for rT2sq in reduced_R2_square))
 
     def PampelSuperLorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
@@ -262,7 +262,7 @@ class System(_Event):
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * cubature(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), zeros_like(T2), ones_like(T2), workers=1).estimate
+        return sqrt( 2 * pi ) * array(list(quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, rT2sq, 985.96), 0, 1)[0] for rT2sq in reduced_R2_square))
 
     def Cylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
@@ -287,7 +287,7 @@ class System(_Event):
             return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offset_square * T2_totSquare)
 
         sin_theta = -sin(deg2rad(self.axonal_angle))
-        return sqrt( .5 * pi ) * cubature(lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -ones_like(T2), ones_like(T2), workers=1).estimate
+        return sqrt( .5 * pi ) * array(list(quad(lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, rT2sq, 985.96), -1, 1)[0] for rT2sq in reduced_R2_square))
 
     def DispersedCylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """Fiber bundle orientation distribution lineshape
