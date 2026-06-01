@@ -1,14 +1,15 @@
 from logging import getLogger, NullHandler
-from numpy import number, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad
+from numpy import number, array, diag, fliplr, zeros, kron, eye, pi, sqrt, exp, sin, cos, sum, dot, deg2rad, atleast_1d, atleast_2d
 from numpy.typing import NDArray
-from scipy.integrate import quad, dblquad
+from scipy.integrate import quad_vec, dblquad
 from scipy.linalg import block_diag
 from scipy.special import i0
 from typing import Any
 from collections.abc import Callable
 from operator import lt
+from copy import deepcopy
 
-from brainhack.meta import _Event, check_value_is_valid
+from brainhack.meta import _Event, ScalarOrVector, ScalarOrMatrix, check_value_is_valid
 from brainhack.pulse import Pulse
 
 logger = getLogger(__name__)
@@ -23,48 +24,52 @@ class System(_Event):
     _pulse: Pulse
 
     _poolFree_Rrf: NDArray[number]
-    _poolFree_M0: float
-    _poolFree_T1: float
-    _poolFree_T2: float
+    _poolFree_M0: NDArray[number]
+    _poolFree_T1: NDArray[number]
+    _poolFree_T2: NDArray[number]
 
-    _poolFreeBound_exchangeRate: float
+    _poolFreeBound_exchangeRate: NDArray[number]
 
     _poolBound_Rrf_singleSat_Positive: NDArray[number]
     _poolBound_Rrf_singleSat_Negative: NDArray[number]
     _poolBound_Rrf_dualSat: NDArray[number]
-    _poolBound_lineshapeAsymmetry: float
-    _poolBound_M0: float
-    _poolBound_T1: float
-    _poolBound_T2: float
-    _poolBound_T1D: float
-    _poolBound_omegaLocalField: float
+    _poolBound_lineshapeAsymmetry: NDArray[number]
+    _poolBound_M0: NDArray[number]
+    _poolBound_T1: NDArray[number]
+    _poolBound_T2: NDArray[number]
+    _poolBound_T1D: NDArray[number]
+    _poolBound_omegaLocalField: NDArray[number]
 
+    _magnetization_recovery: NDArray[number]
+
+    _N_poolFree: int
+    _N_poolBound: int
     _N_pools: int
 
-    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_lineshapeAsymmetry', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', 'N_pools')
+    _classAttributes: tuple[str] = ('pulse', 'poolFree_Rrf', 'poolFree_M0', 'poolFree_T1', 'poolFree_T2', 'poolFreeBound_exchangeRate', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_Rrf_dualSat', 'poolBound_lineshapeAsymmetry', 'poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_omegaLocalField', '_magnetization_recovery', 'N_poolFree', 'N_poolBound', 'N_pools')
 
-    def __init__(self, pulse: Pulse, poolFree_M0: float, poolFree_T1: float, poolFree_T2: float, poolFreeBound_exchangeRate: float, poolBound_M0: float, poolBound_T1: float, poolBound_T2: float, poolBound_T1D: float, poolBound_lineshapeAsymmetry: float, *args: Any, **kwargs: Any):
+    def __init__(self, pulse: Pulse, poolFree_M0: ScalarOrVector, poolFree_T1: ScalarOrVector, poolFree_T2: ScalarOrVector, poolFreeBound_exchangeRate: ScalarOrMatrix, poolBound_M0: ScalarOrVector, poolBound_T1: ScalarOrVector, poolBound_T2: ScalarOrVector, poolBound_T1D: ScalarOrVector, poolBound_lineshapeAsymmetry: ScalarOrVector, *args: Any, **kwargs: Any):
         """_summary_
 
         Parameters
         ----------
         pulse : Pulse
             _description_
-        poolFree_M0 : float
+        poolFree_M0 : ScalarOrVector
             _description_
-        poolFree_T1 : float
+        poolFree_T1 : ScalarOrVector
             _description_
-        poolFree_T2 : float
+        poolFree_T2 : ScalarOrVector
             _description_
-        poolFreeBound_exchangeRate : float
+        poolFreeBound_exchangeRate : ScalarOrMatrix
             _description_
-        poolBound_M0 : float
+        poolBound_M0 : ScalarOrVector
             _description_
-        poolBound_T1 : float
+        poolBound_T1 : ScalarOrVector
             _description_
-        poolBound_T2 : float
+        poolBound_T2 : ScalarOrVector
             _description_
-        poolBound_T1D : float
+        poolBound_T1D : ScalarOrVector
             _description_
         """
         self.pulse = pulse
@@ -82,16 +87,58 @@ class System(_Event):
         self.poolBound_lineshapeAsymmetry = poolBound_lineshapeAsymmetry
 
         self.onChange('pulse', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+
+        self.onChange('N_poolFree', [lambda: self._reset_computed_attributes(['N_pools'])])
+        self.onChange('poolBound_M0', [lambda: self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
+        self.onChange('poolFree_T1', [lambda: self._check_pool_dimension_compatibility('poolFree_T1', self.poolFree_T1.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
+        self.onChange('poolFree_T2', [lambda: self._check_pool_dimension_compatibility('poolFree_T2', self.poolFree_T2.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'poolFree_Rrf'])])
+
         self.onChange('N_pools', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
-        self.onChange('poolFree_T1', [lambda: self._reset_computed_attributes(['N_pools'])])
-        self.onChange('poolFree_T2', [lambda: self._reset_computed_attributes(['N_pools', 'poolFree_Rrf'])])
-        self.onChange('poolBound_T1', [lambda: self._reset_computed_attributes(['N_pools'])])
-        self.onChange('poolBound_T2', [lambda: self._reset_computed_attributes(['N_pools', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
-        self.onChange('poolBound_omegaLocalField', [lambda: self._reset_computed_attributes(['poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
-        self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._reset_computed_attributes(['poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self.onChange('poolFreeBound_exchangeRate', [lambda: self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', self.poolFreeBound_exchangeRate.shape, 'both'), lambda: self._reset_computed_attributes(['N_poolFree', 'N_poolBound'])])
+
+        self.onChange('N_poolBound', [lambda: self._reset_computed_attributes(['N_pools'])])
+        self.onChange('poolBound_M0', [lambda: self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery'])])
+        self.onChange('poolBound_T1', [lambda: self._check_pool_dimension_compatibility('poolBound_T1', self.poolBound_T1.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery'])])
+        self.onChange('poolBound_T2', [lambda: self._check_pool_dimension_compatibility('poolBound_T2', self.poolBound_T2.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
+        self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._check_pool_dimension_compatibility('poolBound_lineshapeAsymmetry', self.poolBound_lineshapeAsymmetry.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
+        self.onChange('poolBound_omegaLocalField', [lambda: self._check_pool_dimension_compatibility('poolBound_omegaLocalField', self.poolBound_omegaLocalField.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
     def copy(self) -> System:
-        return System(self.pulse.copy(), self.poolFree_M0, self.poolFree_T1, self.poolFree_T2, self.poolFreeBound_exchangeRate, self.poolBound_M0, self.poolBound_T1, self.poolBound_T2, self.poolBound_T1D, self.poolBound_lineshapeAsymmetry)
+        return System(self.pulse.copy(), deepcopy(self.poolFree_M0), deepcopy(self.poolFree_T1), deepcopy(self.poolFree_T2), deepcopy(self.poolFreeBound_exchangeRate), deepcopy(self.poolBound_M0), deepcopy(self.poolBound_T1), deepcopy(self.poolBound_T2), deepcopy(self.poolBound_T1D), deepcopy(self.poolBound_lineshapeAsymmetry))
+
+    def _check_pool_dimension_compatibility(self, caller: str, shape: tuple[int, ...], pool: str) -> bool:
+        poolFree_attrs = ['poolFree_M0', 'poolFree_T1', 'poolFree_T2']
+        poolBound_attrs = ['poolBound_M0', 'poolBound_T1', 'poolBound_T2', 'poolBound_T1D', 'poolBound_lineshapeAsymmetry', 'poolBound_omegaLocalField']
+
+        match pool:
+            case 'both':
+                if len(shape) != 2:
+                    raise ValueError(f'Expected a shape of length 2, received `{shape}` of length {len(shape)}. Caller: {caller}.')
+                self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', (shape[0],), 'free')
+                self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', (shape[1],), 'bound')
+                return True
+
+            case 'free':
+                attrlist = poolFree_attrs
+                if hasattr(self, '_poolFreeBound_exchangeRate') and (shape != self.poolFreeBound_exchangeRate.shape[slice(None, 1)]):
+                    raise ValueError(f'Dimension mismatched between new free pool shape `{shape}` and exchange rate matrix column length `{self.poolFreeBound_exchangeRate.shape[slice(None, 1)]}`. Caller: {caller}.')
+
+            case 'bound':
+                attrlist = poolBound_attrs
+                if hasattr(self, '_poolFreeBound_exchangeRate') and (shape != self.poolFreeBound_exchangeRate.shape[slice(1, None)]):
+                    raise ValueError(f'Dimension mismatched between new bound pool shape `{shape}` and exchange rate matrix row length `{self.poolFreeBound_exchangeRate.shape[slice(1, None)]}`. Caller: {caller}.')
+
+            case _:
+                raise ValueError(f'Pool attribute (`{pool}`) does not match available values: [`free`, `bound`, `both`]. Caller: {caller}.')
+
+        for attr in attrlist:
+            if hasattr(self, f'_{attr}'):
+                if shape != getattr(self, attr).shape:
+                    raise ValueError(f'Dimension mismatched between new {pool} pool attribute shape `{shape}` and `{attr}` shape `{getattr(self, attr).shape}`. Caller: {caller}.')
+                else:  # No need to check all every attribute since they will individually check their own shape against at least the 1st attribute
+                    return True
+
+        return True
 
     def _compute_poolBound_RFabsorptionMatrices(self):
         """_summary_
@@ -101,111 +148,124 @@ class System(_Event):
         norm_A = self.pulse.omegaRMS * self.pulse.omegaRMS
         norm_B = angularFrequencyOffset * inv_omegaLocalField
 
-        superLorentzian: Callable[[Pulse, float], float] = self.PampelSuperLorentzian
-        # superLorentzian: Callable[[Pulse, float], float] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
+        superLorentzian: Callable[[NDArray[number], float], NDArray[number]] = self.PampelSuperLorentzian
+        # superLorentzian: Callable[[NDArray[number], float], NDArray[number]] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
 
-        if self.poolBound_lineshapeAsymmetry != 0:
-            poolBound_Rrf_Positive: float = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset - self.poolBound_lineshapeAsymmetry)
-            poolBound_Rrf_Negative: float = .5 * norm_A * superLorentzian(self.poolBound_T2, -self.pulse.offset - self.poolBound_lineshapeAsymmetry)
+        if (self.poolBound_lineshapeAsymmetry != 0).any():
+            poolBound_Rrf_Positive: NDArray[number] = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset - self.poolBound_lineshapeAsymmetry)
+            poolBound_Rrf_Negative: NDArray[number] = .5 * norm_A * superLorentzian(self.poolBound_T2, -self.pulse.offset - self.poolBound_lineshapeAsymmetry)
         else:
-            poolBound_Rrf_Positive: float = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
-            poolBound_Rrf_Negative: float = poolBound_Rrf_Positive
+            poolBound_Rrf_Positive: NDArray[number] = .5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
+            poolBound_Rrf_Negative: NDArray[number] = poolBound_Rrf_Positive
 
-        tmp_diag: NDArray[number] = diag( [ 1, norm_B * norm_B] )
-        tmp_anti: NDArray[number] = fliplr( diag( [ angularFrequencyOffset, norm_B * inv_omegaLocalField ] ) )
+        diag_elements = norm_B * norm_B
+        anti_elements = norm_B * inv_omegaLocalField
 
-        tmp_diag_Positive: NDArray[number] = -poolBound_Rrf_Positive * tmp_diag
-        tmp_anti_Positive: NDArray[number] =  poolBound_Rrf_Positive * tmp_anti
+        tmp_diag: NDArray[number] = [ diag( [ 1, elem] ) for elem in diag_elements]
+        tmp_anti: NDArray[number] = [ fliplr( diag( [ angularFrequencyOffset, elem ] ) ) for elem in anti_elements]
 
-        tmp_diag_Negative: NDArray[number] = -poolBound_Rrf_Negative * tmp_diag
-        tmp_anti_Negative: NDArray[number] = -poolBound_Rrf_Negative * tmp_anti
+        diag_Positive: NDArray[number] = [-Rrf_scalar * mat for Rrf_scalar, mat in zip(poolBound_Rrf_Positive, tmp_diag)]
+        anti_Positive: NDArray[number] = [ Rrf_scalar * mat for Rrf_scalar, mat in zip(poolBound_Rrf_Positive, tmp_anti)]
+
+        diag_Negative: NDArray[number] = [-Rrf_scalar * mat for Rrf_scalar, mat in zip(poolBound_Rrf_Negative, tmp_diag)]
+        anti_Negative: NDArray[number] = [-Rrf_scalar * mat for Rrf_scalar, mat in zip(poolBound_Rrf_Negative, tmp_anti)]
 
         # Setters aren't defined to avoid having to deepcopy to prevent user messing with referenced arrays
         # so we need to call the vars with a leading underscore
-        self._poolBound_Rrf_dualSat = block_diag( 0, kron( eye(self.N_pools - 1), .5 * (tmp_diag_Positive + tmp_diag_Negative) ) )
-        self._poolBound_Rrf_singleSat_Positive = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Positive + tmp_anti_Positive ) )
-        self._poolBound_Rrf_singleSat_Negative = block_diag( 0, kron( eye(self.N_pools - 1), tmp_diag_Negative + tmp_anti_Negative ) )
+        self._poolBound_Rrf_dualSat            = block_diag( zeros((self.N_poolFree, self.N_poolFree)), *[.5 * (tmp_diag_Positive + tmp_diag_Negative)  for tmp_diag_Positive, tmp_diag_Negative in zip(diag_Positive, diag_Negative)])
+        self._poolBound_Rrf_singleSat_Positive = block_diag( zeros((self.N_poolFree, self.N_poolFree)), *[      tmp_diag_Positive + tmp_anti_Positive   for tmp_diag_Positive, tmp_anti_Positive in zip(diag_Positive, anti_Positive)])
+        self._poolBound_Rrf_singleSat_Negative = block_diag( zeros((self.N_poolFree, self.N_poolFree)), *[      tmp_diag_Negative + tmp_anti_Negative   for tmp_diag_Negative, tmp_anti_Negative in zip(diag_Negative, anti_Negative)])
 
         # But getters are defined, so no need for the leading underscore in the var name
         self.poolBound_Rrf_dualSat.setflags(write=False)
         self.poolBound_Rrf_singleSat_Positive.setflags(write=False)
         self.poolBound_Rrf_singleSat_Negative.setflags(write=False)
 
-    def Lorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
+    def Lorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
-        T2 : float
+        T2 : NDArray[number]
+            _description_
+        offset : float
             _description_
 
         Returns
         -------
-        float
+        NDArray[number]
             _description_
         """
         return 2 * T2 / ( 1 + 4 * pi * pi * offset * offset * T2 * T2)
 
-    def Gaussian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
+    def Gaussian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
-        T2 : float
+        T2 : NDArray[number]
+            _description_
+        offset : float
             _description_
 
         Returns
         -------
-        float
+        NDArray[number]
             _description_
         """
         return sqrt(2 * pi) * T2 * exp( -2 * pi * pi * offset * offset * T2 * T2 )
 
-    def SuperLorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
+    def SuperLorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
-        T2 : float
+        T2 : NDArray[number]
+            _description_
+        offset : float
             _description_
 
         Returns
         -------
-        float
+        NDArray[number]
             _description_
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1)[0]
+        return sqrt( 2 * pi ) * quad_vec(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 0), 0, 1, workers=1)[0]
 
-    def PampelSuperLorentzian(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
+    def PampelSuperLorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
-        T2 : float
+        T2 : NDArray[number]
+            _description_
+        offset : float
             _description_
 
         Returns
         -------
-        float
+        NDArray[number]
             _description_
         """
         angular_offset_square = 4 * pi * pi * offset * offset
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * quad( lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1)[0]
+        return sqrt( 2 * pi ) * quad_vec(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, reduced_R2_square, 985.96), 0, 1, workers=1)[0]
 
-    def Cylindrical(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
+    def Cylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
-        T2 : float
+        T2 : NDArray[number]
+            _description_
+        offset : float
             _description_
 
         Returns
         -------
-        float
+        NDArray[number]
             _description_
         """
         angular_offset_square = 4 * pi * pi * offset * offset
@@ -216,19 +276,21 @@ class System(_Event):
             return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offset_square * T2_totSquare)
 
         sin_theta = -sin(deg2rad(self.axonal_angle))
-        return sqrt( .5 * pi ) * quad( lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, limit=100)[0]
+        return sqrt( .5 * pi ) * quad_vec(lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, reduced_R2_square, 985.96), -1, 1, workers=1, limit=100)[0]
 
-    def DispersedCylindrical(self, T2: float, offset: float, *args: Any, **kwargs: Any) -> float:
+    def DispersedCylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
         """Fiber bundle orientation distribution lineshape
 
         Parameters
         ----------
-        T2 : float
+        T2 : NDArray[number]
+            _description_
+        offset : float
             _description_
 
         Returns
         -------
-        float
+        NDArray[number]
             _description_
         """
         raise NotImplementedError("Currently not implemented.")
@@ -282,9 +344,53 @@ class System(_Event):
         self._changed('pulse')
 
     @property
+    def magnetization_recovery(self):
+        if not hasattr(self, '_magnetization_recovery'):
+            HomogenizeCol: NDArray[number] = zeros(self.N_poolFree + 2 * (self.N_poolBound))
+            HomogenizeCol[0:self.N_poolFree] = self.poolFree_M0 / self.poolFree_T1
+            HomogenizeCol[self.N_poolFree::2] = self.poolBound_M0 / self.poolBound_T1
+            self._magnetization_recovery = array([HomogenizeCol]).T
+            self._magnetization_recovery.setflags(write=False)
+            self._changed('magnetization_recovery')
+        return self._magnetization_recovery
+
+    @magnetization_recovery.deleter
+    def magnetization_recovery(self):
+        del self._magnetization_recovery
+        self._changed('magnetization_recovery')
+
+    @property
+    def relaxation(self):
+        if not hasattr(self, '_relaxation'):
+            # filling the diagonal relaxations: poolFree => Zeeman compartments
+            poolFree_block = diag( -(1. / self.poolFree_T1 + sum(self.poolFreeBound_exchangeRate * self.poolBound_M0, axis=1)) )
+            poolBound_block = diag(array([[-(1. / T1 + exchange), 0] for T1, exchange in zip(self.poolBound_T1, sum(self.poolFreeBound_exchangeRate.T * self.poolFree_M0, axis=1))]).flatten())
+
+            tmp = block_diag(poolFree_block, poolBound_block)
+
+            # Filling the off-diagonal: poolBound => Zeeman compartments
+            for i in range(self.N_poolFree):
+                for j in range(self.N_poolBound):
+                    tmp[self.N_poolFree + 2 * j, i] = self.poolFreeBound_exchangeRate[i][j] * self.poolBound_M0[j]
+                    tmp[i, self.N_poolFree + 2 * j] = self.poolFreeBound_exchangeRate[i][j] * self.poolFree_M0[i]
+
+            # filling the diagonal relaxations: poolBound => dipolar compartment
+            tmp[self.N_poolFree + 1::2, self.N_poolFree + 1::2] = diag( -1. / self.poolBound_T1D )
+
+            self._relaxation = tmp
+            self._relaxation.setflags(write=False)
+            self._changed('relaxation')
+        return self._relaxation
+
+    @relaxation.deleter
+    def relaxation(self):
+        del self._poolFree_Rrf
+        self._changed('relaxation')
+
+    @property
     def poolFree_Rrf(self):
         if not hasattr(self, '_poolFree_Rrf'):
-            self._poolFree_Rrf = diag( [ -.5 * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset), *zeros(2 * (self.N_pools - 1)) ] )
+            self._poolFree_Rrf = diag( [ *(-.5 * self.pulse.omegaRMS * self.pulse.omegaRMS * self.Lorentzian(self.poolFree_T2, self.pulse.offset)), *zeros(2 * (self.N_poolBound)) ] )
             self._poolFree_Rrf.setflags(write=False)
             self._changed('poolFree_Rrf')
         return self._poolFree_Rrf
@@ -299,9 +405,10 @@ class System(_Event):
         return self._poolFree_M0
 
     @poolFree_M0.setter
-    def poolFree_M0(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFree_M0')
-        self._poolFree_M0 = float(val)
+    def poolFree_M0(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolFree_M0')
+        self._poolFree_M0 = atleast_1d(val)
+        self._poolFree_M0.setflags(write=False)
         self._changed('poolFree_M0')
 
     @property
@@ -309,9 +416,10 @@ class System(_Event):
         return self._poolFree_T1
 
     @poolFree_T1.setter
-    def poolFree_T1(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFree_T1')
-        self._poolFree_T1 = float(val)
+    def poolFree_T1(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolFree_T1')
+        self._poolFree_T1 = atleast_1d(val)
+        self._poolFree_T1.setflags(write=False)
         self._changed('poolFree_T1')
 
     @property
@@ -319,9 +427,10 @@ class System(_Event):
         return self._poolFree_T2
 
     @poolFree_T2.setter
-    def poolFree_T2(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFree_T2')
-        self._poolFree_T2 = float(val)
+    def poolFree_T2(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolFree_T2')
+        self._poolFree_T2 = atleast_1d(val)
+        self._poolFree_T2.setflags(write=False)
         self._changed('poolFree_T2')
 
     @property
@@ -329,9 +438,10 @@ class System(_Event):
         return self._poolFreeBound_exchangeRate
 
     @poolFreeBound_exchangeRate.setter
-    def poolFreeBound_exchangeRate(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolFreeBound_exchangeRate')
-        self._poolFreeBound_exchangeRate = float(val)
+    def poolFreeBound_exchangeRate(self, val: ScalarOrMatrix):
+        check_value_is_valid(self, val, ScalarOrMatrix, [(lt, 0)], 'poolFreeBound_exchangeRate')
+        self._poolFreeBound_exchangeRate = atleast_2d(val)
+        self._poolFreeBound_exchangeRate.setflags(write=False)
         self._changed('poolFreeBound_exchangeRate')
 
     @property
@@ -375,9 +485,10 @@ class System(_Event):
         return self._poolBound_M0
 
     @poolBound_M0.setter
-    def poolBound_M0(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_M0')
-        self._poolBound_M0 = float(val)
+    def poolBound_M0(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolBound_M0')
+        self._poolBound_M0 = atleast_1d(val)
+        self._poolBound_M0.setflags(write=False)
         self._changed('poolBound_M0')
 
     @property
@@ -385,9 +496,10 @@ class System(_Event):
         return self._poolBound_T1
 
     @poolBound_T1.setter
-    def poolBound_T1(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T1')
-        self._poolBound_T1 = float(val)
+    def poolBound_T1(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolBound_T1')
+        self._poolBound_T1 = atleast_1d(val)
+        self._poolBound_T1.setflags(write=False)
         self._changed('poolBound_T1')
 
     @property
@@ -395,9 +507,10 @@ class System(_Event):
         return self._poolBound_T2
 
     @poolBound_T2.setter
-    def poolBound_T2(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T2')
-        self._poolBound_T2 = float(val)
+    def poolBound_T2(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolBound_T2')
+        self._poolBound_T2 = atleast_1d(val)
+        self._poolBound_T2.setflags(write=False)
         self._changed('poolBound_T2')
 
     @property
@@ -405,9 +518,10 @@ class System(_Event):
         return self._poolBound_T1D
 
     @poolBound_T1D.setter
-    def poolBound_T1D(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_T1D')
-        self._poolBound_T1D = float(val)
+    def poolBound_T1D(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, [(lt, 0)], 'poolBound_T1D')
+        self._poolBound_T1D = atleast_1d(val)
+        self._poolBound_T1D.setflags(write=False)
         self._changed('poolBound_T1D')
 
     @property
@@ -415,22 +529,21 @@ class System(_Event):
         return self._poolBound_lineshapeAsymmetry
 
     @poolBound_lineshapeAsymmetry.setter
-    def poolBound_lineshapeAsymmetry(self, val: float):
-        check_value_is_valid(self, val, float, None, 'poolBound_lineshapeAsymmetry')
-        self._poolBound_lineshapeAsymmetry = float(val)
+    def poolBound_lineshapeAsymmetry(self, val: ScalarOrVector):
+        check_value_is_valid(self, val, ScalarOrVector, None, 'poolBound_lineshapeAsymmetry')
+        self._poolBound_lineshapeAsymmetry = atleast_1d(val)
+        self._poolBound_lineshapeAsymmetry.setflags(write=False)
         self._changed('poolBound_lineshapeAsymmetry')
 
     @property
     def poolBound_omegaLocalField(self):
         if not hasattr(self, '_poolBound_omegaLocalField'):
-            self._poolBound_omegaLocalField = 1. / ( _sqrt15 * self.poolBound_T2 )
+            tmp = atleast_1d(1. / ( _sqrt15 * self.poolBound_T2 ))
+            tmp.setflags(write=False)
+            check_value_is_valid(self, tmp, ScalarOrVector, [(lt, 0)], 'poolBound_omegaLocalField')
+            self._poolBound_omegaLocalField = tmp
+            self._changed('poolBound_omegaLocalField')
         return self._poolBound_omegaLocalField
-
-    @poolBound_omegaLocalField.setter
-    def poolBound_omegaLocalField(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'poolBound_omegaLocalField')
-        self._poolBound_omegaLocalField = float(val)
-        self._changed('poolBound_omegaLocalField')
 
     @poolBound_omegaLocalField.deleter
     def poolBound_omegaLocalField(self):
@@ -438,29 +551,38 @@ class System(_Event):
         self._changed('poolBound_omegaLocalField')
 
     @property
+    def N_poolFree(self):
+        if not hasattr(self, '_N_poolFree'):
+            check_value_is_valid(self, len(self.poolFree_T2), int, [(lt, 1)], 'N_poolFree')
+            self._N_poolFree = len(self.poolFree_T2)
+            self._changed('N_poolFree')
+        return self._N_poolFree
+
+    @N_poolFree.deleter
+    def N_poolFree(self):
+        del self._N_poolFree
+        self._changed('N_poolFree')
+
+    @property
+    def N_poolBound(self):
+        if not hasattr(self, '_N_poolBound'):
+            check_value_is_valid(self, len(self.poolBound_T2), int, [(lt, 1)], 'N_poolBound')
+            self._N_poolBound = len(self.poolBound_T2)
+            self._changed('N_poolBound')
+        return self._N_poolBound
+
+    @N_poolBound.deleter
+    def N_poolBound(self):
+        del self._N_poolBound
+        self._changed('N_poolBound')
+
+    @property
     def N_pools(self):
         if not hasattr(self, '_N_pools'):
-            if (len1 := len(array(self.poolFree_T1).flatten())) != (len2 := len(array(self.poolFree_T2).flatten())):
-                error = f'Could not compute `N_pools` as `poolFree_T1` ({array(self.poolFree_T1).flatten().tolist()}) and `poolFree_T2` ({array(self.poolFree_T2).flatten().tolist()}) arrays do not have the same length ({len1} vs {len2})'
-                logger.critical(error)
-                raise RuntimeError(error)
-            if (len1 := len(array(self.poolBound_T1).flatten())) != (len2 := len(array(self.poolBound_T2).flatten())):
-                error = f'Could not compute `N_pools` as `poolBound_T1` ({array(self.poolBound_T1).flatten().tolist()}) and `poolBound_T2` ({array(self.poolBound_T2).flatten().tolist()}) arrays do not have the same length ({len1} vs {len2})'
-                logger.critical(error)
-                raise RuntimeError(error)
-            if (len1 := len(array(self.poolBound_T1).flatten())) != (len2 := len(array(self.poolBound_T1D).flatten())):
-                error = f'Could not compute `N_pools` as `poolBound_T1` ({array(self.poolBound_T1).flatten().tolist()}) and `poolBound_T1D` ({array(self.poolBound_T1D).flatten().tolist()}) arrays do not have the same length ({len1} vs {len2})'
-                logger.critical(error)
-                raise RuntimeError(error)
-
-            self.N_pools = len(array(self.poolFree_T2).flatten()) + len(array(self.poolBound_T2).flatten())
+            check_value_is_valid(self, self.N_poolFree + self.N_poolBound, int, [(lt, 1)], 'N_pools')
+            self._N_pools = self.N_poolFree + self.N_poolBound
+            self._changed('N_pools')
         return self._N_pools
-
-    @N_pools.setter
-    def N_pools(self, val: int):
-        check_value_is_valid(self, val, int, [(lt, 1)], 'N_pools')
-        self._N_pools = int(val)
-        self._changed('N_pools')
 
     @N_pools.deleter
     def N_pools(self):

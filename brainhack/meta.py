@@ -1,8 +1,8 @@
 from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq, add, sub, mul, truediv 
-from typing import Any
+from typing import Any, TypeAlias
 from collections.abc import Callable
-from numpy import pi, cos, sin, tan, array, array_equal, errstate, round, number
+from numpy import pi, cos, sin, tan, array, array_equal, errstate, round, number, atleast_1d, atleast_2d
 from numpy.typing import NDArray
 from enum import Flag, auto
 
@@ -99,6 +99,20 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
         case slice.__name__ | Frequency.__name__ | AngularFrequency.__name__ | Duration.__name__ | Angle.__name__:
             if type(val_to_check) is not type_to_check:
                 error = f'`{attribute_name}` of `{obj}` must be of type `{type_to_check}`. Received: `{repr(val_to_check)}` of type `{type(val_to_check)}`.'
+        case ScalarOrVector.__name__:
+            try:
+                tmp = atleast_1d(val_to_check)
+                if len(tmp.shape) != 1:
+                    raise ValueError('')
+            except Exception as _:
+                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'    
+        case ScalarOrMatrix.__name__:
+            try:
+                tmp = atleast_2d(val_to_check)
+                if len(tmp.shape) != 2:
+                    raise ValueError('')
+            except Exception as _:
+                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'  
         case _:
             if type_to_check(val_to_check) != val_to_check:
                 error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'    
@@ -125,7 +139,7 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
                     logger.critical(error)
                     raise NotImplementedError(error)
 
-            if operator(val_to_check, bound):
+            if operator(atleast_1d(val_to_check), bound).any():
                 error = f'`{attribute_name}` of `{obj}` cannot be {boundStr}. Received: `{repr(val_to_check)}`.'
                 logger.critical(error)
                 raise ValueError(error)
@@ -461,3 +475,7 @@ class Angle(_BaseUnit):
         if not hasattr(self, '__cot'):
             self.__cot = 1. / self.tan
         return self.__cot
+
+
+type ScalarOrVector = number | NDArray[number]
+type ScalarOrMatrix = number | NDArray[number]

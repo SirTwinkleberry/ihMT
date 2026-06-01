@@ -34,9 +34,9 @@ CONFIG_SYSTEM = {
         'poolBound_omegaLocalField': 1. / ( sqrt(15) * 1e-5 ),
         'N_pools': 2,
         'poolFree_Rrf': array( [[-0.15831672264766541, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
-        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835, -0.0], [0.0, -0.0, -1045.903901038725]] ),
-        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835, -15853407.223753296], [0.0, -0.023780110835629947, -1045.903901038725]] ),
-        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835,  15853407.223753296], [0.0,  0.023780110835629947, -1045.903901038725]] ),
+        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.4498866814628, -0.0], [0.0, -0.0, -1045.9043496612765]] ),
+        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.4498866814628, -15853414.023800595], [0.0, -0.0237801210357009, -1045.9043496612765]] ),
+        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.4498866814628,  15853414.023800595], [0.0,  0.0237801210357009, -1045.9043496612765]] ),
     }
 }
 
@@ -125,13 +125,13 @@ class TestLineshapes(TestCase):
         self.system = System(**CONFIG_SYSTEM['init'])
 
     def test_Lorentzian(self):
-        self.assertEqual(self.system.Lorentzian(self.system.poolBound_T2, self.system.pulse.offset), 1.6758218963854485e-05)
+        self.assertTrue((self.system.Lorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(1.6758218963854485e-05)).all())
 
     def test_Gaussian(self):
-        self.assertEqual(self.system.Gaussian(self.system.poolBound_T2, self.system.pulse.offset), 2.2755377772531e-05)
+        self.assertTrue((self.system.Gaussian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.2755377772531e-05)).all())
 
     def test_SuperLorentzian(self):
-        self.assertEqual(self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset), 2.3539210935678883e-05)
+        self.assertTrue((self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array([2.353922103306849e-05])).all())
 
     def test_PampelSuperLorentzian(self):
-        self.assertEqual(self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset), 2.3539220258601342e-05)
+        self.assertTrue((self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.3539230355346407e-05)).all())
