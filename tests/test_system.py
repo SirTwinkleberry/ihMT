@@ -34,9 +34,9 @@ CONFIG_SYSTEM = {
         'poolBound_omegaLocalField': 1. / ( sqrt(15) * 1e-5 ),
         'N_pools': 2,
         'poolFree_Rrf': array( [[-0.15831672264766541, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
-        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.4498866814628, -0.0], [0.0, -0.0, -1045.9043496612765]] ),
-        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.4498866814628, -15853414.023800595], [0.0, -0.0237801210357009, -1045.9043496612765]] ),
-        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.4498866814628,  15853414.023800595], [0.0,  0.0237801210357009, -1045.9043496612765]] ),
+        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.44988668223857, -0.0], [0.0, -0.0, -1045.9043496635275]] ),
+        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.44988668223857, -15853414.023834717], [0.0, -0.02378012103575208, -1045.9043496635275]] ),
+        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.44988668223857,  15853414.023834717], [0.0,  0.02378012103575208, -1045.9043496635275]] ),
     }
 }
 
@@ -131,7 +131,7 @@ class TestLineshapes(TestCase):
         self.assertTrue((self.system.Gaussian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.2755377772531e-05)).all())
 
     def test_SuperLorentzian(self):
-        self.assertTrue((self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array([2.353922103306849e-05])).all())
+        self.assertTrue((self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array([2.3539221033119172e-05])).all())
 
     def test_PampelSuperLorentzian(self):
-        self.assertTrue((self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.3539230355346407e-05)).all())
+        self.assertTrue((self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.353923035539707e-05)).all())
