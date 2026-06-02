@@ -101,6 +101,7 @@ class System(_Event):
         self.onChange('poolBound_M0', [lambda: self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery'])])
         self.onChange('poolBound_T1', [lambda: self._check_pool_dimension_compatibility('poolBound_T1', self.poolBound_T1.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery'])])
         self.onChange('poolBound_T2', [lambda: self._check_pool_dimension_compatibility('poolBound_T2', self.poolBound_T2.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
+        self.onChange('poolBound_T1D', [lambda: self._check_pool_dimension_compatibility('poolBound_T1D', self.poolBound_T1D.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'relaxation'])])
         self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._check_pool_dimension_compatibility('poolBound_lineshapeAsymmetry', self.poolBound_lineshapeAsymmetry.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
         self.onChange('poolBound_omegaLocalField', [lambda: self._check_pool_dimension_compatibility('poolBound_omegaLocalField', self.poolBound_omegaLocalField.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
@@ -192,14 +193,14 @@ class System(_Event):
         self.poolBound_Rrf_singleSat_Positive.setflags(write=False)
         self.poolBound_Rrf_singleSat_Negative.setflags(write=False)
 
-    def Lorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
+    def Lorentzian(self, T2: NDArray[number], offsets: float | NDArray[number], *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
         T2 : NDArray[number]
             _description_
-        offset : float
+        offsets : float | NDArray[number]
             _description_
 
         Returns
@@ -207,16 +208,16 @@ class System(_Event):
         NDArray[number]
             _description_
         """
-        return 2 * T2 / ( 1 + 4 * pi * pi * offset * offset * T2 * T2)
+        return 2 * T2 / ( 1 + 4 * pi * pi * offsets * offsets * T2 * T2)
 
-    def Gaussian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
+    def Gaussian(self, T2: NDArray[number], offsets: float | NDArray[number], *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
         T2 : NDArray[number]
             _description_
-        offset : float
+        offsets : float | NDArray[number]
             _description_
 
         Returns
@@ -224,16 +225,16 @@ class System(_Event):
         NDArray[number]
             _description_
         """
-        return sqrt(2 * pi) * T2 * exp( -2 * pi * pi * offset * offset * T2 * T2 )
+        return sqrt(2 * pi) * T2 * exp( -2 * pi * pi * offsets * offsets * T2 * T2 )
 
-    def SuperLorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
+    def SuperLorentzian(self, T2: NDArray[number], offsets: float | NDArray[number], *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
         T2 : NDArray[number]
             _description_
-        offset : float
+        offsets : float | NDArray[number]
             _description_
 
         Returns
@@ -241,18 +242,19 @@ class System(_Event):
         NDArray[number]
             _description_
         """
-        angular_offset_square = 4 * pi * pi * offset * offset
+        offsets = atleast_1d(offsets)
+        angular_offsets_square = 4 * pi * pi * offsets * offsets
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * array(list(quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, rT2sq, 0), 0, 1)[0] for rT2sq in reduced_R2_square))
+        return sqrt( 2 * pi ) * array([quad(lambda cos_theta: self._Spherical(cos_theta, offset, r2sq, 0), 0, 1)[0] for offset, r2sq in zip(angular_offsets_square, reduced_R2_square)])
 
-    def PampelSuperLorentzian(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
+    def PampelSuperLorentzian(self, T2: NDArray[number], offsets: float | NDArray[number], *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
         T2 : NDArray[number]
             _description_
-        offset : float
+        offsets : float | NDArray[number]
             _description_
 
         Returns
@@ -260,18 +262,19 @@ class System(_Event):
         NDArray[number]
             _description_
         """
-        angular_offset_square = 4 * pi * pi * offset * offset
+        offsets = atleast_1d(offsets)
+        angular_offsets_square = 4 * pi * pi * offsets * offsets
         reduced_R2_square = .25 / (T2 * T2)
-        return sqrt( 2 * pi ) * array(list(quad(lambda cos_theta: self._Spherical(cos_theta, angular_offset_square, rT2sq, 985.96), 0, 1)[0] for rT2sq in reduced_R2_square))
+        return sqrt( 2 * pi ) * array([quad(lambda cos_theta: self._Spherical(cos_theta, offset, r2sq, 985.96), 0, 1)[0] for offset, r2sq in zip(angular_offsets_square, reduced_R2_square)])
 
-    def Cylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
+    def Cylindrical(self, T2: NDArray[number], offsets: float | NDArray[number], *args: Any, **kwargs: Any) -> NDArray[number]:
         """_summary_
 
         Parameters
         ----------
         T2 : NDArray[number]
             _description_
-        offset : float
+        offsets : float | NDArray[number]
             _description_
 
         Returns
@@ -279,24 +282,25 @@ class System(_Event):
         NDArray[number]
             _description_
         """
-        angular_offset_square = 4 * pi * pi * offset * offset
+        offsets = atleast_1d(offsets)
+        angular_offsets_square = 4 * pi * pi * offsets * offsets
         reduced_R2_square = .25 / (T2 * T2)
 
         if self.axonal_angle == 0:
             T2_totSquare = 1 / (985.96 + reduced_R2_square)
-            return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offset_square * T2_totSquare)
+            return sqrt(2 * pi * T2_totSquare) * exp(-.5 * angular_offsets_square * T2_totSquare)
 
         sin_theta = -sin(deg2rad(self.axonal_angle))
-        return sqrt( .5 * pi ) * array(list(quad(lambda cos_phi: self._Spherical(sin_theta * cos_phi, angular_offset_square, rT2sq, 985.96), -1, 1)[0] for rT2sq in reduced_R2_square))
+        return sqrt( .5 * pi ) * array([quad(lambda cos_phi: self._Spherical(sin_theta * cos_phi, offset, r2sq, 985.96), -1, 1)[0] for offset, r2sq in zip(angular_offsets_square, reduced_R2_square)])
 
-    def DispersedCylindrical(self, T2: NDArray[number], offset: float, *args: Any, **kwargs: Any) -> NDArray[number]:
+    def DispersedCylindrical(self, T2: NDArray[number], offsets: float | NDArray[number], *args: Any, **kwargs: Any) -> NDArray[number]:
         """Fiber bundle orientation distribution lineshape
 
         Parameters
         ----------
         T2 : NDArray[number]
             _description_
-        offset : float
+        offsets : float | NDArray[number]
             _description_
 
         Returns
@@ -319,7 +323,7 @@ class System(_Event):
                 values.append(norm * exp(dot(u, dot(mat, u))))
             return tuple(values)
 
-        def Spherical(theta: float, phi: float, offset: float, T2: float) -> float:
+        def Spherical(theta: float, phi: float, offsets: NDArray[number], T2: float) -> float:
             # This program set up a function for Spherical lineshape integration
             # include neighboors contribution to remove singularity at the magic angle
             # see Pampel et al. NeuroImage 114 (2015) 136–146

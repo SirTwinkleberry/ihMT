@@ -34,9 +34,10 @@ CONFIG_SYSTEM = {
         'poolBound_omegaLocalField': 1. / ( sqrt(15) * 1e-5 ),
         'N_pools': 2,
         'poolFree_Rrf': array( [[-0.15831672264766541, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]] ),
-        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.44988668223857, -0.0], [0.0, -0.0, -1045.9043496635275]] ),
-        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.44988668223857, -15853414.023834717], [0.0, -0.02378012103575208, -1045.9043496635275]] ),
-        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.44988668223857,  15853414.023834717], [0.0,  0.02378012103575208, -1045.9043496635275]] ),
+        'poolBound_Rrf_dualSat': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835, -0.0], [0.0, -0.0, -1045.903901038725]] ),
+        'poolBound_Rrf_singleSat_Negative': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835, -15853407.223753296], [0.0, -0.023780110835629947, -1045.903901038725]] ),
+        'poolBound_Rrf_singleSat_Positive': array( [[0.0, 0.0, 0.0], [0.0, -360.44973207272835,  15853407.223753296], [0.0,  0.023780110835629947, -1045.903901038725]] ),
+
     }
 }
 
@@ -101,23 +102,25 @@ class TestSystem(TestCase):
         self.system.poolBound_T2 = CONFIG_SYSTEM['init']['poolBound_T2'] * 1e3
         self.assertTrue(self.system.poolBound_omegaLocalField != CONFIG_SYSTEM['compute']['poolBound_omegaLocalField'])
 
-    @skip("Vector-type poolFree_T2 not implemented in `check_value_is_valid` yet.")
-    def test_resetComputedAttributes_N_pools_from_poolFree_T2(self):
-        self.system.poolFree_T2 = array([CONFIG_SYSTEM['init']['poolFree_T2'], CONFIG_SYSTEM['init']['poolFree_T2']]).flatten()
-        with self.assertRaises(RuntimeError):
-            self.system.N_pools
+    def test_errorFromMismatchedDimensions_with_poolFree_T1(self):
+        with self.assertRaises(ValueError):
+            self.system.poolFree_T1 = array([CONFIG_SYSTEM['init']['poolFree_T1'], CONFIG_SYSTEM['init']['poolFree_T1']]).flatten()
 
-    @skip("Vector-type poolFree_T2 not implemented in `check_value_is_valid` yet.")
-    def test_resetComputedAttributes_N_pools_from_poolBound_T2(self):
-        self.system.poolBound_T2 = array([CONFIG_SYSTEM['init']['poolBound_T2'], CONFIG_SYSTEM['init']['poolBound_T2']]).flatten()
-        with self.assertRaises(RuntimeError):
-            self.system.N_pools
+    def test_errorFromMismatchedDimensions_with_poolFree_T2(self):
+        with self.assertRaises(ValueError):
+            self.system.poolFree_T2 = array([CONFIG_SYSTEM['init']['poolFree_T2'], CONFIG_SYSTEM['init']['poolFree_T2']]).flatten()
 
-    @skip("Vector-type poolFree_T2 not implemented in `check_value_is_valid` yet.")
-    def test_resetComputedAttributes_N_pools_from_poolBound_T1D(self):
-        self.system.poolBound_T1D = array([CONFIG_SYSTEM['init']['poolBound_T1D'], CONFIG_SYSTEM['init']['poolBound_T1D']]).flatten()
-        with self.assertRaises(RuntimeError):
-            self.system.N_pools
+    def test_errorFromMismatchedDimensions_with_poolBound_T1(self):
+        with self.assertRaises(ValueError):
+            self.system.poolBound_T1 = array([CONFIG_SYSTEM['init']['poolBound_T1'], CONFIG_SYSTEM['init']['poolBound_T1']]).flatten()
+
+    def test_errorFromMismatchedDimensions_with_poolBound_T2(self):
+        with self.assertRaises(ValueError):
+            self.system.poolBound_T2 = array([CONFIG_SYSTEM['init']['poolBound_T2'], CONFIG_SYSTEM['init']['poolBound_T2']]).flatten()
+
+    def test_errorFromMismatchedDimensions_with_poolBound_T1D(self):
+        with self.assertRaises(ValueError):
+            self.system.poolBound_T1D = array([CONFIG_SYSTEM['init']['poolBound_T1D'], CONFIG_SYSTEM['init']['poolBound_T1D']]).flatten()
 
 
 class TestLineshapes(TestCase):
@@ -131,7 +134,7 @@ class TestLineshapes(TestCase):
         self.assertTrue((self.system.Gaussian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.2755377772531e-05)).all())
 
     def test_SuperLorentzian(self):
-        self.assertTrue((self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array([2.3539221033119172e-05])).all())
+        self.assertTrue((self.system.SuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array([2.3539210935678883e-05])).all())
 
     def test_PampelSuperLorentzian(self):
-        self.assertTrue((self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.353923035539707e-05)).all())
+        self.assertTrue((self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.3539220258601342e-05)).all())

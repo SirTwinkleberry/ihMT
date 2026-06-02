@@ -44,7 +44,7 @@ DEFAULT: dict[str, bool | int | float | str] = {
         'export': True,
         'offset': 7000,
         'output_fullVector': True,
-        'export_read': False,
+        'export_read': True,
     },
 
     'log': {
@@ -91,21 +91,24 @@ CONFIG_SIMULATOR = {
     },
     'compute': {
         'ihMTR_CM':  dict(
-            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTs_Positive=[0.767625247137301, 0.045410921774240505, 1.5267492098706601e-06, 1.0],
-            MTs_Negative=[0.767625247137301, 0.045410921774240505, 1.5267492098706601e-06, 1.0],
-            MTd_CM=[0.659952002062041, 0.010208102517860564, 0.0, 1.0],
+            MT0=[0.9037829677605911, 0.09037837084448294, 0.0, 1.0],
+            MTs_Positive=[0.768369253684603, 0.0454539042950363, 1.5281848336861655e-06, 1.0],
+            MTs_Negative=[0.768369253684603, 0.0454539042950363, 1.5281848336861655e-06, 1.0],
+            MTd_CM=[0.6606360409781923, 0.010218152542836825, 0.0, 1.0],
+            readout=[[0.984485836436591, 0.05771551658429958, 0.0, 0.005982035946064735], [0.005749589161890545, 0.9363024474696356, 0.0, 0.0005982035946064736], [0.0, 0.0, 0.5488116360940265, 0.0], [0.0, 0.0, 0.0, 1.0]]
         ),
         'ihMTR_ALT': dict(
-            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTs_Positive=[0.767625247137301, 0.045410921774240505, 1.5267492098706601e-06, 1.0],
-            MTs_Negative=[0.767625247137301, 0.045410921774240505, 1.5267492098706601e-06, 1.0],
-            MTd_ALT=[0.6700713853510588, 0.013280082599319563, -2.724688105707174e-07, 1.0],
+            MT0=[0.9037829677605911, 0.09037837084448294, 0.0, 1.0],
+            MTs_Positive=[0.768369253684603, 0.0454539042950363, 1.5281848336861655e-06, 1.0],
+            MTs_Negative=[0.768369253684603, 0.0454539042950363, 1.5281848336861655e-06, 1.0],
+            MTd_ALT=[0.6707639083635117, 0.013293125187180439, -2.727313124262742e-07, 1.0],
+            readout=[[0.984485836436591, 0.05771551658429958, 0.0, 0.005982035946064735], [0.005749589161890545, 0.9363024474696356, 0.0, 0.0005982035946064736], [0.0, 0.0, 0.5488116360940265, 0.0], [0.0, 0.0, 0.0, 1.0]]
         ),
         'BPR':  dict(
-            MT0=[0.9037829677605914, 0.09037837084448297, 0.0, 1.0],
-            MTd_ALT=[0.6700713853510588, 0.013280082599319563, -2.724688105707174e-07, 1.0],
-            MTd_CM=[0.659952002062041, 0.010208102517860564, 0.0, 1.0],
+            MT0=[0.9037829677605911, 0.09037837084448294, 0.0, 1.0],
+            MTd_ALT=[0.6707639083635117, 0.013293125187180439, -2.727313124262742e-07, 1.0],
+            MTd_CM=[0.6606360409781923, 0.010218152542836825, 0.0, 1.0],
+            readout=[[0.984485836436591, 0.05771551658429958, 0.0, 0.005982035946064735], [0.005749589161890545, 0.9363024474696356, 0.0, 0.0005982035946064736], [0.0, 0.0, 0.5488116360940265, 0.0], [0.0, 0.0, 0.0, 1.0]]
         ),
     }
 }
@@ -122,7 +125,7 @@ def dumpConfig(export: bool, signal: str):
 class TestRun_withoutExport(TestCase):
     @classmethod
     def setUpClass(cls):
-        Path(DEFAULT['run']['outputDir']).mkdir(parents=False, exist_ok=False)
+        Path(DEFAULT['run']['outputDir']).mkdir(parents=False, exist_ok=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -160,8 +163,9 @@ class TestRun_withoutExport(TestCase):
             self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
             self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
             self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
-            del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_CM']
-            del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_CM']
+            self.assertTrue((mat['readout'] == base['readout']).all())
+            del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_CM'], mat['readout']
+            del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_CM'], base['readout']
 
             self.assertDictEqual(mat, base)
         except CalledProcessError as e:
@@ -195,8 +199,9 @@ class TestRun_withoutExport(TestCase):
             self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
             self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
             self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-            del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_ALT']
-            del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_ALT']
+            self.assertTrue((mat['readout'] == base['readout']).all())
+            del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_ALT'], mat['readout']
+            del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_ALT'], base['readout']
 
             self.assertDictEqual(mat, base)
         except CalledProcessError as e:
@@ -229,8 +234,9 @@ class TestRun_withoutExport(TestCase):
             self.assertTrue((mat['MT0'] == base['MT0']).all())
             self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
             self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-            del mat['__header__'], mat['MT0'], mat['MTd_CM'], mat['MTd_ALT']
-            del base['__header__'], base['MT0'], base['MTd_CM'], base['MTd_ALT']
+            self.assertTrue((mat['readout'] == base['readout']).all())
+            del mat['__header__'], mat['MT0'], mat['MTd_CM'], mat['MTd_ALT'], mat['readout']
+            del base['__header__'], base['MT0'], base['MTd_CM'], base['MTd_ALT'], base['readout']
 
             self.assertDictEqual(mat, base)
         except CalledProcessError as e:
@@ -300,8 +306,9 @@ class TestSingleRun(TestCase):
         self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
         self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
-        del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_CM']
-        del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_CM']
+        self.assertTrue((mat['readout'] == base['readout']).all())
+        del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_CM'], mat['readout']
+        del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_CM'], base['readout']
 
         self.assertDictEqual(mat, base)
 
@@ -328,8 +335,9 @@ class TestSingleRun(TestCase):
         self.assertTrue((mat['MTs_Positive'] == base['MTs_Positive']).all())
         self.assertTrue((mat['MTs_Negative'] == base['MTs_Negative']).all())
         self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-        del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_ALT']
-        del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_ALT']
+        self.assertTrue((mat['readout'] == base['readout']).all())
+        del mat['__header__'], mat['MT0'], mat['MTs_Positive'], mat['MTs_Negative'], mat['MTd_ALT'], mat['readout']
+        del base['__header__'], base['MT0'], base['MTs_Positive'], base['MTs_Negative'], base['MTd_ALT'], base['readout']
 
         self.assertDictEqual(mat, base)
 
@@ -353,8 +361,9 @@ class TestSingleRun(TestCase):
         self.assertTrue((mat['MT0'] == base['MT0']).all())
         self.assertTrue((mat['MTd_CM'] == base['MTd_CM']).all())
         self.assertTrue((mat['MTd_ALT'] == base['MTd_ALT']).all())
-        del mat['__header__'], mat['MT0'], mat['MTd_CM'], mat['MTd_ALT']
-        del base['__header__'], base['MT0'], base['MTd_CM'], base['MTd_ALT']
+        self.assertTrue((mat['readout'] == base['readout']).all())
+        del mat['__header__'], mat['MT0'], mat['MTd_CM'], mat['MTd_ALT'], mat['readout']
+        del base['__header__'], base['MT0'], base['MTd_CM'], base['MTd_ALT'], base['readout']
 
         self.assertDictEqual(mat, base)
 

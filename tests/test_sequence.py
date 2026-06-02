@@ -84,10 +84,10 @@ class TestSequence(TestCase):
         self.assertEqual(self.sequence.duration_readout, CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['es'])
 
     def test___init__duration_preparation(self):
-        self.assertEqual(self.sequence.duration_preparation, (CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] + CONFIG_SEQUENCE['init']['dt_lastBurst'])
+        self.assertEqual(self.sequence.duration_preparation, (CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['dt_lastBurst'])
 
     def test___init__duration_recovery(self):
-        self.assertEqual(self.sequence.duration_recovery, CONFIG_SEQUENCE['init']['tr'] - (CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['es']) - ((CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['N_pulse'] * CONFIG_SEQUENCE['init']['dt_interPulse'] + CONFIG_SEQUENCE['init']['dt_lastBurst']))
+        self.assertEqual(self.sequence.duration_recovery, CONFIG_SEQUENCE['init']['tr'] - (CONFIG_SEQUENCE['init']['N_adc'] * CONFIG_SEQUENCE['init']['es']) - ((CONFIG_SEQUENCE['init']['N_burst'] - 1) * CONFIG_SEQUENCE['init']['TR_burst'] + CONFIG_SEQUENCE['init']['dt_lastBurst']))
 
     def test___init__flipAngle(self):
         self.assertEqual(self.sequence.readout_flipAngle, CONFIG_SEQUENCE['init']['readout_flipAngle'])
