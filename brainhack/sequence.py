@@ -305,6 +305,11 @@ class Sequence(_Event):
         self._duration_readout = float(val)
         self._changed('duration_readout')
 
+    @duration_readout.deleter
+    def duration_readout(self):
+        del self._duration_readout
+        self._changed('duration_readout')
+
     @property
     def duration_preparation(self):
         if not hasattr(self, '_duration_preparation'):
@@ -317,6 +322,11 @@ class Sequence(_Event):
         self._duration_preparation = float(val)
         self._changed('duration_preparation')
 
+    @duration_preparation.deleter
+    def duration_preparation(self):
+        del self._duration_preparation
+        self._changed('duration_preparation')
+
     @property
     def duration_recovery(self):
         if not hasattr(self, '_duration_recovery'):
@@ -327,4 +337,9 @@ class Sequence(_Event):
     def duration_recovery(self, val: float):
         check_value_is_valid(self, val, float, [(lt, 0)], 'duration_recovery')
         self._duration_recovery = float(val)
+        self._changed('duration_recovery')
+
+    @duration_recovery.deleter
+    def duration_recovery(self):
+        del self._duration_recovery
         self._changed('duration_recovery')

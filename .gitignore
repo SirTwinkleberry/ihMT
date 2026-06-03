@@ -170,3 +170,5 @@ output/
 !.pixi/config.toml
 
 examples/.slice
+
+tmp/

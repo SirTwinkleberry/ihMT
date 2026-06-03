@@ -89,17 +89,17 @@ class System(_Event):
 
         self.onChange('pulse', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
 
-        self.onChange('N_poolFree', [lambda: self._reset_computed_attributes(['N_pools'])])
-        self.onChange('poolFree_M0', [lambda: self._check_pool_dimension_compatibility('poolFree_M0', self.poolFree_M0.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
-        self.onChange('poolFree_T1', [lambda: self._check_pool_dimension_compatibility('poolFree_T1', self.poolFree_T1.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery'])])
+        self.onChange('N_poolFree', [lambda: self._reset_computed_attributes(['N_pools', 'magnetization_recovery', 'relaxation'])])
+        self.onChange('poolFree_M0', [lambda: self._check_pool_dimension_compatibility('poolFree_M0', self.poolFree_M0.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery', 'relaxation'])])
+        self.onChange('poolFree_T1', [lambda: self._check_pool_dimension_compatibility('poolFree_T1', self.poolFree_T1.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'magnetization_recovery', 'relaxation'])])
         self.onChange('poolFree_T2', [lambda: self._check_pool_dimension_compatibility('poolFree_T2', self.poolFree_T2.shape, 'free'), lambda: self._reset_computed_attributes(['N_poolFree', 'poolFree_Rrf'])])
 
         self.onChange('N_pools', [lambda: self._reset_computed_attributes(['poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
-        self.onChange('poolFreeBound_exchangeRate', [lambda: self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', self.poolFreeBound_exchangeRate.shape, 'both'), lambda: self._reset_computed_attributes(['N_poolFree', 'N_poolBound'])])
+        self.onChange('poolFreeBound_exchangeRate', [lambda: self._check_pool_dimension_compatibility('poolFreeBound_exchangeRate', self.poolFreeBound_exchangeRate.shape, 'both'), lambda: self._reset_computed_attributes(['N_poolFree', 'N_poolBound', 'relaxation'])])
 
-        self.onChange('N_poolBound', [lambda: self._reset_computed_attributes(['N_pools'])])
-        self.onChange('poolBound_M0', [lambda: self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery'])])
-        self.onChange('poolBound_T1', [lambda: self._check_pool_dimension_compatibility('poolBound_T1', self.poolBound_T1.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery'])])
+        self.onChange('N_poolBound', [lambda: self._reset_computed_attributes(['N_pools', 'magnetization_recovery', 'relaxation'])])
+        self.onChange('poolBound_M0', [lambda: self._check_pool_dimension_compatibility('poolBound_M0', self.poolBound_M0.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery', 'relaxation'])])
+        self.onChange('poolBound_T1', [lambda: self._check_pool_dimension_compatibility('poolBound_T1', self.poolBound_T1.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'magnetization_recovery', 'relaxation'])])
         self.onChange('poolBound_T2', [lambda: self._check_pool_dimension_compatibility('poolBound_T2', self.poolBound_T2.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'poolBound_omegaLocalField'])])
         self.onChange('poolBound_T1D', [lambda: self._check_pool_dimension_compatibility('poolBound_T1D', self.poolBound_T1D.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'relaxation'])])
         self.onChange('poolBound_lineshapeAsymmetry', [lambda: self._check_pool_dimension_compatibility('poolBound_lineshapeAsymmetry', self.poolBound_lineshapeAsymmetry.shape, 'bound'), lambda: self._reset_computed_attributes(['N_poolBound', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative'])])
@@ -399,7 +399,7 @@ class System(_Event):
 
     @relaxation.deleter
     def relaxation(self):
-        del self._poolFree_Rrf
+        del self._relaxation
         self._changed('relaxation')
 
     @property

@@ -1,10 +1,11 @@
 from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq, add, sub, mul, truediv 
-from typing import Any, TypeAlias
+from typing import Any
 from collections.abc import Callable
-from numpy import pi, cos, sin, tan, array, array_equal, errstate, round, number, atleast_1d, atleast_2d
+from numpy import pi, cos, sin, tan, array, array_equal, nan_to_num, errstate, round, number, atleast_1d, atleast_2d
 from numpy.typing import NDArray
 from enum import Flag, auto
+from copy import deepcopy
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -251,6 +252,17 @@ class CompositeDictionary(dict):
 
     def squeeze(self):
         return CompositeDictionary({key: val.squeeze() for key, val in self.items()})
+
+    def __str__(self, round_decimals: None | int = None, nan_to_0: bool = False):
+        string = f'Shape: {self[list(self.keys())[0]].shape}\n'
+        for key in self.keys():
+            val = deepcopy(self[key])
+            if round_decimals is not None:
+                val = round(val, round_decimals)
+            if nan_to_0:
+                val = nan_to_num(val, nan=0, posinf=0, neginf=0)
+            string += f'{str(key.name).rjust(13)} = {val.tolist()}\n'
+        return string
 
     #####
     # BELOW: property getters and setters

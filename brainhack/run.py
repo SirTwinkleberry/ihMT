@@ -154,7 +154,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 def GridRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[number]], safe: bool = False) -> dict[str, NDArray[number]]:
     def _runs(range_keys):
         if len(range_keys) == 0:
-            for key, val in simulator.SteadyState().items():
+            for key, val in (tmp := simulator.SteadyState()).items():
                 data[key].append(val)
             return
         attribute = range_keys.pop(0)
