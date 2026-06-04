@@ -1,7 +1,6 @@
 from logging import getLogger, NullHandler
-from numpy import number, equal, mod
+from numpy import ndarray, number, equal, mod
 from numpy.linalg import matrix_power, inv
-from numpy.typing import NDArray
 
 from brainhack.meta import _Event, CompositeDictionary
 from brainhack.simulator import Simulator
@@ -36,7 +35,7 @@ class Trajector(_Event):
         return Trajector(trajectory, simulator)
 
     @staticmethod
-    def readouts(simulator: Simulator, stable: bool = True, *args, **kwargs) -> CompositeDictionary[str, NDArray[number]]:
+    def readouts(simulator: Simulator, stable: bool = True, *args, **kwargs) -> CompositeDictionary[str, ndarray[number]]:
         tmp = simulator.export_readMatrix, simulator.output_vectorSlice
         simulator.export_readMatrix, simulator.output_vectorSlice = True, slice(None)
 
@@ -61,38 +60,38 @@ class Trajector(_Event):
         return CompositeDictionary(readouts).T
 
     @staticmethod
-    def _check_integer_only(array: NDArray[number]):
+    def _check_integer_only(array: ndarray[number]):
         return equal(mod(array, 1), 0).all()
 
-    def VectorialPointSpreadFunction(self) -> NDArray[number]:
+    def VectorialPointSpreadFunction(self) -> ndarray[number]:
         # D?
         raise NotImplementedError
 
-    def PointSpreadFunction(self) -> NDArray[number]:
+    def PointSpreadFunction(self) -> ndarray[number]:
         # 2D or 3D
         raise NotImplementedError
 
-    def LineSpreadFunction(self) -> NDArray[number]:
+    def LineSpreadFunction(self) -> ndarray[number]:
         # 1D
         raise NotImplementedError
 
-    def EdgeSpreadFunction(self) -> NDArray[number]:
+    def EdgeSpreadFunction(self) -> ndarray[number]:
         # 1D
         raise NotImplementedError
 
-    def VectorialOpticalTransferFunction(self) -> NDArray[number]:
+    def VectorialOpticalTransferFunction(self) -> ndarray[number]:
         # D?
         raise NotImplementedError
 
-    def OpticalTransferFunction(self) -> NDArray[number]:
+    def OpticalTransferFunction(self) -> ndarray[number]:
         # 2D or 3D
         raise NotImplementedError
 
-    def ModulationTransferFunction(self) -> NDArray[number]:
+    def ModulationTransferFunction(self) -> ndarray[number]:
         # 2D or 3D
         raise NotImplementedError
 
-    def PhaseTransferFunction(self) -> NDArray[number]:
+    def PhaseTransferFunction(self) -> ndarray[number]:
         # 2D or 3D
         raise NotImplementedError
 

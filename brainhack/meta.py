@@ -2,8 +2,7 @@ from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq, add, sub, mul, truediv
 from typing import Any
 from collections.abc import Callable
-from numpy import pi, cos, sin, tan, array, array_equal, nan_to_num, errstate, round, number, atleast_1d, atleast_2d
-from numpy.typing import NDArray
+from numpy import pi, cos, sin, tan, array, array_equal, nan_to_num, errstate, round, ndarray, number, atleast_1d, atleast_2d
 from enum import Flag, auto
 from copy import deepcopy
 
@@ -99,24 +98,24 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
     match type_to_check.__name__:
         case slice.__name__ | Frequency.__name__ | AngularFrequency.__name__ | Duration.__name__ | Angle.__name__:
             if type(val_to_check) is not type_to_check:
-                error = f'`{attribute_name}` of `{obj}` must be of type `{type_to_check}`. Received: `{repr(val_to_check)}` of type `{type(val_to_check)}`.'
+                error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be of type `{type_to_check}`. Received: `{repr(val_to_check)}` of type `{type(val_to_check)}`.'
         case ScalarOrVector.__name__:
             try:
                 tmp = atleast_1d(val_to_check)
                 if len(tmp.shape) != 1:
                     raise ValueError('')
             except Exception as _:
-                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
+                error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
         case ScalarOrMatrix.__name__:
             try:
                 tmp = atleast_2d(val_to_check)
                 if len(tmp.shape) != 2:
                     raise ValueError('')
             except Exception as _:
-                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
+                error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
         case _:
             if type_to_check(val_to_check) != val_to_check:
-                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
+                error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
 
     if error is not None:
         logger.critical(error)
@@ -141,7 +140,7 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
                     raise NotImplementedError(error)
 
             if operator(atleast_1d(val_to_check), bound).any():
-                error = f'`{attribute_name}` of `{obj}` cannot be {boundStr}. Received: `{repr(val_to_check)}`.'
+                error = f'`{attribute_name}` of `{obj.__class__.__name__}` cannot be {boundStr}. Received: `{repr(val_to_check)}`.'
                 logger.critical(error)
                 raise ValueError(error)
 
@@ -161,7 +160,7 @@ class CompositeDictionary(dict):
                 data[key] = value
         super().__init__(data)
 
-    def __getitem__(self, subscript: Signal) -> CompositeDictionary | NDArray[number]:
+    def __getitem__(self, subscript: Signal) -> CompositeDictionary | ndarray[number]:
         if type(subscript) != Signal:
             raise TypeError(f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`.")
 
@@ -272,7 +271,7 @@ class CompositeDictionary(dict):
         return CompositeDictionary({key: val.T for key, val in self.items()})
 
     @property
-    def _invMT0(self) -> NDArray[number]:
+    def _invMT0(self) -> ndarray[number]:
         if not hasattr(self, '__invMT0'):
             self.__invMT0 = 1. / self[Signal.MT0]
             self.__invMT0.setflags(write=False)
@@ -507,5 +506,5 @@ class Angle(_BaseUnit):
         return self.__cot
 
 
-type ScalarOrVector = number | NDArray[number]
-type ScalarOrMatrix = number | NDArray[number]
+type ScalarOrVector = number | ndarray[number]
+type ScalarOrMatrix = number | ndarray[number]

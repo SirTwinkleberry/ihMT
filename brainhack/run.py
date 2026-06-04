@@ -4,8 +4,7 @@ from datetime import datetime
 from sys import maxsize
 from typing import Any
 from scipy.io import savemat
-from numpy import set_printoptions, array, number
-from numpy.typing import NDArray
+from numpy import set_printoptions, array, number, ndarray
 from yaml import safe_load
 from sys import argv
 from pathlib import Path
@@ -22,7 +21,7 @@ logger.addHandler(NullHandler())
 logger.debug('`run` module loaded successfully')
 
 
-def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, poolBound_lineshapeAsymmetry: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Signal: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, NDArray[number]]:
+def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: float, T1D: float, T2b: float, poolBound_lineshapeAsymmetry: float, pw: float, dt: float, es: float, tr: float, turbo: int, N_dummyADC: int, np: int, nb: int, btr: float, btrlast: float, fa_sat: float, fa_rage: float, FLAG_Signal: str, N_altern: int, r_tukey: float, outputDir: str, filePrefix: str, export: bool, offset: float, output_fullVector: bool, export_read: bool, *args: Any, **kwargs: Any) -> dict[str, ndarray[number]]:
     """_summary_
 
     Parameters
@@ -88,7 +87,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
 
     Returns
     -------
-    dict[str, NDArray[number]]
+    dict[str, ndarray[number]]
         _description_
 
     Raises
@@ -142,7 +141,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
         output_fullVector=output_fullVector,
     )
 
-    arrays: dict[str, NDArray[number]] = simulator.SteadyState()
+    arrays: dict[str, ndarray[number]] = simulator.SteadyState()
 
     if export:
         Path(outputDir).resolve().mkdir(parents=True, exist_ok=True)
@@ -151,7 +150,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     return arrays
 
 
-def GridRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDArray[number]], safe: bool = False) -> dict[str, NDArray[number]]:
+def GridRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, ndarray[number]], safe: bool = False) -> dict[str, ndarray[number]]:
     def _runs(range_keys):
         if len(range_keys) == 0:
             for key, val in (tmp := simulator.SteadyState()).items():
@@ -191,7 +190,7 @@ def GridRuns(simulator: Simulator, range_keys: list[str], ranges: dict[str, NDAr
     return data
 
 
-def SampledRuns(simulator: Simulator, samplers: dict[str, NDArray[number]], grids: dict[str, NDArray[number]], safe: bool = False) -> dict[str, NDArray[number]]:
+def SampledRuns(simulator: Simulator, samplers: dict[str, ndarray[number]], grids: dict[str, ndarray[number]], safe: bool = False) -> dict[str, ndarray[number]]:
     raise NotImplementedError
 
 

@@ -1,6 +1,5 @@
 from logging import getLogger, NullHandler
-from numpy import linspace, float64, number, meshgrid, vstack, nan, ones
-from numpy.typing import NDArray
+from numpy import linspace, float64, ndarray, number, meshgrid, vstack, nan, ones
 from functools import partial
 from scipy.interpolate import PchipInterpolator, RegularGridInterpolator
 from copy import deepcopy
@@ -15,10 +14,10 @@ logger.debug('`corrector` module loaded successfully')
 
 
 class Corrector(_Event):
-    _ranges: dict[str, NDArray[number]]
+    _ranges: dict[str, ndarray[number]]
     _simulator: Simulator
 
-    _simulated: dict[str, NDArray[number]]
+    _simulated: dict[str, ndarray[number]]
     _nominals: dict[str, float]
     _interpolants: dict[str, PchipInterpolator | RegularGridInterpolator]
 
@@ -28,7 +27,7 @@ class Corrector(_Event):
     def Simple(simulator: Simulator) -> Corrector:
         return Corrector(simulator=simulator, ranges={'flipAngle': simulator.pulse.flipAngle * linspace(.1, 1.5, 141)})
 
-    def __init__(self, simulator: Simulator, ranges: dict[str, NDArray[number]]):
+    def __init__(self, simulator: Simulator, ranges: dict[str, ndarray[number]]):
         self.simulator = simulator
         self.ranges = ranges
 
@@ -38,7 +37,7 @@ class Corrector(_Event):
     def copy(self) -> Corrector:
         return Corrector(self.simulator.copy(), deepcopy(self.ranges))
 
-    def apply(self, parameter_maps: dict[str, NDArray[number]], data_maps: dict[Signal, NDArray[number]]) -> CompositeDictionary[Signal, NDArray[number]]:
+    def apply(self, parameter_maps: dict[str, ndarray[number]], data_maps: dict[Signal, ndarray[number]]) -> CompositeDictionary[Signal, ndarray[number]]:
         for key in self.ranges.keys():
             if key not in parameter_maps.keys():
                 raise KeyError(f"Missing key `{key}` in parameter map dictionary.")
@@ -59,7 +58,7 @@ class Corrector(_Event):
 
         parameters = vstack([parameter_maps[key][mask].flatten() for key in self.ranges.keys()]).T
 
-        corrected: dict[Signal, NDArray[number]] = dict()
+        corrected: dict[Signal, ndarray[number]] = dict()
         for key, value in data_maps.items():
             corrected[key] = value.copy().astype(float64)
             corrected[key][mask] *= (self.nominals[key] / self.interpolants[key](parameters)).squeeze()
@@ -70,11 +69,11 @@ class Corrector(_Event):
     # BELOW: property getters and setters
     #####
     @property
-    def ranges(self) -> dict[str, NDArray[number]]:
+    def ranges(self) -> dict[str, ndarray[number]]:
         return self._ranges
 
     @ranges.setter
-    def ranges(self, val: dict[str, NDArray[number]]):
+    def ranges(self, val: dict[str, ndarray[number]]):
         self._ranges = deepcopy(val)
         for val in self._ranges.values():
             val.setflags(write=False)
@@ -90,7 +89,7 @@ class Corrector(_Event):
         self._changed('simulator')
 
     @property  # immutable for the user, so only getter is defined
-    def simulated(self) -> CompositeDictionary[str, NDArray[number]]:
+    def simulated(self) -> CompositeDictionary[str, ndarray[number]]:
         if not hasattr(self, '_simulated'):
             sim = self.simulator.copy()
             sim.output_vectorSlice = slice(1)
@@ -99,7 +98,7 @@ class Corrector(_Event):
         return self._simulated
 
     @property  # immutable for the user, so only getter is defined
-    def mesh(self) -> dict[str, NDArray[number]]:
+    def mesh(self) -> dict[str, ndarray[number]]:
         if not hasattr(self, '_mesh'):
             tmp = dict()
             mesh = meshgrid(*list(self.ranges.values()), indexing='ij', sparse=True)
@@ -130,7 +129,7 @@ class Corrector(_Event):
 
 
 class InterpolantDictionary(dict):
-    def __init__(self, interpolator: PchipInterpolator | RegularGridInterpolator, ranges: dict[str, NDArray[number]], simulated: CompositeDictionary[str, NDArray[number]]):
+    def __init__(self, interpolator: PchipInterpolator | RegularGridInterpolator, ranges: dict[str, ndarray[number]], simulated: CompositeDictionary[str, ndarray[number]]):
         self._interpolator = interpolator
         self._ranges = tuple(ranges.values())
         self._simulated = simulated

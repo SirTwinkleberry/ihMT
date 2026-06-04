@@ -1,8 +1,7 @@
 from logging import getLogger, NullHandler
-from numpy import zeros, kron, eye, diag, array, sum, vstack, hstack, round, deg2rad, cos, number, errstate, complex128, iscomplex
-from numpy.typing import NDArray
+from numpy import zeros, eye, vstack, hstack, round, deg2rad, cos, ndarray, number, complex128, iscomplex
 from numpy.linalg import matrix_power, eig
-from scipy.linalg import expm, block_diag
+from scipy.linalg import expm
 from typing import Any
 
 from brainhack.meta import _Event, Signal, check_value_is_valid
@@ -64,7 +63,7 @@ class Simulator(_Event):
             logger.critical(error)
             raise ValueError(error)
 
-    def SteadyState(self) -> dict[str, NDArray[number]]:
+    def SteadyState(self) -> dict[str, ndarray[number]]:
         """_summary_
 
         Array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
@@ -77,47 +76,47 @@ class Simulator(_Event):
 
         Returns
         -------
-        tuple[NDArray[number], ...]
+        tuple[ndarray[number], ...]
             _description_
         """
         self._check_pulse_match()
 
         sys = self.system
         seq = self.sequence
-        output: dict[str, NDArray[number]] = dict()
+        output: dict[str, ndarray[number]] = dict()
 
         mat_REX = vstack([hstack([sys.relaxation, sys.magnetization_recovery]), zeros((1, 1 + sys.N_poolFree + 2 * sys.N_poolBound))])
 
         # Readout & Recovery
-        evol_relax_interReadRF: NDArray[number] = expm(mat_REX * seq.es)
-        evol_relax_recovery: NDArray[number] = expm(mat_REX * seq.duration_recovery)
+        evol_relax_interReadRF: ndarray[number] = expm(mat_REX * seq.es)
+        evol_relax_recovery: ndarray[number] = expm(mat_REX * seq.duration_recovery)
         evol_rf_readoutInstantAction = eye(1 + sys.N_poolFree + 2 * sys.N_poolBound)
         evol_rf_readoutInstantAction[0, 0] = cos(deg2rad(seq.readout_flipAngle))
-        read: NDArray[number] = evol_relax_interReadRF @ evol_rf_readoutInstantAction
-        evol_RAGE: NDArray[number] = evol_relax_recovery @ matrix_power(read, seq.N_adc - seq.N_dummyADC)
-        evol_dummyRAGE: NDArray[number] = matrix_power(read, seq.N_dummyADC)
+        read: ndarray[number] = evol_relax_interReadRF @ evol_rf_readoutInstantAction
+        evol_RAGE: ndarray[number] = evol_relax_recovery @ matrix_power(read, seq.N_adc - seq.N_dummyADC)
+        evol_dummyRAGE: ndarray[number] = matrix_power(read, seq.N_dummyADC)
 
         if Signal.MT0 in seq.signal:
-            evol_relax_fullPrep: NDArray[number] = expm(mat_REX * seq.duration_preparation)
+            evol_relax_fullPrep: ndarray[number] = expm(mat_REX * seq.duration_preparation)
         v_MT0 = eig(round(evol_dummyRAGE @ (evol_relax_fullPrep @ evol_RAGE), 16))[1][:, -1]
         if (v_MT0.dtype == complex128) and (not iscomplex(v_MT0).any()):
             v_MT0 = v_MT0.real
         output['MT0'] = v_MT0[self.output_vectorSlice] / v_MT0[-1]
 
         if (Signal.MTs in seq.signal) or (Signal.MTd_ALT in seq.signal) or (Signal.MTd_CM in seq.signal):
-            evol_relax_interPulse: NDArray[number] = expm(mat_REX * (seq.dt_interPulse - seq.pulse.duration))
-            evol_relax_TR_burst: NDArray[number] = expm(mat_REX * (seq.TR_burst - seq.N_pulse * seq.dt_interPulse))
-            evol_relax_lastBurst: NDArray[number] = expm(mat_REX * (seq.dt_lastBurst - seq.N_pulse * seq.dt_interPulse))
+            evol_relax_interPulse: ndarray[number] = expm(mat_REX * (seq.dt_interPulse - seq.pulse.duration))
+            evol_relax_TR_burst: ndarray[number] = expm(mat_REX * (seq.TR_burst - seq.N_pulse * seq.dt_interPulse))
+            evol_relax_lastBurst: ndarray[number] = expm(mat_REX * (seq.dt_lastBurst - seq.N_pulse * seq.dt_interPulse))
 
             if (Signal.MTs in seq.signal) or (Signal.MTd_ALT in seq.signal):
-                evol_rf_singleSat_Positive: NDArray[number] = expm(
+                evol_rf_singleSat_Positive: ndarray[number] = expm(
                     vstack([
                         hstack( [ sys.poolBound_Rrf_singleSat_Positive + sys.poolFree_Rrf + sys.relaxation, sys.magnetization_recovery ] ),
                         zeros( (1, 1 + sys.N_poolFree + 2 * sys.N_poolBound) )
                     ]) * seq.pulse.duration
                 )
 
-                evol_rf_singleSat_Negative: NDArray[number] = expm(
+                evol_rf_singleSat_Negative: ndarray[number] = expm(
                     vstack([
                         hstack( [ sys.poolBound_Rrf_singleSat_Negative + sys.poolFree_Rrf + sys.relaxation, sys.magnetization_recovery ] ),
                         zeros( (1, 1 + sys.N_poolFree + 2 * sys.N_poolBound) )
@@ -125,7 +124,7 @@ class Simulator(_Event):
                 )
 
                 if Signal.MTs_Positive in seq.signal:
-                    evol_MTsat_single: NDArray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse)) \
+                    evol_MTsat_single: ndarray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse)) \
                         @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulse), seq.N_burst - 1)
                     v_MTs_Positive = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
                     if (v_MTs_Positive.dtype == complex128) and (not iscomplex(v_MTs_Positive).any()):
@@ -134,7 +133,7 @@ class Simulator(_Event):
 
                 if Signal.MTs_Negative in seq.signal:
                     if (sys.poolBound_lineshapeAsymmetry != 0).any():
-                        evol_MTsat_single: NDArray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse)) \
+                        evol_MTsat_single: ndarray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse)) \
                             @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulse), seq.N_burst - 1)
                         v_MTs_Negative = eig(round(evol_dummyRAGE @ (evol_MTsat_single @ evol_RAGE), 16))[1][:, -1]
                         if (v_MTs_Negative.dtype == complex128) and (not iscomplex(v_MTs_Negative).any()):
@@ -144,7 +143,7 @@ class Simulator(_Event):
                         output['MTs_Negative'] = output['MTs_Positive']
 
                 if Signal.MTd_ALT in seq.signal:
-                    evol_MTsat_dual_ALT: NDArray[number] = evol_relax_lastBurst @ matrix_power(
+                    evol_MTsat_dual_ALT: ndarray[number] = evol_relax_lastBurst @ matrix_power(
                             matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Negative, seq.N_pulsePerOffset)
                             @ matrix_power(evol_relax_interPulse @ evol_rf_singleSat_Positive, seq.N_pulsePerOffset),
                             int(.5 * seq.N_pulse / seq.N_pulsePerOffset)
@@ -162,14 +161,14 @@ class Simulator(_Event):
                     output['MTd_ALT'] = v_MTd_ALT[self.output_vectorSlice] / v_MTd_ALT[-1]
 
             if Signal.MTd_CM in seq.signal:
-                evol_rf_dualSat_SM: NDArray[number] = expm(
+                evol_rf_dualSat_SM: ndarray[number] = expm(
                     vstack([
                         hstack( [ sys.poolBound_Rrf_dualSat + sys.poolFree_Rrf + sys.relaxation, sys.magnetization_recovery ] ),
                         zeros( (1, 1 + sys.N_poolFree + 2 * sys.N_poolBound) )
                     ]) * seq.pulse.duration
                 )
 
-                evol_MTsat_dual_CM: NDArray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse)) \
+                evol_MTsat_dual_CM: ndarray[number] = (evol_relax_lastBurst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse)) \
                     @ matrix_power(evol_relax_TR_burst @ matrix_power(evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse), seq.N_burst - 1)
                 v_MTd_CM = eig(round(evol_dummyRAGE @ (evol_MTsat_dual_CM @ evol_RAGE), 16))[1][:, -1]
                 if (v_MTd_CM.dtype == complex128) and (not iscomplex(v_MTd_CM).any()):

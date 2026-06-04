@@ -6,3 +6,5 @@ from brainhack.simulator import Simulator
 from brainhack.corrector import Corrector
 from brainhack.trajector import Trajector
 from brainhack.run import SingleRun, GridRuns, SampledRuns
+
+from brainhack.vectorized.pulse import TukeyVector
