@@ -174,7 +174,7 @@ class _Pulse(ABC, _Event):
 
 class Tukey(_Pulse):
     _shape: float  # r factor for Tukey shape
-    
+
     _classAttributes: tuple[str] = ('shape', *_Pulse._get_classAttributes())
 
     def __init__(self, duration: float, shape: float, flipAngle: float, offset: float, *args: Any, **kwargs: Any):

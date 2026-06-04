@@ -135,7 +135,7 @@ def SingleRun(M0a: float, T1f: float, T2f: float, R: float, M0b: float, T1b: flo
     )
 
     simulator = Simulator(
-        system=system, 
+        system=system,
         sequence=sequence,
         output_vectorSlice=slice(None) if output_fullVector else slice(1),
         export_readMatrix=export_read,

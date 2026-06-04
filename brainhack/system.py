@@ -310,7 +310,7 @@ class System(_Event):
         """
         raise NotImplementedError("Currently not implemented.")
         theta = np.deg2rad(theta)
-        
+
         def ScaledBingham(theta: float, phi: float) -> float:
             u: NDArray = array([sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta)])
             values = list()

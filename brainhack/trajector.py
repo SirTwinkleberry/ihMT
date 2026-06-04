@@ -75,7 +75,7 @@ class Trajector(_Event):
     def LineSpreadFunction(self) -> NDArray[number]:
         # 1D
         raise NotImplementedError
-    
+
     def EdgeSpreadFunction(self) -> NDArray[number]:
         # 1D
         raise NotImplementedError

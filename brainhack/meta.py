@@ -1,5 +1,5 @@
 from logging import getLogger, NullHandler
-from operator import le, lt, gt, ge, eq, add, sub, mul, truediv 
+from operator import le, lt, gt, ge, eq, add, sub, mul, truediv
 from typing import Any
 from collections.abc import Callable
 from numpy import pi, cos, sin, tan, array, array_equal, nan_to_num, errstate, round, number, atleast_1d, atleast_2d
@@ -106,17 +106,17 @@ def check_value_is_valid(obj: Any, val_to_check: Any, type_to_check: type, opera
                 if len(tmp.shape) != 1:
                     raise ValueError('')
             except Exception as _:
-                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'    
+                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
         case ScalarOrMatrix.__name__:
             try:
                 tmp = atleast_2d(val_to_check)
                 if len(tmp.shape) != 2:
                     raise ValueError('')
             except Exception as _:
-                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'  
+                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
         case _:
             if type_to_check(val_to_check) != val_to_check:
-                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'    
+                error = f'`{attribute_name}` of `{obj}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`.'
 
     if error is not None:
         logger.critical(error)
@@ -286,21 +286,21 @@ class _Event():
 
     def onChange(self, attribute: str, callbacks: list[Callable]):
         if attribute not in self._get_classAttributes():
-            error = f"`{attribute}` is not an acceptable attribute name for callbacks. Possible attributes for `{self}`:\n{'`' + '`, `'.join(self._get_classAttributes()) + '`'}."
+            error = f"`{attribute}` is not an acceptable attribute name for callbacks. Possible attributes for `{self.__class__.__name__}`:\n{'`' + '`, `'.join(self._get_classAttributes()) + '`'}."
             logger.critical(error)
             raise ValueError(error)
 
         onChanges = self._get_onChanges()
         if attribute not in onChanges.keys():
-            logger.debug(f'Initializing `{attribute}` callback list to `_onChanges` for `{self}`.')
+            logger.debug(f'Initializing `{attribute}` callback list to `_onChanges` for `{self.__class__.__name__}`.')
             onChanges[attribute] = []
         onChanges[attribute].extend(callbacks)
-        logger.debug(f'Extended `{attribute}` callback list with `{callbacks}` for `{self}`.')
+        logger.debug(f'Extended `{attribute}` callback list with `{callbacks}` for `{self.__class__.__name__}`.')
 
     def _changed(self, attribute: str):
         onChanges = self._get_onChanges()
         if attribute in onChanges.keys():
-            logger.debug(f'Parsing callbacks for `{attribute}` in `{self}`.')
+            logger.debug(f'Parsing callbacks for `{attribute}` in `{self.__class__.__name__}`.')
             for callback in onChanges[attribute]:
                 try:
                     callback()
@@ -313,18 +313,36 @@ class _Event():
             if hasattr(self, f'_{attribute}'): # prefix `_` to avoid calling getter method
                 try:
                     delattr(self, f'{attribute}')  # No prefix `_` to ensure calling deleter method
-                    logger.debug(f'Called for deletion of `_{attribute}` in `{self}`.')
+                    logger.debug(f'Called for deletion of `_{attribute}` in `{self.__class__.__name__}`.')
                 except AttributeError as e:
                     logger.debug(f'Called for deletion of `{attribute}` but exception ensued:')
                     logger.debug(e)
             else:
-                logger.debug(f'Called for deletion of `{attribute}` but `_{attribute}` was not found in `{self}`.')
+                logger.debug(f'Called for deletion of `{attribute}` but `_{attribute}` was not found in `{self.__class__.__name__}`.')
 
     def _get_onChanges(self) -> dict[str, list[Callable]]:
         if not hasattr(self, '_onChanges'):
             self._onChanges = dict()
-            logger.debug(f'Initializing `_onChanges` for `{self}`.')
+            logger.debug(f'Initializing `_onChanges` for `{self.__class__.__name__}`.')
         return self._onChanges
+
+    def __str__(self, shift=0) -> str:
+        string = f'=====> {self.__class__.__name__.upper()} <=====\n'
+        length = len(string)
+        for attribute in self._get_classAttributes():
+            value = getattr(self, attribute)
+            string += f'{" " * shift}{attribute} = '
+            if type(value) == type(array(0)):
+                tmp = str(value.tolist()).split(', [')
+                for i in range(1, len(tmp)):
+                    tmp[i] = ' ' * (shift + 1 + len(attribute) + 3) + '[' + tmp[i]
+                string += ',\n'.join(tmp)
+            elif attribute in ['pulse', 'sequence', 'system', 'corrector', 'trajector', 'simulator']:
+                string += value.__str__(shift + len(attribute) + 3)
+            else:
+                string += str(value)
+            string += '\n'
+        return string + ' ' * shift + '=' * length
 
     @classmethod
     def _get_classAttributes(cls) -> tuple[str, ...]:
@@ -384,7 +402,7 @@ class Frequency(_BaseUnit):
         if not hasattr(self, '__angular'):
             self.__angular = AngularFrequency(_2pi * self, self.label)
         return self.__angular
-    
+
     @property
     def period(self) -> Duration:
         if not hasattr(self, '__period'):
