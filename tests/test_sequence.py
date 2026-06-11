@@ -116,6 +116,18 @@ class TestSequence(TestCase):
         with self.assertRaises(ValueError):
             Sequence(pulse=self.pulse, **tmp)
 
+    def test__init__wrong_N_adc_vs_N_dummy_ADC(self):
+        tmp = copy(CONFIG_SEQUENCE['init'])
+        tmp['N_dummyADC'] = tmp['N_adc'] + 1
+        with self.assertRaises(ValueError):
+            Sequence(pulse=self.pulse, **tmp)
+
+    def test__init__flag_not_Signal(self):
+        tmp = copy(CONFIG_SEQUENCE['init'])
+        tmp['signal'] = 'ihMTR_CM'
+        with self.assertRaises(TypeError):
+            Sequence(pulse=self.pulse, **tmp)
+
     def test_TR_set_wrong(self):
             with self.assertRaises(ValueError):
                 self.sequence.tr = self.sequence.duration_preparation + self.sequence.duration_readout - 1e-15
@@ -131,3 +143,78 @@ class TestSequence(TestCase):
     def test_N_pulsePerOffset_Multiplicity_set_wrong(self):
             with self.assertRaises(ValueError):
                 self.sequence.N_pulsePerOffset = 4
+
+    def test_reset_duration_preparation(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        seq.duration_preparation
+        del seq.duration_preparation
+        self.assertFalse(hasattr(seq, '_duration_preparation'))
+        seq.duration_preparation
+        self.assertTrue(hasattr(seq, '_duration_preparation'))
+
+    def test_reset_duration_readout(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        seq.duration_readout
+        del seq.duration_readout
+        self.assertFalse(hasattr(seq, '_duration_readout'))
+        seq.duration_readout
+        self.assertTrue(hasattr(seq, '_duration_readout'))
+
+    def test_reset_duration_recovery(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        seq.duration_recovery
+        del seq.duration_recovery
+        self.assertFalse(hasattr(seq, '_duration_recovery'))
+        seq.duration_recovery
+        seq.duration_recovery
+        self.assertTrue(hasattr(seq, '_duration_recovery'))
+
+    def test_bypass_check_against_tr(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        del seq._N_adc
+        self.assertIsNone(seq._check_against_tr())
+
+    def test_bypass_check_against_tr_burst(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        del seq._TR_burst
+        self.assertIsNone(seq._check_against_tr_burst())
+
+    def test_bypass_check_against_N_pulse_multiplicity(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        del seq._N_pulse
+        self.assertIsNone(seq._check_against_N_pulse_multiplicity())
+
+    def test_bypass_check_against_pulse_duration(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        del seq._dt_interPulse
+        self.assertIsNone(seq._check_against_pulse_duration())
+
+    def test_bypass_check_against_N_dummyADC(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        del seq._N_dummyADC
+        self.assertIsNone(seq._check_against_N_dummyADC())
+
+
+    def test_copy(self):
+        seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE['init'])
+        tmp = seq.copy()
+        self.assertTrue(tmp.signal == seq.signal)
+        self.assertTrue(tmp.N_pulsePerOffset == seq.N_pulsePerOffset)
+        self.assertTrue(tmp.N_pulse == seq.N_pulse)
+        self.assertTrue(tmp.N_burst == seq.N_burst)
+        self.assertTrue(tmp.N_adc == seq.N_adc)
+        self.assertTrue(tmp.readout_flipAngle == seq.readout_flipAngle)
+        self.assertTrue(tmp.dt_interPulse == seq.dt_interPulse)
+        self.assertTrue(tmp.dt_lastBurst == seq.dt_lastBurst)
+        self.assertTrue(tmp.TR_burst == seq.TR_burst)
+        self.assertTrue(tmp.es == seq.es)
+        self.assertTrue(tmp.tr == seq.tr)
+        self.assertTrue(tmp.duration_readout == seq.duration_readout)
+        self.assertTrue(tmp.duration_preparation == seq.duration_preparation)
+        self.assertTrue(tmp.duration_recovery == seq.duration_recovery)
+        self.assertNotEqual(tmp._get_onChanges(), seq._get_onChanges())
+        self.assertTrue(tmp.pulse.shape, seq.pulse.shape)
+        self.assertTrue(tmp.pulse.duration, seq.pulse.duration)
+        self.assertTrue(tmp.pulse.flipAngle, seq.pulse.flipAngle)
+        self.assertTrue(tmp.pulse.offset, seq.pulse.offset)
+        self.assertNotEqual(tmp.pulse._get_onChanges(), seq.pulse._get_onChanges())

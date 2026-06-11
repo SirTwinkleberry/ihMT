@@ -122,6 +122,43 @@ class TestSystem(TestCase):
         with self.assertRaises(ValueError):
             self.system.poolBound_T1D = array([CONFIG_SYSTEM['init']['poolBound_T1D'], CONFIG_SYSTEM['init']['poolBound_T1D']]).flatten()
 
+    def test_reset_computed(self):
+        computeds = ['magnetization_recovery', 'relaxation', 'poolFree_Rrf', 'poolBound_Rrf_dualSat', 'poolBound_Rrf_singleSat_Positive', 'poolBound_Rrf_singleSat_Negative', 'N_poolFree', 'N_poolBound', 'N_pools']
+        for computed in computeds:
+            getattr(self.system, computed)
+            delattr(self.system, computed)
+            self.assertFalse(hasattr(self.system, f'_{computed}'))
+            getattr(self.system, computed)
+            getattr(self.system, computed)
+            self.assertTrue(hasattr(self.system, f'_{computed}'))
+
+    def test_copy(self):
+        tmp = self.system.copy()
+        self.assertTrue((tmp.poolFree_Rrf == self.system.poolFree_Rrf).all())
+        self.assertTrue((tmp.poolFree_M0 == self.system.poolFree_M0).all())
+        self.assertTrue((tmp.poolFree_T1 == self.system.poolFree_T1).all())
+        self.assertTrue((tmp.poolFree_T2 == self.system.poolFree_T2).all())
+        self.assertTrue((tmp.poolFreeBound_exchangeRate == self.system.poolFreeBound_exchangeRate).all())
+        self.assertTrue((tmp.poolBound_Rrf_singleSat_Positive == self.system.poolBound_Rrf_singleSat_Positive).all())
+        self.assertTrue((tmp.poolBound_Rrf_singleSat_Negative == self.system.poolBound_Rrf_singleSat_Negative).all())
+        self.assertTrue((tmp.poolBound_Rrf_dualSat == self.system.poolBound_Rrf_dualSat).all())
+        self.assertTrue((tmp.poolBound_lineshapeAsymmetry == self.system.poolBound_lineshapeAsymmetry).all())
+        self.assertTrue((tmp.poolBound_M0 == self.system.poolBound_M0).all())
+        self.assertTrue((tmp.poolBound_T1 == self.system.poolBound_T1).all())
+        self.assertTrue((tmp.poolBound_T2 == self.system.poolBound_T2).all())
+        self.assertTrue((tmp.poolBound_T1D == self.system.poolBound_T1D).all())
+        self.assertTrue((tmp.poolBound_omegaLocalField == self.system.poolBound_omegaLocalField).all())
+        self.assertTrue((tmp.magnetization_recovery == self.system.magnetization_recovery).all())
+        self.assertTrue((tmp.relaxation == self.system.relaxation).all())
+        self.assertTrue(tmp.N_poolFree == self.system.N_poolFree)
+        self.assertTrue(tmp.N_poolBound == self.system.N_poolBound)
+        self.assertTrue(tmp.N_pools == self.system.N_pools)
+        self.assertNotEqual(tmp._get_onChanges(), self.system._get_onChanges())
+        self.assertTrue(tmp.pulse.shape, self.system.pulse.shape)
+        self.assertTrue(tmp.pulse.duration, self.system.pulse.duration)
+        self.assertTrue(tmp.pulse.flipAngle, self.system.pulse.flipAngle)
+        self.assertTrue(tmp.pulse.offset, self.system.pulse.offset)
+        self.assertNotEqual(tmp.pulse._get_onChanges(), self.system.pulse._get_onChanges())
 
 class TestLineshapes(TestCase):
     def setUp(self):
@@ -138,3 +175,11 @@ class TestLineshapes(TestCase):
 
     def test_PampelSuperLorentzian(self):
         self.assertTrue((self.system.PampelSuperLorentzian(self.system.poolBound_T2, self.system.pulse.offset) == array(2.3539220258601342e-05)).all())
+
+    def test_Cylindrical(self):
+        with self.assertRaises(NotImplementedError):
+            self.system.Cylindrical(self.system.poolBound_T2, self.system.pulse.offset)
+
+    def test_DispersedCylindrical(self):
+        with self.assertRaises(NotImplementedError):
+            self.system.DispersedCylindrical(self.system.poolBound_T2, self.system.pulse.offset)

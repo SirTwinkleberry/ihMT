@@ -312,7 +312,7 @@ class _Event():
             if hasattr(self, f'_{attribute}'): # prefix `_` to avoid calling getter method
                 try:
                     delattr(self, f'{attribute}')  # No prefix `_` to ensure calling deleter method
-                    logger.debug(f'Called for deletion of `_{attribute}` in `{self.__class__.__name__}`.')
+                    logger.debug(f'Called for deletion of `{attribute}`. `_{attribute}` was deleted in `{self.__class__.__name__}`.')
                 except AttributeError as e:
                     logger.debug(f'Called for deletion of `{attribute}` but exception ensued:')
                     logger.debug(e)

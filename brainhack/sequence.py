@@ -100,11 +100,11 @@ class Sequence(_Event):
         self.onChange('pulse', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_pulse_duration])
 
         self.onChange('N_pulsePerOffset', [self._check_against_N_pulse_multiplicity])
-        self.onChange('N_pulse', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_N_pulse_multiplicity, self._check_against_tr_burst, self._check_against_tr])
-        self.onChange('N_burst', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr])
-        self.onChange('dt_interPulse', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_pulse_duration, self._check_against_tr_burst, self._check_against_tr])
-        self.onChange('dt_lastBurst', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr])
-        self.onChange('TR_burst', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr_burst, self._check_against_tr])
+        self.onChange('N_pulse', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_N_pulse_multiplicity, self._check_against_tr_burst, self._check_against_tr])
+        self.onChange('N_burst', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_tr])
+        self.onChange('dt_interPulse', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_pulse_duration, self._check_against_tr_burst, self._check_against_tr])
+        self.onChange('dt_lastBurst', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_tr])
+        self.onChange('TR_burst', [lambda: self._reset_computed_attributes(['duration_preparation', 'duration_recovery']), self._check_against_tr_burst, self._check_against_tr])
 
         self.onChange('es', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_tr])
         self.onChange('N_adc', [lambda: self._reset_computed_attributes(['duration_readout', 'duration_recovery']), self._check_against_N_dummyADC, self._check_against_tr])
@@ -296,14 +296,9 @@ class Sequence(_Event):
     @property
     def duration_readout(self):
         if not hasattr(self, '_duration_readout'):
-            self.duration_readout = self.N_adc * self.es
+            self._duration_readout = self.N_adc * self.es
+            self._changed('duration_readout')
         return self._duration_readout
-
-    @duration_readout.setter
-    def duration_readout(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'duration_readout')
-        self._duration_readout = float(val)
-        self._changed('duration_readout')
 
     @duration_readout.deleter
     def duration_readout(self):
@@ -313,14 +308,9 @@ class Sequence(_Event):
     @property
     def duration_preparation(self):
         if not hasattr(self, '_duration_preparation'):
-            self.duration_preparation = (self.N_burst - 1) * self.TR_burst + self.dt_lastBurst
+            self._duration_preparation = (self.N_burst - 1) * self.TR_burst + self.dt_lastBurst
+            self._changed('duration_preparation')
         return self._duration_preparation
-
-    @duration_preparation.setter
-    def duration_preparation(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'duration_preparation')
-        self._duration_preparation = float(val)
-        self._changed('duration_preparation')
 
     @duration_preparation.deleter
     def duration_preparation(self):
@@ -330,14 +320,9 @@ class Sequence(_Event):
     @property
     def duration_recovery(self):
         if not hasattr(self, '_duration_recovery'):
-            self.duration_recovery = self.tr - self.duration_readout - self.duration_preparation
+            self._duration_recovery = self.tr - self.duration_readout - self.duration_preparation
+            self._changed('duration_recovery')
         return self._duration_recovery
-
-    @duration_recovery.setter
-    def duration_recovery(self, val: float):
-        check_value_is_valid(self, val, float, [(lt, 0)], 'duration_recovery')
-        self._duration_recovery = float(val)
-        self._changed('duration_recovery')
 
     @duration_recovery.deleter
     def duration_recovery(self):

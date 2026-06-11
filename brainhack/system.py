@@ -281,6 +281,8 @@ class System(_Event):
         ndarray[number]
             _description_
         """
+        raise NotImplementedError
+
         offsets = atleast_1d(offsets)
         angular_offsets_square = 4 * pi * pi * offsets * offsets
         reduced_R2_square = .25 / (T2 * T2)
