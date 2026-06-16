@@ -172,3 +172,5 @@ output/
 examples/.slice
 
 tmp/
+
+.vscode
