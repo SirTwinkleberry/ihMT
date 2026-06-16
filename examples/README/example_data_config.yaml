@@ -1,0 +1,29 @@
+pulse:
+  duration: 0.005
+  shape: 0.2
+  flipAngle: 1122
+  offset: 7000
+
+sequence:
+  N_pulsePerOffset: 1
+  N_pulse: 1
+  N_burst: 5
+  N_adc: 88
+  N_dummyADC: 0
+  dt_interPulse: 0.00608
+  TR_burst: 0.145
+  dt_lastBurst: 0.00708
+  es: 0.0082
+  tr: 1.44
+  readout_flipAngle: 5
+
+system:
+  poolFree_M0: 0.8435
+  poolFree_T1: 2.0
+  poolFree_T2: 0.025
+  poolFreeBound_exchangeRate: 11
+  poolBound_M0: 0.1565
+  poolBound_T1: 0.5
+  poolBound_T2: 1.0560108135507307e-05
+  poolBound_T1D: 2.0601
+  poolBound_lineshapeAsymmetry: -593.82898722349529206530870705997

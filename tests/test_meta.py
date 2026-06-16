@@ -1,9 +1,10 @@
-from brainhack.meta import _Event, Signal
+from ihmt.meta import _Event, Signal
 
 from unittest import TestCase, skip
 
 from numpy import set_printoptions
 from sys import maxsize
+
 set_printoptions(precision=maxsize)
 
 
@@ -28,5 +29,4 @@ class TestSignal(TestCase):
         self.assertTrue(Signal.CM in Signal.BP)
 
 
-class TestMeta(TestCase):
-    ...
+class TestMeta(TestCase): ...

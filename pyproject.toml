@@ -18,7 +18,7 @@
     version = "1.0.0"
 
     # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name
-    name = "brainhack"
+    name = "ihmt"
 
     # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#description
     description = "Inhomogeneous magnetization transfer simulator for magnetic resonance research."
@@ -89,9 +89,9 @@
 
 # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
 [project.urls]
-    Homepage = "https://gitea.crmbm.univ-amu.fr/ihmt/brainhack2026"
-    Repository = "https://gitea.crmbm.univ-amu.fr/ihmt/blob/master/brainhack2026.git"
-    Issues = "https://gitea.crmbm.univ-amu.fr/ihmt/brainhack2026/issues"
+    Homepage = "https://github.com/SirTwinkleberry/ihMT"
+    Repository = "https://github.com/SirTwinkleberry/ihMT.git"
+    Issues = "https://github.com/SirTwinkleberry/ihMT/issues"
     Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#creating-executable-scripts

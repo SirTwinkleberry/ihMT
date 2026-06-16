@@ -1,4 +1,4 @@
-# **BrainHack 2026**
+# **ihMT**
 
 ## Table of contents<a id='toc0_'></a>    
 
@@ -26,26 +26,26 @@
     - [Trajector - WIP](#toc2_3_7_)    
 - [Applications](#toc3_)    
   - [Simulating a single experiment](#toc3_1_)    
-    - [Using the `brainhack.simulator.Simulator` class](#toc3_1_1_)    
-    - [Using the `brainhack.run.SingleRun` function](#toc3_1_2_)    
+    - [Using the `ihmt.simulator.Simulator` class](#toc3_1_1_)    
+    - [Using the `ihmt.run.SingleRun` function](#toc3_1_2_)    
       - [Hand parametrized](#toc3_1_2_1_)    
       - [Using a configuration object](#toc3_1_2_2_)    
       - [From the command line](#toc3_1_2_3_)    
     - [Example: Computing derivative maps: MT(s/d)R, ihMT, ihMTR, BP, BPR](#toc3_1_3_)    
       - [Manual Computation](#toc3_1_3_1_)    
-      - [Using `brainhack.meta.CompositeSignal`](#toc3_1_3_2_)    
+      - [Using `ihmt.meta.CompositeSignal`](#toc3_1_3_2_)    
     - [Example: Computing steady-state signals at every readout](#toc3_1_4_)    
       - [Manual computation](#toc3_1_4_1_)    
-      - [Using `brainhack.trajector.Trajector`](#toc3_1_4_2_)    
+      - [Using `ihmt.trajector.Trajector`](#toc3_1_4_2_)    
         - [Timing difference using `stable=True`](#toc3_1_4_2_1_)    
         - [Value difference using `stable=True`](#toc3_1_4_2_2_)    
     - [Example: Point Spread Function (PSF) - WIP](#toc3_1_5_)    
   - [Simulating many experiments](#toc3_2_)    
-    - [Using the `brainhack.run.GridRuns` function](#toc3_2_1_)    
+    - [Using the `ihmt.run.GridRuns` function](#toc3_2_1_)    
     - [Example: Computing derivative maps: MT(s/d)R, ihMT, ihMTR, BP, BPR](#toc3_2_2_)    
     - [Example: $\mathrm{B}_1^+$ correction](#toc3_2_3_)    
       - [Manual computation](#toc3_2_3_1_)    
-      - [Using `brainhack.corrector.Corrector`](#toc3_2_3_2_)    
+      - [Using `ihmt.corrector.Corrector`](#toc3_2_3_2_)    
   - [Visualization](#toc3_3_)    
     - [Example: $\mathrm{B}_1^+$ correction](#toc3_3_1_)    
       - [1-Dim $\mathrm{B}_1^+$ correction](#toc3_3_1_1_)    
@@ -66,8 +66,8 @@
       - [In a live environment](#toc4_1_2_1_)    
       - [Stored on file](#toc4_1_2_2_)    
   - [Loggers](#toc4_2_)    
-  - [The `brainhack.meta.CompositeDictionary` class](#toc4_3_)    
-  - [Optimizing `brainhack.run.GridRuns` runtime](#toc4_4_)    
+  - [The `ihmt.meta.CompositeDictionary` class](#toc4_3_)    
+  - [Optimizing `ihmt.run.GridRuns` runtime](#toc4_4_)    
   - [Test suite](#toc4_5_)    
   - [Contributing new features - WIP](#toc4_6_)    
     - [Adding new modules](#toc4_6_1_)    
@@ -100,9 +100,9 @@ pip install numpy scipy pyyaml coverage
 conda install numpy scipy pyyaml coverage
 ```
 
-Install `brainhack` in edit mode:
+Install `ihmt` in edit mode:
 ```bash
-cd brainhack
+cd ihmt
 pip install -e .
 ```
 
@@ -117,9 +117,9 @@ pip install numpy scipy pyyaml
 conda install numpy scipy pyyaml
 ```
 
-Install `brainhack` in normal mode:
+Install `ihmt` in normal mode:
 ```bash
-cd brainhack
+cd ihmt
 pip install .
 ```
 
@@ -138,7 +138,7 @@ conda install matplotlib jupyter
 
 ```python
 try:  # Basic import example
-    from brainhack import (
+    from ihmt import (
         Tukey,
         Sequence,
         System,
@@ -154,9 +154,9 @@ try:  # Basic import example
         AngularFrequency,     # Utility
         Angle,                # Utility
     )
-    from brainhack.config import default
+    from ihmt.config import default
 
-except ImportError as e:  # If the brainhack package is not installed
+except ImportError as e:  # If the ihmt package is not installed
     %pip install -e .
     from os import _exit
     _exit(00)
@@ -171,17 +171,17 @@ from copy import deepcopy
 
 ## <a id='toc2_3_'></a>[Overview](#toc0_)
 
-The `brainhack` package aims to provide an interface for simulation and manipulation of (ih)MT signal for varying configurations of MT-preparation pulses, sequences, and biophysical systems. To provide ample space for new features, the package separates each part of the process into different modules:
-- MT-preparation pulse classes (e.g., `Tukey`) are declared in the `brainhack.pulse` module,
-- the sequence-specifying class `Sequence` is defined in the `brainhack.sequence` module,
-- the biophysical system class `System` is in the `brainhack.system` module,
-- the simulator class `Simulator` is in the `brainhack.simulator` module,
-- the signal correction class `Corrector` is defined in the `brainhack.corrector` module,
-- the signal encoding class `Trajector` is defined in the `brainhack.trajector` module,
-- some utility features such as the `Signal`, `Angle`, and `Frequency` classes are defined in the `brainhack.meta` module,
-- and some utility functions to simplify obtaining results from command line (`SingleRun`) and from batched experiments (`GridRuns`) are defined in the `brainhack.run` module.
+The `ihmt` package aims to provide an interface for simulation and manipulation of (ih)MT signal for varying configurations of MT-preparation pulses, sequences, and biophysical systems. To provide ample space for new features, the package separates each part of the process into different modules:
+- MT-preparation pulse classes (e.g., `Tukey`) are declared in the `ihmt.pulse` module,
+- the sequence-specifying class `Sequence` is defined in the `ihmt.sequence` module,
+- the biophysical system class `System` is in the `ihmt.system` module,
+- the simulator class `Simulator` is in the `ihmt.simulator` module,
+- the signal correction class `Corrector` is defined in the `ihmt.corrector` module,
+- the signal encoding class `Trajector` is defined in the `ihmt.trajector` module,
+- some utility features such as the `Signal`, `Angle`, and `Frequency` classes are defined in the `ihmt.meta` module,
+- and some utility functions to simplify obtaining results from command line (`SingleRun`) and from batched experiments (`GridRuns`) are defined in the `ihmt.run` module.
 
-To enhance the user experience, important classes can be directly imported from the `brainhack` namespace. E.g., one can import the `Tukey` class using `from brainhack.pulse import Tukey`, or they can import it using `from brainhack import Tukey` directly. <br>
+To enhance the user experience, important classes can be directly imported from the `ihmt` namespace. E.g., one can import the `Tukey` class using `from ihmt.pulse import Tukey`, or they can import it using `from ihmt import Tukey` directly. <br>
 
 Below is an object-by-object `Initialization` example of the various classes of the package, with further information on their interplay. The next section shows various example `Applications` of this package, like $\mathrm{B}_1^+$ correction, sensitivity analysis, and visualization. The third and final section contains `Additional Information`, such as defining configuration files for automated analyses and using loggers to manage the package output streams.
 
@@ -1112,7 +1112,7 @@ except NotImplementedError as e:
 
 ## <a id='toc3_1_'></a>[Simulating a single experiment](#toc0_)
 
-### <a id='toc3_1_1_'></a>[Using the `brainhack.simulator.Simulator` class](#toc0_)
+### <a id='toc3_1_1_'></a>[Using the `ihmt.simulator.Simulator` class](#toc0_)
 
 
 ```python
@@ -1134,7 +1134,7 @@ simulator.SteadyState()
 
 
 
-### <a id='toc3_1_2_'></a>[Using the `brainhack.run.SingleRun` function](#toc0_)
+### <a id='toc3_1_2_'></a>[Using the `ihmt.run.SingleRun` function](#toc0_)
 
 #### <a id='toc3_1_2_1_'></a>[Hand parametrized](#toc0_)
 
@@ -1221,7 +1221,7 @@ SingleRun(**default['run'])
 
 
 ```python
-!python brainhack/run.py ./brainhack/configs/default.yaml
+!python ihmt/run.py ./ihmt/configs/default.yaml
 ```
 
     2026-06-16 05:17:45,103 - root - INFO - MT0: [0.9732036610707328, 0.09829085279876039, 0.0, 1.0]
@@ -1278,7 +1278,7 @@ print(CompositeDictionary(data))
     
 
 
-#### <a id='toc3_1_3_2_'></a>[Using `brainhack.meta.CompositeSignal`](#toc0_)
+#### <a id='toc3_1_3_2_'></a>[Using `ihmt.meta.CompositeSignal`](#toc0_)
 
 
 ```python
@@ -1360,7 +1360,7 @@ print(CompositeDictionary(readouts).T[Signal.ALL])
     
 
 
-#### <a id='toc3_1_4_2_'></a>[Using `brainhack.trajector.Trajector`](#toc0_)
+#### <a id='toc3_1_4_2_'></a>[Using `ihmt.trajector.Trajector`](#toc0_)
 
 
 ```python
@@ -1447,7 +1447,7 @@ print(Trajector.readouts(simulator=simulator, stable=True)[Signal.ALL] - Traject
 
 ## <a id='toc3_2_'></a>[Simulating many experiments](#toc0_)
 
-### <a id='toc3_2_1_'></a>[Using the `brainhack.run.GridRuns` function](#toc0_)
+### <a id='toc3_2_1_'></a>[Using the `ihmt.run.GridRuns` function](#toc0_)
 
 
 ```python
@@ -1564,7 +1564,7 @@ print(*zip(fake_data[Signal.ihMTR_CM].flatten(), corrected[Signal.ihMTR_CM].flat
     (np.float64(22.08440262247551), np.float64(34.777637301503766))
 
 
-#### <a id='toc3_2_3_2_'></a>[Using `brainhack.corrector.Corrector`](#toc0_)
+#### <a id='toc3_2_3_2_'></a>[Using `ihmt.corrector.Corrector`](#toc0_)
 
 
 ```python
@@ -2087,14 +2087,14 @@ for key, val in default.items():
 
 ```
 
-## <a id='toc4_3_'></a>[The `brainhack.meta.CompositeDictionary` class](#toc0_)
+## <a id='toc4_3_'></a>[The `ihmt.meta.CompositeDictionary` class](#toc0_)
 
 
 ```python
 
 ```
 
-## <a id='toc4_4_'></a>[Optimizing `brainhack.run.GridRuns` runtime](#toc0_)
+## <a id='toc4_4_'></a>[Optimizing `ihmt.run.GridRuns` runtime](#toc0_)
 
 
 ```python
@@ -2125,54 +2125,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test___init___Duration (tests.test_vectorized_pulses.TestTukeyVector.test___init___Duration)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m40[0m, in [35mtest___init___Duration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m40[0m, in [35mtest___init___Duration[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2187,54 +2187,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test___init___FlipAngle (tests.test_vectorized_pulses.TestTukeyVector.test___init___FlipAngle)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m48[0m, in [35mtest___init___FlipAngle[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m48[0m, in [35mtest___init___FlipAngle[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2249,54 +2249,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test___init___Offset (tests.test_vectorized_pulses.TestTukeyVector.test___init___Offset)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m52[0m, in [35mtest___init___Offset[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m52[0m, in [35mtest___init___Offset[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2311,54 +2311,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test___init___Shape (tests.test_vectorized_pulses.TestTukeyVector.test___init___Shape)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m44[0m, in [35mtest___init___Shape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m44[0m, in [35mtest___init___Shape[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2373,54 +2373,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test__init__AmplitudeIntegral (tests.test_vectorized_pulses.TestTukeyVector.test__init__AmplitudeIntegral)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m60[0m, in [35mtest__init__AmplitudeIntegral[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m60[0m, in [35mtest__init__AmplitudeIntegral[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2435,54 +2435,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test__init__B1peak (tests.test_vectorized_pulses.TestTukeyVector.test__init__B1peak)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m68[0m, in [35mtest__init__B1peak[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m68[0m, in [35mtest__init__B1peak[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2497,54 +2497,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test__init__GyromagneticFactor (tests.test_vectorized_pulses.TestTukeyVector.test__init__GyromagneticFactor)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m56[0m, in [35mtest__init__GyromagneticFactor[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m56[0m, in [35mtest__init__GyromagneticFactor[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2559,54 +2559,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test__init__OmegaRMS (tests.test_vectorized_pulses.TestTukeyVector.test__init__OmegaRMS)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m72[0m, in [35mtest__init__OmegaRMS[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m72[0m, in [35mtest__init__OmegaRMS[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2621,54 +2621,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test__init__PowerIntegral (tests.test_vectorized_pulses.TestTukeyVector.test__init__PowerIntegral)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m64[0m, in [35mtest__init__PowerIntegral[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m64[0m, in [35mtest__init__PowerIntegral[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2683,54 +2683,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test__reset_computed_attributes (tests.test_vectorized_pulses.TestTukeyVector.test__reset_computed_attributes)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m101[0m, in [35mtest__reset_computed_attributes[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m101[0m, in [35mtest__reset_computed_attributes[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2745,54 +2745,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test_value_outside_bounds (tests.test_vectorized_pulses.TestTukeyVector.test_value_outside_bounds)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m76[0m, in [35mtest_value_outside_bounds[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m76[0m, in [35mtest_value_outside_bounds[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2807,54 +2807,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test_value_plateau (tests.test_vectorized_pulses.TestTukeyVector.test_value_plateau)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m95[0m, in [35mtest_value_plateau[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m95[0m, in [35mtest_value_plateau[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2869,54 +2869,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test_value_ramping_down (tests.test_vectorized_pulses.TestTukeyVector.test_value_ramping_down)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m89[0m, in [35mtest_value_ramping_down[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m89[0m, in [35mtest_value_ramping_down[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2931,54 +2931,54 @@ except ImportError as e:
     [31mERROR[0m[1;31m: test_value_ramping_up (tests.test_vectorized_pulses.TestTukeyVector.test_value_ramping_up)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m106[0m, in [35mcheck_value_is_valid[0m
         raise ValueError('')
     [1;35mValueError[0m
     
     During handling of the above exception, another exception occurred:
     
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_vectorized_pulses.py"[0m, line [35m83[0m, in [35mtest_value_ramping_up[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_vectorized_pulses.py"[0m, line [35m83[0m, in [35mtest_value_ramping_up[0m
         pulse = TukeyVector(**CONFIG_TUKEY['init'])
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m184[0m, in [35m__init__[0m
         [31mself._reshape[0m[1;31m()[0m
         [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m224[0m, in [35m_reshape[0m
         [1;31mself.duration[0m = DD
         [1;31m^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/vectorized/pulse.py"[0m, line [35m74[0m, in [35mduration[0m
         [31mcheck_value_is_valid[0m[1;31m(self, val, ScalarOrVector, [(le, 0)], 'duration')[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/brainhack/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/ihmt/meta.py"[0m, line [35m108[0m, in [35mcheck_value_is_valid[0m
         error = f'`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{[31mrepr[0m[1;31m(val_to_check)[0m}`.'
                                                                                                                              [31m~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1614[0m, in [35m_array_repr_implementation[0m
         lst = array2string(arr, max_line_width, precision, suppress_small,
                            ', ', prefix, suffix=")")
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m802[0m, in [35marray2string[0m
         return _array2string(a, options, separator, prefix)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m587[0m, in [35mwrapper[0m
         return f(self, *args, **kwargs)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m613[0m, in [35m_array2string[0m
         format_function = _get_format_function(data, **options)
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m546[0m, in [35m_get_format_function[0m
         return [31mformatdict['float'][0m[1;31m()[0m
                [31m~~~~~~~~~~~~~~~~~~~[0m[1;31m^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m485[0m, in [35m<lambda>[0m
         'float': lambda: [31mFloatingFormat[0m[1;31m([0m
                          [31m~~~~~~~~~~~~~~[0m[1;31m^[0m
             [1;31mdata, precision, floatmode, suppress, sign, legacy=legacy)[0m,
             [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1003[0m, in [35m__init__[0m
         [31mself.fillFormat[0m[1;31m(data)[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35mfillFormat[0m
         int_part, frac_part = [31mzip[0m[1;31m(*(s.split('.') for s in strs))[0m
                               [31m~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1065[0m, in [35m<genexpr>[0m
         int_part, frac_part = zip(*(s.split('.') for s in [1;31mstrs[0m))
                                                           [1;31m^^^^[0m
-      File [35m"/home/timothy/miniconda3/envs/brainhack/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
+      File [35m"/home/timothy/miniconda3/envs/ihmt/lib/python3.14/site-packages/numpy/_core/arrayprint.py"[0m, line [35m1060[0m, in [35m<genexpr>[0m
         strs = ([31mdragon4_positional[0m[1;31m(x, precision=self.precision,[0m
                 [31m~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
                                    [1;31mfractional=True,[0m
@@ -2993,7 +2993,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_run_SingleRun_ALT_checkExport (tests.test_run.TestRun_withoutExport.test_run_SingleRun_ALT_checkExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m199[0m, in [35mtest_run_SingleRun_ALT_checkExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m199[0m, in [35mtest_run_SingleRun_ALT_checkExport[0m
         [31mself.assertTrue[0m[1;31m((mat['MTs_Positive'] == base['MTs_Positive']).all())[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mnp.False_ is not true[0m
@@ -3002,7 +3002,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_run_SingleRun_ALT_noExport (tests.test_run.TestRun_withoutExport.test_run_SingleRun_ALT_noExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m182[0m, in [35mtest_run_SingleRun_ALT_noExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m182[0m, in [35mtest_run_SingleRun_ALT_noExport[0m
         [31mself.assertEqual[0m[1;31m(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['ihMTR_ALT'].items()]) + '\n'))[0m
         [31m~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mb'MT0[79 chars]536845962, 0.0454539042950342, 1.5281848336861[387 chars]]]\n' != b'MT0[79 chars]53684603, 0.0454539042950363, 1.52818483368616[387 chars]]]\n'[0m
@@ -3011,7 +3011,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_run_SingleRun_BP_checkExport (tests.test_run.TestRun_withoutExport.test_run_SingleRun_BP_checkExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m235[0m, in [35mtest_run_SingleRun_BP_checkExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m235[0m, in [35mtest_run_SingleRun_BP_checkExport[0m
         [31mself.assertTrue[0m[1;31m((mat['MTd_CM'] == base['MTd_CM']).all())[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mnp.False_ is not true[0m
@@ -3020,7 +3020,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_run_SingleRun_BP_noExport (tests.test_run.TestRun_withoutExport.test_run_SingleRun_BP_noExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m218[0m, in [35mtest_run_SingleRun_BP_noExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m218[0m, in [35mtest_run_SingleRun_BP_noExport[0m
         [31mself.assertEqual[0m[1;31m(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['BPR'].items()]) + '\n'))[0m
         [31m~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mb'MT0[97 chars]87180541, -2.727313124262742e-07, 1.0]\nMTd_CM[263 chars]]]\n' != b'MT0[97 chars]87180439, -2.727313124262742e-07, 1.0]\nMTd_CM[263 chars]]]\n'[0m
@@ -3029,7 +3029,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_run_SingleRun_CM_checkExport (tests.test_run.TestRun_withoutExport.test_run_SingleRun_CM_checkExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m163[0m, in [35mtest_run_SingleRun_CM_checkExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m163[0m, in [35mtest_run_SingleRun_CM_checkExport[0m
         [31mself.assertTrue[0m[1;31m((mat['MTs_Positive'] == base['MTs_Positive']).all())[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mnp.False_ is not true[0m
@@ -3038,7 +3038,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_run_SingleRun_CM_noExport (tests.test_run.TestRun_withoutExport.test_run_SingleRun_CM_noExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m146[0m, in [35mtest_run_SingleRun_CM_noExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m146[0m, in [35mtest_run_SingleRun_CM_noExport[0m
         [31mself.assertEqual[0m[1;31m(output, str.encode('\n'.join([f'{key}: {str(sublist)}' for key, sublist in CONFIG_SIMULATOR['compute']['ihMTR_CM'].items()]) + '\n'))[0m
         [31m~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mb'MT0[79 chars]536845962, 0.0454539042950342, 1.5281848336861[367 chars]]]\n' != b'MT0[79 chars]53684603, 0.0454539042950363, 1.52818483368616[367 chars]]]\n'[0m
@@ -3047,7 +3047,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_singleRun_ALT_checkExport (tests.test_run.TestSingleRun.test_singleRun_ALT_checkExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m335[0m, in [35mtest_singleRun_ALT_checkExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m335[0m, in [35mtest_singleRun_ALT_checkExport[0m
         [31mself.assertTrue[0m[1;31m((mat['MTs_Positive'] == base['MTs_Positive']).all())[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mnp.False_ is not true[0m
@@ -3056,7 +3056,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_singleRun_ALT_noExport (tests.test_run.TestSingleRun.test_singleRun_ALT_noExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m323[0m, in [35mtest_singleRun_ALT_noExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m323[0m, in [35mtest_singleRun_ALT_noExport[0m
         [31mself.assertDictEqual[0m[1;31m(out, CONFIG_SIMULATOR['compute']['ihMTR_ALT'])[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35m{'MT0[82 chars]536845962, 0.0454539042950342, 1.5281848336861[391 chars].0]]} != {'MT0[82 chars]53684603, 0.0454539042950363, 1.52818483368616[391 chars].0]]}
@@ -3066,7 +3066,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_singleRun_BP_checkExport (tests.test_run.TestSingleRun.test_singleRun_BP_checkExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m362[0m, in [35mtest_singleRun_BP_checkExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m362[0m, in [35mtest_singleRun_BP_checkExport[0m
         [31mself.assertTrue[0m[1;31m((mat['MTd_CM'] == base['MTd_CM']).all())[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mnp.False_ is not true[0m
@@ -3075,7 +3075,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_singleRun_BP_noExport (tests.test_run.TestSingleRun.test_singleRun_BP_noExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m351[0m, in [35mtest_singleRun_BP_noExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m351[0m, in [35mtest_singleRun_BP_noExport[0m
         [31mself.assertDictEqual[0m[1;31m(out, CONFIG_SIMULATOR['compute']['BPR'])[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35m{'MT0[100 chars]87180541, -2.727313124262742e-07, 1.0], 'MTd_C[265 chars].0]]} != {'MT0[100 chars]87180439, -2.727313124262742e-07, 1.0], 'MTd_C[265 chars].0]]}
@@ -3085,7 +3085,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_singleRun_CM_checkExport (tests.test_run.TestSingleRun.test_singleRun_CM_checkExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m306[0m, in [35mtest_singleRun_CM_checkExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m306[0m, in [35mtest_singleRun_CM_checkExport[0m
         [31mself.assertTrue[0m[1;31m((mat['MTs_Positive'] == base['MTs_Positive']).all())[0m
         [31m~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35mnp.False_ is not true[0m
@@ -3094,7 +3094,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_singleRun_CM_noExport (tests.test_run.TestSingleRun.test_singleRun_CM_noExport)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_run.py"[0m, line [35m294[0m, in [35mtest_singleRun_CM_noExport[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_run.py"[0m, line [35m294[0m, in [35mtest_singleRun_CM_noExport[0m
         [31mself.assertDictEqual[0m[1;31m(out, CONFIG_SIMULATOR['compute']['ihMTR_CM'])[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35m{'MT0[82 chars]536845962, 0.0454539042950342, 1.5281848336861[371 chars].0]]} != {'MT0[82 chars]53684603, 0.0454539042950363, 1.52818483368616[371 chars].0]]}
@@ -3104,7 +3104,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_steadyState_ALT (tests.test_simulator.TestSteadyState.test_steadyState_ALT)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_simulator.py"[0m, line [35m102[0m, in [35mtest_steadyState_ALT[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_simulator.py"[0m, line [35m102[0m, in [35mtest_steadyState_ALT[0m
         [31mself.assertDictEqual[0m[1;31m(out, CONFIG_SIMULATOR['compute']['ihMTR_ALT'])[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35m{'MT0[82 chars]536845962, 0.0454539042950342, 1.5281848336861[391 chars].0]]} != {'MT0[82 chars]53684603, 0.0454539042950363, 1.52818483368616[391 chars].0]]}
@@ -3114,7 +3114,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_steadyState_BP (tests.test_simulator.TestSteadyState.test_steadyState_BP)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_simulator.py"[0m, line [35m108[0m, in [35mtest_steadyState_BP[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_simulator.py"[0m, line [35m108[0m, in [35mtest_steadyState_BP[0m
         [31mself.assertDictEqual[0m[1;31m(out, CONFIG_SIMULATOR['compute']['BPR'])[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35m{'MT0[100 chars]87180541, -2.727313124262742e-07, 1.0], 'MTd_C[265 chars].0]]} != {'MT0[100 chars]87180439, -2.727313124262742e-07, 1.0], 'MTd_C[265 chars].0]]}
@@ -3124,7 +3124,7 @@ except ImportError as e:
     [31mFAIL[0m[1;31m: test_steadyState_CM (tests.test_simulator.TestSteadyState.test_steadyState_CM)[0m
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/tests/test_simulator.py"[0m, line [35m95[0m, in [35mtest_steadyState_CM[0m
+      File [35m"/mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/tests/test_simulator.py"[0m, line [35m95[0m, in [35mtest_steadyState_CM[0m
         [31mself.assertDictEqual[0m[1;31m(out, CONFIG_SIMULATOR['compute']['ihMTR_CM'])[0m
         [31m~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
     [1;35mAssertionError[0m: [35m{'MT0[82 chars]536845962, 0.0454539042950342, 1.5281848336861[371 chars].0]]} != {'MT0[82 chars]53684603, 0.0454539042950363, 1.52818483368616[371 chars].0]]}
@@ -3134,20 +3134,20 @@ except ImportError as e:
     Ran 116 tests in 5.069s
     
     [1;31mFAILED[0m ([1;31mfailures=15[0m, [1;31merrors=14[0m, [33mskipped=5[0m)
-    Wrote HTML report to ]8;;file:///mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/brainhack/htmlcov/index.htmlhtmlcov/index.html]8;;
+    Wrote HTML report to ]8;;file:///mnt/c/Users/timya/Documents/Cloud/Nextcloud/Backup/git/ihmt/htmlcov/index.htmlhtmlcov/index.html]8;;
     Name                            Stmts   Miss Branch BrPart  Cover
     -----------------------------------------------------------------
-    brainhack/__init__.py               9      0      0      0   100%
-    brainhack/config.py                24      4      2      0    85%
-    brainhack/corrector.py            113     76     40      0    24%
-    brainhack/meta.py                 418    204    174     24    46%
-    brainhack/pulse.py                179     24     20      0    86%
-    brainhack/run.py                   94     60     38      1    28%
-    brainhack/sequence.py             210      0     28      0   100%
-    brainhack/simulator.py            126     17     30     10    81%
-    brainhack/system.py               336      7     44      6    97%
-    brainhack/trajector.py             58     29     10      0    43%
-    brainhack/vectorized/pulse.py     166     79     16      0    48%
+    ihmt/__init__.py               9      0      0      0   100%
+    ihmt/config.py                24      4      2      0    85%
+    ihmt/corrector.py            113     76     40      0    24%
+    ihmt/meta.py                 418    204    174     24    46%
+    ihmt/pulse.py                179     24     20      0    86%
+    ihmt/run.py                   94     60     38      1    28%
+    ihmt/sequence.py             210      0     28      0   100%
+    ihmt/simulator.py            126     17     30     10    81%
+    ihmt/system.py               336      7     44      6    97%
+    ihmt/trajector.py             58     29     10      0    43%
+    ihmt/vectorized/pulse.py     166     79     16      0    48%
     -----------------------------------------------------------------
     TOTAL                            1733    500    402     41    65%
 
@@ -3163,7 +3163,7 @@ except ImportError as e:
 # <a id='toc5_'></a>[Notes](#toc0_)
 
 - General nomenclature (variable, function, class, and file names) is still open to changes
-- Parameter names of `brainhack.run.SingleRun` should match exactly the names in `config` files/dict for `SingleRun(**config)` to work as intended
+- Parameter names of `ihmt.run.SingleRun` should match exactly the names in `config` files/dict for `SingleRun(**config)` to work as intended
 - new python projects tend to favor `.toml` over `.yaml` configuration files, but I'm not too sure if the switch is worth it
     - A generic `Configuration` object could be implemented and instantiated with `Configuration.from_yaml`, `Configuration.from_toml`, and `Configuration.from_json`
 
