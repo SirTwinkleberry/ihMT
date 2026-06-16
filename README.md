@@ -192,51 +192,51 @@ Below is an object-by-object `Initialization` example of the various classes of 
 `meta.Signal` is an enumerator of the various signals that are defined within the package. This flag enumerator is used in various location to homogeneize requesting specific signals without risks of case-sensitive or misspelling errors. The following signals are currently implemented in this package:
 
 - **Native signals**
-    - **MT0**: [$MT_0$], *blablabla. `unit: a.u.`*
+    - **MT0**: [ $MT_0$ ], *blablabla. `unit: a.u.`*
 
-    - **MTs_Positive**: [$MT{_\mathrm{s}^+}$], *blablabla. `unit: a.u.`*
+    - **MTs_Positive**: [ $MT{_\mathrm{s}^+}$ ], *blablabla. `unit: a.u.`*
 
-    - **MTs_Negative**: [$MT{_\mathrm{s}^-}$], *blablabla. `unit: a.u.`*
+    - **MTs_Negative**: [ $MT{_\mathrm{s}^-}$ ], *blablabla. `unit: a.u.`*
 
-    - **MTd_CM**: [$MT{_\mathrm{d}^\mathrm{CM}}$], *blablabla. `unit: a.u.`*
+    - **MTd_CM**: [ $MT{_\mathrm{d}^\mathrm{CM}}$ ], *blablabla. `unit: a.u.`*
 
-    - **MTd_ALT**: [$MT{_\mathrm{d}^\mathrm{ALT}}$], *blablabla. `unit: a.u.`*
+    - **MTd_ALT**: [ $MT{_\mathrm{d}^\mathrm{ALT}}$ ], *blablabla. `unit: a.u.`*
 
 - **Composite signals**
-    - **MTs**: [$MT{_\mathrm{s}}$], *blablabla. `unit: a.u.`*
+    - **MTs**: [ $MT{_\mathrm{s}}$ ], *blablabla. `unit: a.u.`*
         - $MT{_\mathrm{s}} = \frac{1}{2} (MT{_\mathrm{s}^+} + MT{_\mathrm{s}^-})$
 
-    - **ihMT_CM**: [$ihMT{^\mathrm{CM}}$], *blablabla. `unit: a.u.`*
+    - **ihMT_CM**: [ $ihMT{^\mathrm{CM}}$ ], *blablabla. `unit: a.u.`*
         - $ihMT{^\mathrm{CM}} = 2 \times (MT{_\mathrm{s}} - MT{_\mathrm{d}^\mathrm{CM}})$
 
-    - **ihMT_ALT**: [$ihMT{^\mathrm{ALT}}$], *blablabla. `unit: a.u.`*
+    - **ihMT_ALT**: [ $ihMT{^\mathrm{ALT}}$ ], *blablabla. `unit: a.u.`*
         - $ihMT{^\mathrm{ALT}} = 2 \times (MT{_\mathrm{s}} - MT{_\mathrm{d}^\mathrm{ALT}})$
 
-    - **BP**: [$BP$], *blablabla. `unit: a.u.`*
+    - **BP**: [ $BP$ ], *blablabla. `unit: a.u.`*
         - $BP = 2 \times (MT{_\mathrm{d}^\mathrm{ALT}} - MT{_\mathrm{d}^\mathrm{CM}})$
 
-    - **MTsR_Positive**: [$MTR{_\mathrm{s}^+}$], *blablabla. `unit: % of MT0`*
+    - **MTsR_Positive**: [ $MTR{_\mathrm{s}^+}$ ], *blablabla. `unit: % of MT0`*
         - $MTR{_\mathrm{s}^+} = 100 \times (1 - MT{_\mathrm{s}^+} / MT_0)$
 
-    - **MTsR_Negative**: [$MTR{_\mathrm{s}^-}$], *blablabla. `unit: % of MT0`*
+    - **MTsR_Negative**: [ $MTR{_\mathrm{s}^-}$ ], *blablabla. `unit: % of MT0`*
         - $MTR{_\mathrm{s}^-} = 100 \times (1 - MT{_\mathrm{s}^-} / MT_0)$
 
-    - **MTsR**: [$MTR{_\mathrm{s}}$], *blablabla. `unit: % of MT0`*
+    - **MTsR**: [ $MTR{_\mathrm{s}}$ ], *blablabla. `unit: % of MT0`*
         - $MTR{_\mathrm{s}} = 100 \times (1 - MT{_\mathrm{s}} / MT_0)$
 
-    - **MTdR_CM**: [$MTR{_\mathrm{d}^\mathrm{CM}}$], *blablabla. `unit: % of MT0`*
+    - **MTdR_CM**: [ $MTR{_\mathrm{d}^\mathrm{CM}}$ ], *blablabla. `unit: % of MT0`*
         - $MTR{_\mathrm{d}^\mathrm{CM}} = 100 \times (1 - MT{_\mathrm{d}^\mathrm{CM}} / MT_0)$
 
-    - **MTdR_ALT**: [$MTR{_\mathrm{d}^\mathrm{ALT}}$], *blablabla. `unit: % of MT0`*
+    - **MTdR_ALT**: [ $MTR{_\mathrm{d}^\mathrm{ALT}}$ ], *blablabla. `unit: % of MT0`*
         - $MTR{_\mathrm{d}^\mathrm{ALT}} = 100 \times (1 - MT{_\mathrm{d}^\mathrm{ALT}} / MT_0)$
 
-    - **ihMTR_CM**: [$ihMTR{^\mathrm{CM}}$], *blablabla. `unit: % of MT0`*
+    - **ihMTR_CM**: [ $ihMTR{^\mathrm{CM}}$ ], *blablabla. `unit: % of MT0`*
         - $ihMTR{^\mathrm{CM}} = 100 \times ihMT{^\mathrm{CM}} / MT_0$
 
-    - **ihMTR_ALT**: [$ihMTR{^\mathrm{ALT}}$], *blablabla. `unit: % of MT0`*
+    - **ihMTR_ALT**: [ $ihMTR{^\mathrm{ALT}}$ ], *blablabla. `unit: % of MT0`*
         - $ihMTR{^\mathrm{ALT}} = 100 \times ihMT{^\mathrm{ALT}} / MT_0$
 
-    - **BPR**: [$BPR$], *blablabla. `unit: % of MT0`*
+    - **BPR**: [ $BPR$ ], *blablabla. `unit: % of MT0`*
         - $BPR = 100 \times BP / MT_0$
 
 
@@ -609,13 +609,13 @@ print("Angle(.003) == Angle.from_milli(3) ?", Angle(.003) == Angle.from_milli(3)
 
 **Class `Tukey`**, subclass of `meta._Event` & `pulse._Pulse`: Tukey-shaped MT pulse
 - **Input parameters**, e.g., `tukeyObject = Tukey(**inputs)`
-    - `float` **duration**: [$pw$], *pulse duration. `unit: s`*
+    - `float` **duration**: [ $pw$ ], *pulse duration. `unit: s`*
 
-    - `float` **shape**: [$r$], *tukey shape factor. `unit: ∅`*
+    - `float` **shape**: [ $r$ ], *tukey shape factor. `unit: ∅`*
 
-    - `float` **flipAngle**: [$FA_\mathrm{sat}$], *MT-preparation pulse flip angle. `unit: °`*
+    - `float` **flipAngle**: [ $FA_\mathrm{sat}$ ], *MT-preparation pulse flip angle. `unit: °`*
 
-    - `float` **offset**: [$\Delta f$], *offset frequency from the gyromagnetic factor. `unit: Hz`*
+    - `float` **offset**: [ $\Delta f$ ], *offset frequency from the gyromagnetic factor. `unit: Hz`*
 
 - **Accessible methods**, e.g., `tukeyObject.method(*args, **kwargs)`
     - **copy**:
@@ -626,33 +626,33 @@ print("Angle(.003) == Angle.from_milli(3) ?", Angle(.003) == Angle.from_milli(3)
 
     - **value**: $\mathbb{R} \to \mathbb{R}$
         - **inputs**:
-            - `float` **t**: [$t$], *time at which to sample the pulse shape. `unit: s`*
+            - `float` **t**: [ $t$ ], *time at which to sample the pulse shape. `unit: s`*
 
         - **outputs**:
-            - `float` **value**: [$w(t)$], *normalized amplitude of the pulse shape at time $t$. `unit: ∅`*
+            - `float` **value**: [ $w(t)$ ], *normalized amplitude of the pulse shape at time $t$. `unit: ∅`*
 
 - **Accessible attributes**, e.g., `tukeyObject.attribute`
     - **Each input parameter**
 
-    - `float` **gyromagneticFactor**: [$\gamma$], *gyromagnetic factor. `unit: rad•Hz/T`*
+    - `float` **gyromagneticFactor**: [ $\gamma$ ], *gyromagnetic factor. `unit: rad•Hz/T`*
         - *default value: 267513000 rad•Hz/T*
 
-    - `float` **amplitudeIntegral**: [$AI$], *the normalized integral of the amplitude of the pulse shape. `unit: ∅`*
+    - `float` **amplitudeIntegral**: [ $AI$ ], *the normalized integral of the amplitude of the pulse shape. `unit: ∅`*
         - $AI = \frac{1}{pw} \int_0^{pw} w(t) dt = 1 - r/2$
 
-    - `float` **powerIntegral**: [$PI$], *the normalized integral of the squared amplitude of the pulse shape. `unit: ∅`*
+    - `float` **powerIntegral**: [ $PI$ ], *the normalized integral of the squared amplitude of the pulse shape. `unit: ∅`*
         - $PI = \frac{1}{pw} \int_0^{pw} [w(t)]^2 dt = 1 - 5r/8$
 
-    - `float` **b1peak**: [$B_1^\mathrm{peak}$], *peak pulse amplitude. `unit: T`* 
+    - `float` **b1peak**: [ $B_1^\mathrm{peak}$ ], *peak pulse amplitude. `unit: T`* 
         - $B_1^\mathrm{peak} = (\pi/180) \times FA_\mathrm{sat} \times (\gamma \times AI \times pw)^{-1}$
 
-    - `float` **b1**: [$B_1$], *average pulse amplitude. `unit: T`*
+    - `float` **b1**: [ $B_1$ ], *average pulse amplitude. `unit: T`*
         - $B_1 = AI \times B_1^{peak}$
 
-    - `float` **b1RMS**: [$B_1^\mathrm{rms}$], *pulse root mean squared amplitude. `unit: T`*
+    - `float` **b1RMS**: [ $B_1^\mathrm{rms}$ ], *pulse root mean squared amplitude. `unit: T`*
         - $B_1^\mathrm{rms} = \sqrt{PI} \times B_1^{peak}$
 
-    - `float` **omegaRMS**: [$\omega^\mathrm{rms}$], *pulse $B_1^\mathrm{rms}$ as angular frequency. `unit: rad•Hz`*
+    - `float` **omegaRMS**: [ $\omega^\mathrm{rms}$ ], *pulse $B_1^\mathrm{rms}$ as angular frequency. `unit: rad•Hz`*
         - $\omega^\mathrm{rms} = \gamma B_1^\mathrm{rms}$
 
 
@@ -671,31 +671,31 @@ pulse = Tukey(
 
 **Class `Sequence`**, subclass of `meta._Event`:
 - **Input parameters**, e.g., `sequenceObject = Sequence(**inputs)`
-    - `Signal` **signal**: [$S$], *logical flag specifying intended signal processing. `unit: a.u. or %`*
+    - `Signal` **signal**: [ $S$ ], *logical flag specifying intended signal processing. `unit: a.u. or %`*
 
     - `Pulse` **pulse**: *off-resonance saturation pulse to use during MT preparation.*
 
-    - `int` **N_pulsePerOffset**: [$N_\mathrm{switch}$], *number of consecutive pulses with the same offset within a single burst. `unit: ∅`*
+    - `int` **N_pulsePerOffset**: [ $N_\mathrm{switch}$ ], *number of consecutive pulses with the same offset within a single burst. `unit: ∅`*
 
-    - `int` **N_pulse**: [$N_\mathrm{pulse}$], *total number of pulses within a single burst. `unit: ∅`*
+    - `int` **N_pulse**: [ $N_\mathrm{pulse}$ ], *total number of pulses within a single burst. `unit: ∅`*
 
-    - `int` **N_burst**: [$N_\mathrm{burst}$], *number of bursts within a preparation module. `unit: ∅`*
+    - `int` **N_burst**: [ $N_\mathrm{burst}$ ], *number of bursts within a preparation module. `unit: ∅`*
 
-    - `int` **N_adc**: [$N_\mathrm{ADC}$], *total number of adc events within a readout module. `unit: ∅`*
+    - `int` **N_adc**: [ $N_\mathrm{ADC}$ ], *total number of adc events within a readout module. `unit: ∅`*
 
-    - `int` **N_dummyADC**: [$N^\mathrm{dummy}_\mathrm{ADC}$], *number of dummy ADC events within a readout module. `unit: ∅`*
+    - `int` **N_dummyADC**: [ $N^\mathrm{dummy}_\mathrm{ADC}$ ], *number of dummy ADC events within a readout module. `unit: ∅`*
 
-    - `float` **dt_interPulse**: [$dt$], *delay separating 2 pulses within a burst. `unit: s`*
+    - `float` **dt_interPulse**: [ $dt$ ], *delay separating 2 pulses within a burst. `unit: s`*
 
-    - `float` **TR_burst**: [$TR_\mathrm{burst}$], *delay separating 2 bursts within a preparation module. `unit: s`*
+    - `float` **TR_burst**: [ $TR_\mathrm{burst}$ ], *delay separating 2 bursts within a preparation module. `unit: s`*
 
-    - `float` **dt_lastBurst**: [$dt^\mathrm{last}_\mathrm{burst}$], *delay separating the beginning of the last burst and the beginning of the readout module. `unit: s`*
+    - `float` **dt_lastBurst**: [ $dt^\mathrm{last}_\mathrm{burst}$ ], *delay separating the beginning of the last burst and the beginning of the readout module. `unit: s`*
 
-    - `float` **es**: [$ES$], *delay between 2 adc events, "echo spacing". `unit: s`*
+    - `float` **es**: [ $ES$ ], *delay between 2 adc events, "echo spacing". `unit: s`*
 
-    - `float` **tr**: [$TR$], *delay between 2 preparation modules. `unit: s`*
+    - `float` **tr**: [ $TR$ ], *delay between 2 preparation modules. `unit: s`*
 
-    - `float` **readout_flipAngle**: [$FA_\mathrm{read}$], *readout pulse flip angle. `unit: °`*
+    - `float` **readout_flipAngle**: [ $FA_\mathrm{read}$ ], *readout pulse flip angle. `unit: °`*
 
 - **Accessible methods**, e.g., `sequenceObject.method(*args, **kwargs)`
     - **copy**:
@@ -707,13 +707,13 @@ pulse = Tukey(
 - **Accessible attributes**, e.g., `sequenceObject.attribute`
     - **Each input parameter**
 
-    - `float` **duration_preparation**: [$dt_\mathrm{prep}$], *duration of the preparation module. `unit: s`*
+    - `float` **duration_preparation**: [ $dt_\mathrm{prep}$ ], *duration of the preparation module. `unit: s`*
         - $dt_\mathrm{prep} = (N_\mathrm{burst} - 1) \times TR_\mathrm{burst} + N_\mathrm{pulse} \times dt + dt^\mathrm{last}_\mathrm{burst}$
 
-    - `float` **duration_readout**: [$dt_\mathrm{read}$], *duration of the readout module. `unit: s`*
+    - `float` **duration_readout**: [ $dt_\mathrm{read}$ ], *duration of the readout module. `unit: s`*
         - $dt_\mathrm{read} = N_\mathrm{ADC} \times ES$
 
-    - `float` **duration_recovery**: [$dt_\mathrm{recov}$], *duration of the recovery module. `unit: s`*
+    - `float` **duration_recovery**: [ $dt_\mathrm{recov}$ ], *duration of the recovery module. `unit: s`*
         - $dt_\mathrm{recov} = TR - dt_\mathrm{prep} - dt_\mathrm{read}$
 
 
@@ -745,23 +745,23 @@ sequence = Sequence(
 
     - `Pulse` **pulse**: *off-resonance saturation pulse to use during MT preparation.*
 
-    - `float` or `NDArray[float]` **poolFree_M0**: [$M_0^\mathrm{A}$], *free pool initial magnetizations. `unit: T`*
+    - `float` or `NDArray[float]` **poolFree_M0**: [ $M_0^\mathrm{A}$ ], *free pool initial magnetizations. `unit: T`*
 
-    - `float` or `NDArray[float]` **poolFree_T1**: [$T_1^\mathrm{A}$], *free pool Zeeman compartment longitudinal relaxation times. `unit: s`*
+    - `float` or `NDArray[float]` **poolFree_T1**: [ $T_1^\mathrm{A}$ ], *free pool Zeeman compartment longitudinal relaxation times. `unit: s`*
 
-    - `float` or `NDArray[float]` **poolFree_T2**: [$T_2^\mathrm{A}$], *free pool Zeeman compartment transverse relaxation times. `unit: s`*
+    - `float` or `NDArray[float]` **poolFree_T2**: [ $T_2^\mathrm{A}$ ], *free pool Zeeman compartment transverse relaxation times. `unit: s`*
 
-    - `float` or `NDArray[float]` **poolFreeBound_exchangeRate**: [$R_\mathrm{AB}$], *exchange rate between free and bound pools' Zeeman compartments. `unit: Hz`*
+    - `float` or `NDArray[float]` **poolFreeBound_exchangeRate**: [ $R_\mathrm{AB}$ ], *exchange rate between free and bound pools' Zeeman compartments. `unit: Hz`*
 
-    - `float` or `NDArray[float]` **poolBound_M0**: [$M_0^\mathrm{B}$], *bound pool initial magnetizations. `unit: T`*
+    - `float` or `NDArray[float]` **poolBound_M0**: [ $M_0^\mathrm{B}$ ], *bound pool initial magnetizations. `unit: T`*
 
-    - `float` or `NDArray[float]` **poolBound_T1**: [$T_1^\mathrm{B}$], *bound pool Zeeman compartment longitudinal relaxation times. `unit: s`*
+    - `float` or `NDArray[float]` **poolBound_T1**: [ $T_1^\mathrm{B}$ ], *bound pool Zeeman compartment longitudinal relaxation times. `unit: s`*
 
-    - `float` or `NDArray[float]` **poolBound_T2**: [$T_2^\mathrm{B}$], *bound pool Zeeman compartment transverse relaxation times. `unit: s`*
+    - `float` or `NDArray[float]` **poolBound_T2**: [ $T_2^\mathrm{B}$ ], *bound pool Zeeman compartment transverse relaxation times. `unit: s`*
 
-    - `float` or `NDArray[float]` **poolBound_T1D**: [$T_{1\mathrm{D}}^\mathrm{B}$], *bound pool dipolar compartment dipolar relaxation times. `unit: s`*
+    - `float` or `NDArray[float]` **poolBound_T1D**: [ $T_{1\mathrm{D}}^\mathrm{B}$ ], *bound pool dipolar compartment dipolar relaxation times. `unit: s`*
 
-    - `float` or `NDArray[float]` **poolBound_lineshapeAsymmetry**: [$\delta f^\mathrm{B}$], *bound pool lineshape frequency offsets w.r.t. water resonance. `unit: Hz`*
+    - `float` or `NDArray[float]` **poolBound_lineshapeAsymmetry**: [ $\delta f^\mathrm{B}$ ], *bound pool lineshape frequency offsets w.r.t. water resonance. `unit: Hz`*
 
 - **Accessible methods**, e.g., `systemObject.method(*args, **kwargs)`
     - **copy**:
@@ -772,13 +772,13 @@ sequence = Sequence(
 
     - **Lorentzian**: $\mathbb{R}^{(n+1)} \to \mathbb{R}^n = \mathbf{\vec{T}_2} / ( 1 + (2\pi \mathbf{\vec{T}_2} \Delta f)^2)$
         - **inputs**:
-            - `NDArray[float]` **T2**: [$\mathbf{\vec{T}_2}$], *transverse relaxation time of the pools modeled by the given lineshape. `unit: s`*
+            - `NDArray[float]` **T2**: [ $\mathbf{\vec{T}_2}$ ], *transverse relaxation time of the pools modeled by the given lineshape. `unit: s`*
 
-            - `float` **offset**: [$\Delta f_\mathrm{eff}$], *effective frequency offset of the pool modeled by the given lineshape. `unit: Hz`*
+            - `float` **offset**: [ $\Delta f_\mathrm{eff}$ ], *effective frequency offset of the pool modeled by the given lineshape. `unit: Hz`*
                 - $\Delta f_\mathrm{eff} = \Delta f_\mathrm{pulse} - \delta f^\mathrm{B}$
 
         - **outputs**:
-            - `NDArray[float]` **value**: [$\mathbf{\vec{g}}(\mathbf{\vec{T}_2}, \Delta f_\mathrm{eff})$], *lineshape value for each element of $\mathbf{\vec{T}_2}$. `unit: s / rad^2`*
+            - `NDArray[float]` **value**: [ $\mathbf{\vec{g}}(\mathbf{\vec{T}_2}, \Delta f_\mathrm{eff})$ ], *lineshape value for each element of $\mathbf{\vec{T}_2}$. `unit: s / rad^2`*
 
     - **Gaussian**: *(see: **Lorentzian**)* $\mathbb{R}^{(n+1)} \to \mathbb{R}^n = \sqrt{2 \pi} \times \mathbf{\vec{T}_2} \exp( -(2\pi \mathbf{\vec{T}_2} \Delta f)^2 / 2)$
 
@@ -793,13 +793,13 @@ sequence = Sequence(
 - **Accessible attributes**, e.g., `systemObject.attribute`
     - **Each input parameter**
 
-    - `int` **N_poolFree**: [$N_\mathrm{pools}$], *number of free pools within the system. `unit: ∅`*
+    - `int` **N_poolFree**: [ $N_\mathrm{pools}$ ], *number of free pools within the system. `unit: ∅`*
 
-    - `int` **N_poolBound**: [$N_\mathrm{pools}$], *number of bound pools within the system. `unit: ∅`*
+    - `int` **N_poolBound**: [ $N_\mathrm{pools}$ ], *number of bound pools within the system. `unit: ∅`*
 
-    - `int` **N_pools**: [$N_\mathrm{pools}$], *number of pools within the system. `unit: ∅`*
+    - `int` **N_pools**: [ $N_\mathrm{pools}$ ], *number of pools within the system. `unit: ∅`*
 
-    - `NDArray[float]` **poolBound_omegaLocalField**: [$\omega_\mathrm{loc}$], *square root of the 2nd moment of the bound pool absorption lineshape, interpreted as the local dipolar field amplitude as an angular frequency. `unit: rad•Hz`*
+    - `NDArray[float]` **poolBound_omegaLocalField**: [ $\omega_\mathrm{loc}$ ], *square root of the 2nd moment of the bound pool absorption lineshape, interpreted as the local dipolar field amplitude as an angular frequency. `unit: rad•Hz`*
         - $\omega_\mathrm{loc}(T_2) = \sqrt{\int_{-\infty}^{\infty} \nu^2 g(T_2, \nu) d\nu}$, in particular:
 
             - **Gaussian**: $\omega_\mathrm{loc}(T_2) = (T_2^\mathrm{B})^{-1}$
@@ -808,22 +808,22 @@ sequence = Sequence(
             
             - **SuperLorentz**: $\omega_\mathrm{loc}(T_2) = (\sqrt{15} T_2^\mathrm{B})^{-1}$
 
-    - `NDArray[float]` **poolFree_Rrf**: [$\mathbf{\hat{R}_\mathrm{RF}^\mathrm{A}}$], *exchange matrix of the system containing the elements specifying the Zeeman-Zeeman interactions. `unit: Hz`*
+    - `NDArray[float]` **poolFree_Rrf**: [ $\mathbf{\hat{R}_\mathrm{RF}^\mathrm{A}}$ ], *exchange matrix of the system containing the elements specifying the Zeeman-Zeeman interactions. `unit: Hz`*
         - $\mathbf{\hat{R}_\mathrm{RF}^\mathrm{A}} = -\frac{1}{2} (\omega^\mathrm{rms}_\mathrm{pulse})^2 g_\mathrm{Lorentz}(T_2^\mathrm{A}, \Delta f) \begin{bmatrix} 1 & \\\ & \mathbf{\hat{0}_2} \end{bmatrix}$
 
-    - `NDArray[float]` **poolBound_Rrf_singleSat_Positive**: [$\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},+}}$], *exchange matrix of the system containing the elements specifying the Zeeman-Dipolar interactions for a single-sided positive off-resonance RF saturation. `unit: Hz`*
+    - `NDArray[float]` **poolBound_Rrf_singleSat_Positive**: [ $\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},+}}$ ], *exchange matrix of the system containing the elements specifying the Zeeman-Dipolar interactions for a single-sided positive off-resonance RF saturation. `unit: Hz`*
         - $\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},+}} = -\frac{1}{2}(\omega_\mathrm{pulse}^\mathrm{rms})^2 g_\mathrm{SuperLorentz}(T_2^\mathrm{B}, +|\Delta f| - \delta f^\mathrm{B}) \begin{bmatrix}\mathbf{\hat{0}_1} &  & \\\ & 1 & -2\pi|\Delta f| \\\ & -2\pi|\Delta f| / (\omega_\mathrm{loc})^2 & (2\pi|\Delta f| / \omega_\mathrm{loc})^2 \end{bmatrix}$
 
-    - `NDArray[float]` **poolBound_Rrf_singleSat_Negative**: [$\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},-}}$], *exchange matrix of the system containing the elements specifying the Zeeman-Dipolar interactions for a single-sided negative off-resonance RF saturation. `unit: Hz`*
+    - `NDArray[float]` **poolBound_Rrf_singleSat_Negative**: [ $\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},-}}$ ], *exchange matrix of the system containing the elements specifying the Zeeman-Dipolar interactions for a single-sided negative off-resonance RF saturation. `unit: Hz`*
         - $\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},-}} = -\frac{1}{2}(\omega_\mathrm{pulse}^\mathrm{rms})^2 g_\mathrm{SuperLorentz}(T_2^\mathrm{B}, -|\Delta f| - \delta f^\mathrm{B}) \begin{bmatrix} \mathbf{\hat{0}_1} &  & \\\ & 1 & 2\pi|\Delta f| \\\ & 2\pi|\Delta f| / (\omega_\mathrm{loc})^2 & (2\pi|\Delta f| / \omega_\mathrm{loc})^2 \end{bmatrix}$
 
-    - `NDArray[float]` **poolBound_Rrf_dualSat**: [$\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},\pm}}$], *exchange matrix of the system containing the elements specifying the Zeeman-Dipolar interactions for a dual-sided off-resonance RF saturation. `unit: Hz`*
+    - `NDArray[float]` **poolBound_Rrf_dualSat**: [ $\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},\pm}}$ ], *exchange matrix of the system containing the elements specifying the Zeeman-Dipolar interactions for a dual-sided off-resonance RF saturation. `unit: Hz`*
         - $\mathbf{\hat{R}_\mathrm{RF}^{\mathrm{B},\pm}} = \frac{1}{2} \left( R_\mathrm{RF}^{\mathrm{B},+} + R_\mathrm{RF}^{\mathrm{B},-} \right)$
 
-    - `NDArray[float]` **relaxation**: [$\mathbf{\hat{R}}_\mathrm{relax}$], *relaxation and exchanges matrix of the system when not under RF saturation. `unit: T`*
+    - `NDArray[float]` **relaxation**: [ $\mathbf{\hat{R}}_\mathrm{relax}$ ], *relaxation and exchanges matrix of the system when not under RF saturation. `unit: T`*
         - $\mathbf{\hat{R}}_\mathrm{relax} = blablabla$
 
-    - `NDArray[float]` **magnetization_recovery**: [$\mathbf{\vec{V}}_\mathrm{equil}$], *vector of relaxation rates toward thermodynamic equilibrium under no RF saturation. `unit: T•Hz`*
+    - `NDArray[float]` **magnetization_recovery**: [ $\mathbf{\vec{V}}_\mathrm{equil}$ ], *vector of relaxation rates toward thermodynamic equilibrium under no RF saturation. `unit: T•Hz`*
         - $\mathbf{\vec{V}}_\mathrm{equil} = \begin{bmatrix} \mathbf{\vec{M}_0^{A}} / \mathbf{\vec{T}_1^{A}} \\\ \mathbf{\vec{M}_0^{B}} / \mathbf{\vec{T}_1^{B}}  \\\ \mathbf{\vec{0}} \end{bmatrix}$
 
 
@@ -897,7 +897,7 @@ print('PampelSuperLorentzian Integrated =', np.round(sp.integrate.quad(lambda x:
         - `slice(1, None, 2) == array[1::2]`: *outputs every other element (compartment) from the 2nd up to the last element included of the magnetization vector, i.e., each Zeeman compartment of the (possibly multiple) bound pools.*
         - `slice(start, stop, step) == [start:stop:step]`: *general slice constructor. `start` is included in the range but `stop` is not.* 
 
-    - `bool` **export_readMatrix**: [$\mathbf{\hat{A}_\mathrm{read}}$] *Whether or not to export the readout evolution matrix, for use in computing the signal at each readout event. Note: the output matrix dimension has 1 additional column/row due the `SteadyState` solver requiring that additional degree of freedom for normalizing eigenvectors.*
+    - `bool` **export_readMatrix**: [ $\mathbf{\hat{A}_\mathrm{read}}$ ] *Whether or not to export the readout evolution matrix, for use in computing the signal at each readout event. Note: the output matrix dimension has 1 additional column/row due the `SteadyState` solver requiring that additional degree of freedom for normalizing eigenvectors.*
         - $\mathbf{\hat{A}_\mathrm{read}} = \exp(\mathbf{\hat{a}_\mathrm{relax}} \times ES) \exp(\begin{bmatrix}\cos{[(\pi / 180) \times FA_\mathrm{read}]} & \\\ & \mathbf{\hat{\mathbb{1}}_{2+1}} \end{bmatrix})$
 
 - **Accessible methods**, e.g., `simulatorObject.method(*args, **kwargs)`
