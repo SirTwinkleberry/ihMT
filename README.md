@@ -2008,7 +2008,7 @@ for key, val in default.items():
     print()
 ```
 
-    [1mrun[0m
+    run
                               pw : 0.001
                          r_tukey : 0.3
                           fa_sat : 200
@@ -2040,18 +2040,18 @@ for key, val in default.items():
                       filePrefix : ''
                           export : True
     
-    [1mlog[0m
+    log
                          version : 1
         disable_existing_loggers : False
-    	[1mformatters[0m
+    	formatters
     		 standard {'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'}
     		 error {'format': '%(asctime)s - %(name)s - %(levelname)s <PID %(process)d:%(processName)s> %(name)s.%(funcName)s(): %(message)s'}
-    	[1mhandlers[0m
+    	handlers
     		 root_file_handler {'class': 'logging.FileHandler', 'level': 'INFO', 'formatter': 'standard', 'filename': './output/logs.txt', 'mode': 'w'}
     		 debug_root_file_handler {'class': 'logging.FileHandler', 'level': 'DEBUG', 'formatter': 'error', 'filename': './output/logs_debug.txt', 'mode': 'w'}
     		 console {'class': 'logging.StreamHandler', 'level': 'INFO', 'formatter': 'standard', 'stream': 'ext://sys.stdout'}
     		 error_console {'class': 'logging.StreamHandler', 'level': 'ERROR', 'formatter': 'error', 'stream': 'ext://sys.stderr'}
-    	[1mroot[0m
+    	root
     		 level 'DEBUG'
     		 handlers ['console', 'error_console', 'root_file_handler', 'debug_root_file_handler']
     

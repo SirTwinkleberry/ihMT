@@ -8,91 +8,110 @@
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#declaring-the-build-backend
 [build-system]
-    requires = ["hatchling >= 1.26"]
-    build-backend = "hatchling.build"
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#about-your-project
 [project]
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#version
-    # https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers
-    version = "1.0.0"
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#version
+# https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers
+version = "1.0.0"
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name
-    name = "ihmt"
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name
+name = "ihmt"
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#description
-    description = "Inhomogeneous magnetization transfer simulator for magnetic resonance research."
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#description
+description = "Inhomogeneous magnetization transfer simulator for magnetic resonance research."
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#authors-maintainers
-    authors = [
-        { name="Timothy Anderson", email="timothy.anderson@univ-amu.com" },
-    ]
-    maintainers = [
-        { name="Timothy Anderson", email="timothy.anderson@univ-amu.com" },
-    ]
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#authors-maintainers
+authors = [
+    { name = "Timothy Anderson", email = "timothy.anderson@univ-amu.com" },
+]
+maintainers = [
+    { name = "Timothy Anderson", email = "timothy.anderson@univ-amu.com" },
+]
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#requires-python
-    requires-python = ">=3"
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#requires-python
+requires-python = ">=3"
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements
-    # https://packaging.python.org/en/latest/specifications/dependency-specifiers/#dependency-specifiers
-    dependencies = [
-        "numpy",
-        "scipy",
-        "pyyaml"
-    ]
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements
+# https://packaging.python.org/en/latest/specifications/dependency-specifiers/#dependency-specifiers
+dependencies = ["numpy", "scipy", "pyyaml"]
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#keywords
-    keywords = [
-        'simulator',
-        'magnetization transfer', 'MT',
-        'inhomogeneous magnetization transfer', 'ihMT',
-        'magnetic resonance', 'MR',
-        'magnetic resonance imaging', 'MRI',
-        'nuclear magnetic resonance', 'NMR',
-        'bloch'
-    ]
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#keywords
+keywords = [
+    'simulator',
+    'magnetization transfer',
+    'MT',
+    'inhomogeneous magnetization transfer',
+    'ihMT',
+    'magnetic resonance',
+    'MR',
+    'magnetic resonance imaging',
+    'MRI',
+    'nuclear magnetic resonance',
+    'NMR',
+    'bloch',
+]
 
-    # https://pypi.org/classifiers/
-    classifiers = [
-        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
-        "Natural Language :: English",
+# https://pypi.org/classifiers/
+classifiers = [
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Natural Language :: English",
 
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
-        "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
 
-        "Development Status :: 3 - Alpha",
-        "Intended Audience :: Education",
-        "Intended Audience :: Science/Research",
-        "Intended Audience :: Healthcare Industry",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
 
-        "Topic :: Education",
-        "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
 
-        "Typing :: Typed",
-    ]
+    "Typing :: Typed",
+]
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license-and-license-files
-    license = "LGPL-3.0-or-later"
-    license-files = ["LICEN[CS]E*"]
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license-and-license-files
+license = "LGPL-3.0-or-later"
+license-files = ["LICEN[CS]E*"]
 
-    # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#readme
-    readme = "README.md"
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#readme
+readme = "README.md"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements
 # https://packaging.python.org/en/latest/specifications/dependency-specifiers/#dependency-specifiers
 [project.optional-dependencies]
-    cli = []
-    gui = []
+test = ["coverage"]
+examples = [
+    "jupyter",
+    "notebook",
+    "matplotlib",
+    "pandas",
+    "ipywidgets",
+    "anywidget",
+    "plotly",
+]
+all = [
+    "coverage",
+    "jupyter",
+    "notebook",
+    "matplotlib",
+    "pandas",
+    "ipywidgets",
+    "anywidget",
+    "plotly",
+]
 
 # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
 [project.urls]
-    Homepage = "https://github.com/SirTwinkleberry/ihMT"
-    Repository = "https://github.com/SirTwinkleberry/ihMT.git"
-    Issues = "https://github.com/SirTwinkleberry/ihMT/issues"
-    Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+Homepage = "https://github.com/SirTwinkleberry/ihMT"
+Repository = "https://github.com/SirTwinkleberry/ihMT.git"
+Issues = "https://github.com/SirTwinkleberry/ihMT/issues"
+Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#creating-executable-scripts
 [project.scripts]
