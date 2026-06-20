@@ -1,5 +1,7 @@
 # **ihMT**
 
+License: GNU General Public License v3 or later (GPLv3+)
+
 ## Table of contents<a id='toc0_'></a>    
 
 - [Setup](#toc2_)    

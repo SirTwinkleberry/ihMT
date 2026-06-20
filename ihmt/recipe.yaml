@@ -1,0 +1,46 @@
+schema_version: 1
+
+context:
+  python_min: "3.9"
+  version: "0.9.0"
+
+package:
+  name: ihmt
+  version: ${{ version }}
+
+source:
+  url: https://pypi.org/packages/source/i/ihmt/ihmt-${{ version }}.tar.gz
+  sha256: 0f87ebdb9e9e2053494efd73c246a0794b7934c924d2486aed2937b52c00828f
+
+build:
+  number: 0
+  noarch: python
+  script: ${{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - python ${{ python_min }}.*
+    - hatchling >=1.26
+    - pip
+  run:
+    - python >=${{ python_min }}
+    - numpy
+    - scipy
+    - pyyaml
+
+tests:
+  - python:
+      imports:
+        - ihmt
+      pip_check: true
+      python_version: ${{ python_min }}.*
+
+about:
+  summary: Inhomogeneous magnetization transfer simulator for magnetic resonance research.
+  license: GPL-3.0-only
+  license_file: LICENSE
+  homepage: https://github.com/SirTwinkleberry/ihMT
+
+extra:
+  recipe-maintainers:
+    - SirTwinkleberry

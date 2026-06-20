@@ -15,7 +15,7 @@ build-backend = "hatchling.build"
 [project]
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#version
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers
-version = "1.0.0"
+version = "0.9.0"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name
 name = "ihmt"
@@ -56,7 +56,7 @@ keywords = [
 
 # https://pypi.org/classifiers/
 classifiers = [
-    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Natural Language :: English",
 
     "Programming Language :: Python :: 3",
@@ -76,7 +76,7 @@ classifiers = [
 ]
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license-and-license-files
-license = "LGPL-3.0-or-later"
+license = "GPL-3.0-or-later"
 license-files = ["LICEN[CS]E*"]
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#readme
