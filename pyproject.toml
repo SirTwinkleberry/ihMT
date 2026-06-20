@@ -15,7 +15,7 @@ build-backend = "hatchling.build"
 [project]
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#version
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers
-version = "0.9.0"
+version = "0.9.1"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name
 name = "ihmt"
