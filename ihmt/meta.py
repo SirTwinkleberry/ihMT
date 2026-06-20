@@ -82,7 +82,7 @@ class Signal(Flag):
 
     @classmethod
     def from_str(cls, key: str):
-        match key.upper():
+        match str(key).upper():
             case "MT0":
                 return cls.MT0
             case "MTS_POSITIVE":
