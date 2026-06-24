@@ -21,7 +21,7 @@ from abc import ABC
 from numpy import atleast_1d, meshgrid, zeros_like, cos, pi, sqrt, number, ndarray
 from scipy.integrate import quad
 from operator import le, lt, gt
-from typing import Any, NewType
+from typing import Any
 from copy import deepcopy
 
 from ihmt.meta import _Event, check_value_is_valid, _deg2rad, ScalarOrVector
@@ -40,18 +40,18 @@ class _PulseVector(ABC, _Event):
         _raised when user calls `_Pulse().value` directly instead of through a daughter class
     """
 
-    _gyromagneticFactor: ndarray[number]  # rad / s / T
+    _gyromagneticFactor: ndarray  # rad / s / T
 
-    _duration: ndarray[number]  # s
-    _flipAngle: ndarray[number]  # °
-    _offset: ndarray[number]  # Hz
+    _duration: ndarray  # s
+    _flipAngle: ndarray  # °
+    _offset: ndarray  # Hz
 
-    _amplitudeIntegral: ndarray[number]
-    _powerIntegral: ndarray[number]
-    _b1peak: ndarray[number]
-    _omegaRMS: ndarray[number]
+    _amplitudeIntegral: ndarray
+    _powerIntegral: ndarray
+    _b1peak: ndarray
+    _omegaRMS: ndarray
 
-    _classAttributes: tuple[str] = (
+    _classAttributes = (
         "gyromagneticFactor",
         "duration",
         "flipAngle",
@@ -75,20 +75,21 @@ class _PulseVector(ABC, _Event):
         logger.critical(error)
         raise NotImplementedError(error)
 
-    def copy(self) -> _PulseVector:
-        return self(
-            **{
-                key.replace("_vector_", ""): deepcopy(value)
-                for key, value in self.__dict__.items()
-                if "_vector_" in key
-            }
-        )
+    def copy(self) -> "_PulseVector":
+        error = "Method `_Pulse.copy` should not be called directly. Use daughter class' `copy` method instead."
+        logger.critical(error)
+        raise NotImplementedError(error)
+
+    def _reshape(self):
+        error = "Method `_Pulse._reshape` should not be called directly. Use daughter class' `_reshape` method instead."
+        logger.critical(error)
+        raise NotImplementedError(error)
 
     #####
     # BELOW: property getters and setters
     #####
     @property
-    def gyromagneticFactor(self) -> ndarray[number]:
+    def gyromagneticFactor(self) -> ndarray:
         if not hasattr(self, "_gyromagneticFactor"):
             self._gyromagneticFactor = atleast_1d(267513000.0)
         return self._gyromagneticFactor
@@ -100,7 +101,7 @@ class _PulseVector(ABC, _Event):
         self._changed("gyromagneticFactor")
 
     @property
-    def duration(self) -> ndarray[number]:
+    def duration(self) -> ndarray:
         return self._duration
 
     @duration.setter
@@ -110,7 +111,7 @@ class _PulseVector(ABC, _Event):
         self._changed("duration")
 
     @property
-    def flipAngle(self) -> ndarray[number]:
+    def flipAngle(self) -> ndarray:
         return self._flipAngle
 
     @flipAngle.setter
@@ -120,7 +121,7 @@ class _PulseVector(ABC, _Event):
         self._changed("flipAngle")
 
     @property
-    def offset(self) -> ndarray[number]:
+    def offset(self) -> ndarray:
         return self._offset
 
     @offset.setter
@@ -130,7 +131,7 @@ class _PulseVector(ABC, _Event):
         self._changed("offset")
 
     @property
-    def amplitudeIntegral(self) -> ndarray[number]:
+    def amplitudeIntegral(self) -> ndarray:
         if not hasattr(self, "_amplitudeIntegral"):
             self._amplitudeIntegral = (
                 quad(self.value, 0, self.duration)[0] / self.duration
@@ -144,7 +145,7 @@ class _PulseVector(ABC, _Event):
         self._changed("amplitudeIntegral")
 
     @property
-    def powerIntegral(self) -> ndarray[number]:
+    def powerIntegral(self) -> ndarray:
         if not hasattr(self, "_powerIntegral"):
             self._powerIntegral = (
                 quad(lambda t: self.value(t) ** 2, 0, self.duration)[0] / self.duration
@@ -158,7 +159,7 @@ class _PulseVector(ABC, _Event):
         self._changed("powerIntegral")
 
     @property
-    def b1peak(self) -> ndarray[number]:
+    def b1peak(self) -> ndarray:
         if not hasattr(self, "_b1peak"):
             self._b1peak = (
                 _deg2rad
@@ -174,17 +175,17 @@ class _PulseVector(ABC, _Event):
         self._changed("b1peak")
 
     @property
-    def b1(self) -> ndarray[number]:
+    def b1(self) -> ndarray:
         return self.b1peak * self.amplitudeIntegral
 
     @property
-    def b1RMS(self) -> ndarray[number]:
+    def b1RMS(self) -> ndarray:
         return self.b1peak * sqrt(self.powerIntegral)
 
     @property
-    def omegaRMS(self) -> ndarray[number]:
+    def omegaRMS(self) -> ndarray:
         if not hasattr(self, "_omegaRMS"):
-            self.omegaRMS = self.b1RMS * self.gyromagneticFactor
+            self._omegaRMS = self.b1RMS * self.gyromagneticFactor
             self._changed("omegaRMS")
         return self._omegaRMS
 
@@ -195,10 +196,10 @@ class _PulseVector(ABC, _Event):
 
 
 class TukeyVector(_PulseVector):
-    _shape: ndarray[number]  # r factor for Tukey shape
+    _shape: ndarray  # r factor for Tukey shape
 
-    _classAttributes: tuple[str] = ("shape", *_PulseVector._get_classAttributes())
-    _broadcastshape: tuple[int]
+    _classAttributes = ("shape", *_PulseVector._get_classAttributes())
+    _broadcastshape: tuple[int, ...]
 
     def __init__(
         self,
@@ -207,7 +208,7 @@ class TukeyVector(_PulseVector):
         flipAngle: ScalarOrVector,
         offset: ScalarOrVector,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """_Tukey pulse class_
 
@@ -240,7 +241,7 @@ class TukeyVector(_PulseVector):
 
         self.onChange("shape", [self._reshape])
 
-    def copy(self) -> TukeyVector:
+    def copy(self) -> "TukeyVector":
         return TukeyVector(
             deepcopy(self._vector_duration),
             deepcopy(self._vector_shape),
@@ -248,7 +249,7 @@ class TukeyVector(_PulseVector):
             deepcopy(self._vector_offset),
         )
 
-    def value(self, t: float) -> float:
+    def value(self, t: float) -> ndarray:
         """_summary_
 
         Parameters
@@ -258,7 +259,7 @@ class TukeyVector(_PulseVector):
 
         Returns
         -------
-        float
+        ndarray
             _description_
         """
         pulse = zeros_like(self.duration)
@@ -307,7 +308,7 @@ class TukeyVector(_PulseVector):
     # BELOW: property getters and setters
     #####
     @property
-    def shape(self) -> ndarray[number]:
+    def shape(self) -> ndarray:
         return self._shape
 
     @shape.setter
@@ -317,7 +318,7 @@ class TukeyVector(_PulseVector):
         self._changed("shape")
 
     @property
-    def amplitudeIntegral(self) -> ndarray[number]:
+    def amplitudeIntegral(self) -> ndarray:
         if not hasattr(self, "_amplitudeIntegral"):
             self._amplitudeIntegral = 1 - 0.5 * self.shape
             self._changed("amplitudeIntegral")
@@ -329,7 +330,7 @@ class TukeyVector(_PulseVector):
         self._changed("amplitudeIntegral")
 
     @property
-    def powerIntegral(self) -> ndarray[number]:
+    def powerIntegral(self) -> ndarray:
         if not hasattr(self, "_powerIntegral"):
             self._powerIntegral = 1 - 0.625 * self.shape
             self._changed("powerIntegral")
@@ -341,4 +342,4 @@ class TukeyVector(_PulseVector):
         self._changed("powerIntegral")
 
 
-PulseVector = NewType("Pulse", _PulseVector)
+type PulseVector = _PulseVector  # Python 3.12 feature

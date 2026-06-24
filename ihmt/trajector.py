@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from logging import getLogger, NullHandler
-from numpy import ndarray, number, equal, mod
+from numpy import ndarray, equal, mod
 from numpy.linalg import matrix_power, inv
 
 from ihmt.meta import _Event, CompositeDictionary
@@ -36,26 +36,28 @@ class Trajector(_Event):
         trajectory: tuple[tuple[int, int, int]],
         simulator: Simulator,
         *args,
-        **kwargs
+        **kwargs,
     ):
         raise NotImplementedError
 
     @staticmethod
-    def CartesianSpiral_CentricOut(simulator: Simulator, *args, **kwargs) -> Trajector:
+    def CartesianSpiral_CentricOut(
+        simulator: Simulator, *args, **kwargs
+    ) -> "Trajector":
         raise NotImplementedError
         trajectory = None
         return Trajector(trajectory, simulator)
 
     @staticmethod
-    def CentricOut_Linear(simulator: Simulator, *args, **kwargs) -> Trajector:
+    def CentricOut_Linear(simulator: Simulator, *args, **kwargs) -> "Trajector":
         raise NotImplementedError
-        N = simulator.sequence.N_adc - simulator.sequence.N_dummyADC
+        N = simulator.sequence.N_totalADC - simulator.sequence.N_dummyADC
         dims = (N, N)
         trajectory = None
         return Trajector(trajectory, simulator)
 
     @staticmethod
-    def Linear_Linear(simulator: Simulator, *args, **kwargs) -> Trajector:
+    def Linear_Linear(simulator: Simulator, *args, **kwargs) -> "Trajector":
         raise NotImplementedError
         trajectory = None
         return Trajector(trajectory, simulator)
@@ -63,7 +65,7 @@ class Trajector(_Event):
     @staticmethod
     def readouts(
         simulator: Simulator, stable: bool = True, *args, **kwargs
-    ) -> CompositeDictionary[str, ndarray[number]]:
+    ) -> CompositeDictionary:
         tmp = simulator.export_readMatrix, simulator.output_vectorSlice
         simulator.export_readMatrix, simulator.output_vectorSlice = True, slice(None)
 
@@ -73,7 +75,7 @@ class Trajector(_Event):
 
         if stable:
             readouts = {key: [] for key in data.keys() if key != "readout"}
-            for adc in range(simulator.sequence.N_adc):
+            for adc in range(simulator.sequence.N_totalADC):
                 readoutMatrix = matrix_power(
                     data["readout"], adc - simulator.sequence.N_dummyADC
                 )
@@ -90,44 +92,44 @@ class Trajector(_Event):
             }
 
             for key in readouts.keys():
-                for _ in range(1, simulator.sequence.N_adc):
+                for _ in range(1, simulator.sequence.N_totalADC):
                     readouts[key].append(data["readout"] @ readouts[key][-1])
 
         return CompositeDictionary(readouts).T
 
     @staticmethod
-    def _check_integer_only(array: ndarray[number]):
+    def _check_integer_only(array: ndarray):
         return equal(mod(array, 1), 0).all()
 
-    def VectorialPointSpreadFunction(self) -> ndarray[number]:
+    def VectorialPointSpreadFunction(self) -> ndarray:
         # D?
         raise NotImplementedError
 
-    def PointSpreadFunction(self) -> ndarray[number]:
+    def PointSpreadFunction(self) -> ndarray:
         # 2D or 3D
         raise NotImplementedError
 
-    def LineSpreadFunction(self) -> ndarray[number]:
+    def LineSpreadFunction(self) -> ndarray:
         # 1D
         raise NotImplementedError
 
-    def EdgeSpreadFunction(self) -> ndarray[number]:
+    def EdgeSpreadFunction(self) -> ndarray:
         # 1D
         raise NotImplementedError
 
-    def VectorialOpticalTransferFunction(self) -> ndarray[number]:
+    def VectorialOpticalTransferFunction(self) -> ndarray:
         # D?
         raise NotImplementedError
 
-    def OpticalTransferFunction(self) -> ndarray[number]:
+    def OpticalTransferFunction(self) -> ndarray:
         # 2D or 3D
         raise NotImplementedError
 
-    def ModulationTransferFunction(self) -> ndarray[number]:
+    def ModulationTransferFunction(self) -> ndarray:
         # 2D or 3D
         raise NotImplementedError
 
-    def PhaseTransferFunction(self) -> ndarray[number]:
+    def PhaseTransferFunction(self) -> ndarray:
         # 2D or 3D
         raise NotImplementedError
 

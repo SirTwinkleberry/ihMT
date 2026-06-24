@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from logging import getLogger, NullHandler
 from numpy import (
     ndarray,
-    number,
     array,
     diag,
     fliplr,
@@ -59,31 +58,31 @@ _sqrt15 = sqrt(15)
 class System(_Event):
     _pulse: Pulse
 
-    _poolFree_Rrf: ndarray[number]
-    _poolFree_M0: ndarray[number]
-    _poolFree_T1: ndarray[number]
-    _poolFree_T2: ndarray[number]
+    _poolFree_Rrf: ndarray
+    _poolFree_M0: ndarray
+    _poolFree_T1: ndarray
+    _poolFree_T2: ndarray
 
-    _poolFreeBound_exchangeRate: ndarray[number]
+    _poolFreeBound_exchangeRate: ndarray
 
-    _poolBound_Rrf_singleSat_Positive: ndarray[number]
-    _poolBound_Rrf_singleSat_Negative: ndarray[number]
-    _poolBound_Rrf_dualSat: ndarray[number]
-    _poolBound_lineshapeAsymmetry: ndarray[number]
-    _poolBound_M0: ndarray[number]
-    _poolBound_T1: ndarray[number]
-    _poolBound_T2: ndarray[number]
-    _poolBound_T1D: ndarray[number]
-    _poolBound_omegaLocalField: ndarray[number]
+    _poolBound_Rrf_singleSat_Positive: ndarray
+    _poolBound_Rrf_singleSat_Negative: ndarray
+    _poolBound_Rrf_dualSat: ndarray
+    _poolBound_lineshapeAsymmetry: ndarray
+    _poolBound_M0: ndarray
+    _poolBound_T1: ndarray
+    _poolBound_T2: ndarray
+    _poolBound_T1D: ndarray
+    _poolBound_omegaLocalField: ndarray
 
-    _magnetization_recovery: ndarray[number]
-    _relaxation: ndarray[number]
+    _magnetization_recovery: ndarray
+    _relaxation: ndarray
 
     _N_poolFree: int
     _N_poolBound: int
     _N_pools: int
 
-    _classAttributes: tuple[str] = (
+    _classAttributes = (
         "pulse",
         "poolFree_Rrf",
         "poolFree_M0",
@@ -119,7 +118,7 @@ class System(_Event):
         poolBound_T1D: ScalarOrVector,
         poolBound_lineshapeAsymmetry: ScalarOrVector,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """_summary_
 
@@ -361,7 +360,7 @@ class System(_Event):
             "poolBound_omegaLocalField", self.poolBound_omegaLocalField.shape, "bound"
         )
 
-    def copy(self) -> System:
+    def copy(self) -> "System":
         return System(
             self.pulse.copy(),
             deepcopy(self.poolFree_M0),
@@ -443,13 +442,13 @@ class System(_Event):
         norm_A = self.pulse.omegaRMS * self.pulse.omegaRMS
         norm_B = angularFrequencyOffset * inv_omegaLocalField
 
-        superLorentzian: Callable[[ndarray[number], float], ndarray[number]] = (
+        superLorentzian: Callable[[ndarray, float], ndarray] = (
             self.PampelSuperLorentzian
         )
-        # superLorentzian: Callable[[ndarray[number], float], ndarray[number]] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
+        # superLorentzian: Callable[[ndarray, float], ndarray] = self.SuperLorentzian if abs(self.pulse.offset) > 1000 else self.PampelSuperLorentzian
 
         if (self.poolBound_lineshapeAsymmetry != 0).any():
-            poolBound_Rrf_Positive: ndarray[number] = (
+            poolBound_Rrf_Positive: ndarray = (
                 0.5
                 * norm_A
                 * superLorentzian(
@@ -457,7 +456,7 @@ class System(_Event):
                     self.pulse.offset - self.poolBound_lineshapeAsymmetry,
                 )
             )
-            poolBound_Rrf_Negative: ndarray[number] = (
+            poolBound_Rrf_Negative: ndarray = (
                 0.5
                 * norm_A
                 * superLorentzian(
@@ -466,65 +465,65 @@ class System(_Event):
                 )
             )
         else:
-            poolBound_Rrf_Positive: ndarray[number] = (
+            poolBound_Rrf_Positive: ndarray = (
                 0.5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
             )
-            poolBound_Rrf_Negative: ndarray[number] = poolBound_Rrf_Positive
+            poolBound_Rrf_Negative: ndarray = poolBound_Rrf_Positive
 
         diag_elements = norm_B * norm_B
         anti_elements = norm_B * inv_omegaLocalField
 
-        tmp_diag: ndarray[number] = [diag([1, elem]) for elem in diag_elements]
-        tmp_anti: ndarray[number] = [
+        tmp_diag: list[ndarray] = [diag([1, elem]) for elem in diag_elements]
+        tmp_anti: list[ndarray] = [
             fliplr(diag([angularFrequencyOffset, elem])) for elem in anti_elements
         ]
 
-        diag_Positive: ndarray[number] = [
+        diag_Positive: list[ndarray] = [
             -Rrf_scalar * mat
             for Rrf_scalar, mat in zip(poolBound_Rrf_Positive, tmp_diag)
         ]
-        anti_Positive: ndarray[number] = [
+        anti_Positive: list[ndarray] = [
             Rrf_scalar * mat
             for Rrf_scalar, mat in zip(poolBound_Rrf_Positive, tmp_anti)
         ]
 
-        diag_Negative: ndarray[number] = [
+        diag_Negative: list[ndarray] = [
             -Rrf_scalar * mat
             for Rrf_scalar, mat in zip(poolBound_Rrf_Negative, tmp_diag)
         ]
-        anti_Negative: ndarray[number] = [
+        anti_Negative: list[ndarray] = [
             -Rrf_scalar * mat
             for Rrf_scalar, mat in zip(poolBound_Rrf_Negative, tmp_anti)
         ]
 
         # Setters aren't defined to avoid having to deepcopy to prevent user messing with referenced arrays
         # so we need to call the vars with a leading underscore
-        self._poolBound_Rrf_dualSat = block_diag(
+        self._poolBound_Rrf_dualSat = block_diag(  # type: ignore
             zeros((self.N_poolFree, self.N_poolFree)),
             *[
                 0.5 * (tmp_diag_Positive + tmp_diag_Negative)
                 for tmp_diag_Positive, tmp_diag_Negative in zip(
                     diag_Positive, diag_Negative
                 )
-            ]
+            ],
         )
-        self._poolBound_Rrf_singleSat_Positive = block_diag(
+        self._poolBound_Rrf_singleSat_Positive = block_diag(  # type: ignore
             zeros((self.N_poolFree, self.N_poolFree)),
             *[
                 tmp_diag_Positive + tmp_anti_Positive
                 for tmp_diag_Positive, tmp_anti_Positive in zip(
                     diag_Positive, anti_Positive
                 )
-            ]
+            ],
         )
-        self._poolBound_Rrf_singleSat_Negative = block_diag(
+        self._poolBound_Rrf_singleSat_Negative = block_diag(  # type: ignore
             zeros((self.N_poolFree, self.N_poolFree)),
             *[
                 tmp_diag_Negative + tmp_anti_Negative
                 for tmp_diag_Negative, tmp_anti_Negative in zip(
                     diag_Negative, anti_Negative
                 )
-            ]
+            ],
         )
 
         # But getters are defined, so no need for the leading underscore in the var name
@@ -533,70 +532,58 @@ class System(_Event):
         self.poolBound_Rrf_singleSat_Negative.setflags(write=False)
 
     def Lorentzian(
-        self,
-        T2: ndarray[number],
-        offsets: float | ndarray[number],
-        *args: Any,
-        **kwargs: Any
-    ) -> ndarray[number]:
+        self, T2: ndarray, offsets: float | ndarray, *args: Any, **kwargs: Any
+    ) -> ndarray:
         """_summary_
 
         Parameters
         ----------
-        T2 : ndarray[number]
+        T2 : ndarray
             _description_
-        offsets : float | ndarray[number]
+        offsets : float | ndarray
             _description_
 
         Returns
         -------
-        ndarray[number]
+        ndarray
             _description_
         """
         return 2 * T2 / (1 + 4 * pi * pi * offsets * offsets * T2 * T2)
 
     def Gaussian(
-        self,
-        T2: ndarray[number],
-        offsets: float | ndarray[number],
-        *args: Any,
-        **kwargs: Any
-    ) -> ndarray[number]:
+        self, T2: ndarray, offsets: float | ndarray, *args: Any, **kwargs: Any
+    ) -> ndarray:
         """_summary_
 
         Parameters
         ----------
-        T2 : ndarray[number]
+        T2 : ndarray
             _description_
-        offsets : float | ndarray[number]
+        offsets : float | ndarray
             _description_
 
         Returns
         -------
-        ndarray[number]
+        ndarray
             _description_
         """
         return sqrt(2 * pi) * T2 * exp(-2 * pi * pi * offsets * offsets * T2 * T2)
 
     def SuperLorentzian(
-        self,
-        T2: ndarray[number],
-        offsets: float | ndarray[number],
-        *args: Any,
-        **kwargs: Any
-    ) -> ndarray[number]:
+        self, T2: ndarray, offsets: float | ndarray, *args: Any, **kwargs: Any
+    ) -> ndarray:
         """_summary_
 
         Parameters
         ----------
-        T2 : ndarray[number]
+        T2 : ndarray
             _description_
-        offsets : float | ndarray[number]
+        offsets : float | ndarray
             _description_
 
         Returns
         -------
-        ndarray[number]
+        ndarray
             _description_
         """
         offsets = atleast_1d(offsets)
@@ -612,24 +599,20 @@ class System(_Event):
         )
 
     def PampelSuperLorentzian(
-        self,
-        T2: ndarray[number],
-        offsets: float | ndarray[number],
-        *args: Any,
-        **kwargs: Any
-    ) -> ndarray[number]:
+        self, T2: ndarray, offsets: float | ndarray, *args: Any, **kwargs: Any
+    ) -> ndarray:
         """_summary_
 
         Parameters
         ----------
-        T2 : ndarray[number]
+        T2 : ndarray
             _description_
-        offsets : float | ndarray[number]
+        offsets : float | ndarray
             _description_
 
         Returns
         -------
-        ndarray[number]
+        ndarray
             _description_
         """
         offsets = atleast_1d(offsets)
@@ -647,24 +630,20 @@ class System(_Event):
         )
 
     def Cylindrical(
-        self,
-        T2: ndarray[number],
-        offsets: float | ndarray[number],
-        *args: Any,
-        **kwargs: Any
-    ) -> ndarray[number]:
+        self, T2: ndarray, offsets: float | ndarray, *args: Any, **kwargs: Any
+    ) -> ndarray:
         """_summary_
 
         Parameters
         ----------
-        T2 : ndarray[number]
+        T2 : ndarray
             _description_
-        offsets : float | ndarray[number]
+        offsets : float | ndarray
             _description_
 
         Returns
         -------
-        ndarray[number]
+        ndarray
             _description_
         """
         raise NotImplementedError
@@ -694,24 +673,20 @@ class System(_Event):
         )
 
     def DispersedCylindrical(
-        self,
-        T2: ndarray[number],
-        offsets: float | ndarray[number],
-        *args: Any,
-        **kwargs: Any
-    ) -> ndarray[number]:
+        self, T2: ndarray, offsets: float | ndarray, *args: Any, **kwargs: Any
+    ) -> ndarray:
         """Fiber bundle orientation distribution lineshape
 
         Parameters
         ----------
-        T2 : ndarray[number]
+        T2 : ndarray
             _description_
-        offsets : float | ndarray[number]
+        offsets : float | ndarray
             _description_
 
         Returns
         -------
-        ndarray[number]
+        ndarray
             _description_
         """
         raise NotImplementedError("Currently not implemented.")
@@ -733,9 +708,7 @@ class System(_Event):
                 values.append(norm * exp(dot(u, dot(mat, u))))
             return tuple(values)
 
-        def Spherical(
-            theta: float, phi: float, offsets: ndarray[number], T2: float
-        ) -> float:
+        def Spherical(theta: float, phi: float, offsets: ndarray, T2: float) -> float:
             # This program set up a function for Spherical lineshape integration
             # include neighboors contribution to remove singularity at the magic angle
             # see Pampel et al. NeuroImage 114 (2015) 136–146
@@ -821,9 +794,7 @@ class System(_Event):
     @property
     def magnetization_recovery(self):
         if not hasattr(self, "_magnetization_recovery"):
-            HomogenizeCol: ndarray[number] = zeros(
-                self.N_poolFree + 2 * (self.N_poolBound)
-            )
+            HomogenizeCol: ndarray = zeros(self.N_poolFree + 2 * (self.N_poolBound))
             HomogenizeCol[0 : self.N_poolFree] = self.poolFree_M0 / self.poolFree_T1
             HomogenizeCol[self.N_poolFree :: 2] = self.poolBound_M0 / self.poolBound_T1
             self._magnetization_recovery = array([HomogenizeCol]).T
@@ -874,11 +845,11 @@ class System(_Event):
                     )
 
             # filling the diagonal relaxations: poolBound => dipolar compartment
-            tmp[self.N_poolFree + 1 :: 2, self.N_poolFree + 1 :: 2] = diag(
+            tmp[self.N_poolFree + 1 :: 2, self.N_poolFree + 1 :: 2] = diag(  # type: ignore
                 -1.0 / self.poolBound_T1D
             )
 
-            self._relaxation = tmp
+            self._relaxation = tmp  # type: ignore
             self._relaxation.setflags(write=False)
             self._changed("relaxation")
         return self._relaxation

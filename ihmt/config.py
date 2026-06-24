@@ -18,37 +18,68 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from logging import getLogger, NullHandler
 from pathlib import Path
-from yaml import safe_load  # noqa: F401
+from yaml import safe_load, safe_dump
 from typing import Any
+from copy import deepcopy
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 logger.debug("`config` module loaded successfully")
 
 
-default: Config
-BP_3T: Config
-MC_3T: Config
-BP_7T: Config
-MC_7T: Config
-
-
 class Config(dict):
     def __init__(self, mapping: Any):
         super().__init__(mapping)
 
-    def as_dict(self): ...
+        self._check_run_keys()
+        self._check_log_keys()
 
-    def to_file(self): ...
+    def to_filename(self, fullpath: str | Path):
+        with open(Path(fullpath), "w") as f:
+            safe_dump(self, f)
 
-    def __getitem__(self, subscript: str):
-        return dict.__getitem__(self, subscript)
+    def copy(self):
+        return deepcopy(self)
+
+    def _check_run_keys(self): ...
+
+    def _check_log_keys(self): ...
 
 
-for file in (Path(__file__).parent / "configs").glob("*.yaml"):
-    with open(file, "r") as f:
+BP_3T: Config
+MC_3T: Config
+CM_3T: Config
+ALT_3T: Config
+
+BP_7T: Config
+MC_7T: Config
+CM_7T: Config
+ALT_7T: Config
+
+_configNames = [
+    "BP_3T",
+    "MC_3T",
+    "CM_3T",
+    "ALT_3T",
+    "BP_7T",
+    "MC_7T",
+    "CM_7T",
+    "ALT_7T",
+]
+
+logging: dict
+with open(Path(__file__).parent / "configs" / "logging.yaml") as f:
+    logging = safe_load(f)
+
+default: Config
+with open(Path(__file__).parent / "configs" / "default.yaml") as f:
+    default = Config(safe_load(f))
+
+for filename in _configNames:
+    path = Path(__file__).parent / "configs" / (filename + ".yaml")
+    with open(path, "r") as f:
         try:
-            exec(f"{file.stem} = safe_load(f)")
-            logger.debug(f"<{file}> configuration file loaded successfully.")
+            exec(f"{filename}" + " = Config({'run': safe_load(f)} | {'log': logging})")
+            logger.debug(f"<{path}> configuration file loaded successfully.")
         except Exception as e:
             logger.error(e)

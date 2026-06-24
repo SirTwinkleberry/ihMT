@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from logging import getLogger, NullHandler
-from numpy import linspace, float64, ndarray, number, meshgrid, vstack, nan, ones
+from numpy import linspace, float64, ndarray, meshgrid, vstack, nan, ones
 from functools import partial
 from scipy.interpolate import PchipInterpolator, RegularGridInterpolator
 from copy import deepcopy
@@ -32,14 +32,14 @@ logger.debug("`corrector` module loaded successfully")
 
 
 class Corrector(_Event):
-    _ranges: dict[str, ndarray[number]]
+    _ranges: dict[str, ndarray]
     _simulator: Simulator
 
-    _simulated: dict[str, ndarray[number]]
-    _nominals: dict[str, float]
+    _simulated: CompositeDictionary
+    _nominals: CompositeDictionary
     _interpolants: dict[str, PchipInterpolator | RegularGridInterpolator]
 
-    _classAttributes: tuple[str] = (
+    _classAttributes = (
         "ranges",
         "simulator",
         "simulated",
@@ -49,13 +49,13 @@ class Corrector(_Event):
     )
 
     @staticmethod
-    def Simple(simulator: Simulator) -> Corrector:
+    def Simple(simulator: Simulator) -> "Corrector":
         return Corrector(
             simulator=simulator,
-            ranges={"flipAngle": simulator.pulse.flipAngle * linspace(0.1, 1.5, 141)},
+            ranges={"relative_transmitB1": linspace(0.1, 1.5, 141)},
         )
 
-    def __init__(self, simulator: Simulator, ranges: dict[str, ndarray[number]]):
+    def __init__(self, simulator: Simulator, ranges: dict[str, ndarray]):
         self.simulator = simulator
         self.ranges = ranges
 
@@ -76,14 +76,14 @@ class Corrector(_Event):
             ],
         )
 
-    def copy(self) -> Corrector:
+    def copy(self) -> "Corrector":
         return Corrector(self.simulator.copy(), deepcopy(self.ranges))
 
     def apply(
         self,
-        parameter_maps: dict[str, ndarray[number]],
-        data_maps: dict[Signal, ndarray[number]],
-    ) -> CompositeDictionary[Signal, ndarray[number]]:
+        parameter_maps: dict[str, ndarray],
+        data_maps: dict[Signal, ndarray],
+    ) -> CompositeDictionary:
         for key in self.ranges.keys():
             if key not in parameter_maps.keys():
                 raise KeyError(f"Missing key `{key}` in parameter map dictionary.")
@@ -105,7 +105,7 @@ class Corrector(_Event):
                 )
 
         mask = (
-            ones(shape).astype(bool)
+            ones(shape).astype(bool)  # type: ignore
             if "mask" not in parameter_maps.keys()
             else parameter_maps["mask"].astype(bool)
         )
@@ -114,11 +114,11 @@ class Corrector(_Event):
             [parameter_maps[key][mask].flatten() for key in self.ranges.keys()]
         ).T
 
-        corrected: dict[Signal, ndarray[number]] = dict()
+        corrected: dict[Signal, ndarray] = dict()
         for key, value in data_maps.items():
             corrected[key] = value.copy().astype(float64)
             corrected[key][mask] *= (
-                self.nominals[key] / self.interpolants[key](parameters)
+                self.nominals[key] / self.interpolants[key](parameters)  # type: ignore  # dunno how to correct this type hint error
             ).squeeze()
 
         return CompositeDictionary(corrected)
@@ -127,14 +127,15 @@ class Corrector(_Event):
     # BELOW: property getters and setters
     #####
     @property
-    def ranges(self) -> dict[str, ndarray[number]]:
+    def ranges(self) -> dict[str, ndarray]:
         return self._ranges
 
     @ranges.setter
-    def ranges(self, val: dict[str, ndarray[number]]):
+    def ranges(self, val: dict[str, ndarray]):
         self._ranges = deepcopy(val)
-        for val in self._ranges.values():
-            val.setflags(write=False)
+        for value in self._ranges.values():
+            if isinstance(value, ndarray):
+                value.setflags(write=False)
         self._changed("ranges")
 
     @property
@@ -147,7 +148,7 @@ class Corrector(_Event):
         self._changed("simulator")
 
     @property  # immutable for the user, so only getter is defined
-    def simulated(self) -> CompositeDictionary[str, ndarray[number]]:
+    def simulated(self) -> CompositeDictionary:
         if not hasattr(self, "_simulated"):
             sim = self.simulator.copy()
             sim.output_vectorSlice = slice(1)
@@ -158,7 +159,7 @@ class Corrector(_Event):
         return self._simulated
 
     @property  # immutable for the user, so only getter is defined
-    def mesh(self) -> dict[str, ndarray[number]]:
+    def mesh(self) -> dict[str, ndarray]:
         if not hasattr(self, "_mesh"):
             tmp = dict()
             mesh = meshgrid(*list(self.ranges.values()), indexing="ij", sparse=True)
@@ -169,7 +170,7 @@ class Corrector(_Event):
         return self._mesh
 
     @property  # immutable for the user, so only getter is defined
-    def nominals(self) -> CompositeDictionary[str, float]:
+    def nominals(self) -> CompositeDictionary:
         if not hasattr(self, "_nominals"):
             tmp = self.simulator.output_vectorSlice
             self.simulator.output_vectorSlice = slice(1)
@@ -197,9 +198,9 @@ class Corrector(_Event):
 class InterpolantDictionary(dict):
     def __init__(
         self,
-        interpolator: PchipInterpolator | RegularGridInterpolator,
-        ranges: dict[str, ndarray[number]],
-        simulated: CompositeDictionary[str, ndarray[number]],
+        interpolator: type[PchipInterpolator] | partial[RegularGridInterpolator],
+        ranges: dict[str, ndarray],
+        simulated: CompositeDictionary,
     ):
         self._interpolator = interpolator
         self._ranges = tuple(ranges.values())
@@ -217,14 +218,14 @@ class InterpolantDictionary(dict):
             )
 
         if subscript == Signal.ALL:
-            for subscript in Signal.values():
+            for subscript in Signal.values():  # type: ignore
                 if (subscript != Signal.ALL) and (subscript not in self.keys()):
                     try:
                         dict.__setitem__(
                             self,
                             subscript,
                             self._interpolator(
-                                self._ranges, self._simulated[subscript]
+                                self._ranges, self._simulated[subscript]  # type: ignore
                             ),
                         )
                     except Exception as _:
@@ -235,7 +236,7 @@ class InterpolantDictionary(dict):
             dict.__setitem__(
                 self,
                 subscript,
-                self._interpolator(self._ranges, self._simulated[subscript]),
+                self._interpolator(self._ranges, self._simulated[subscript]),  # type: ignore
             )
 
         return dict.__getitem__(self, subscript)

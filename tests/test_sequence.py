@@ -67,9 +67,9 @@ class TestSequence(TestCase):
         self.assertEqual(self.sequence.signal, Signal.ihMTR_CM)
 
     def test___init__pulse(self):
-        self.sequence.pulse.__dict__["_onChanges"] = {}
+        self.sequence.pulse.__dict__["_onChanges"] = {}  # type: ignore
         tmp = Tukey(**CONFIG_TUKEY["init"]).__dict__
-        tmp["_onChanges"] = {}
+        tmp["_onChanges"] = {}  # type: ignore
         self.assertDictEqual(self.sequence.pulse.__dict__, tmp)
 
     def test___init__N_pulsePerOffset(self):
@@ -230,7 +230,7 @@ class TestSequence(TestCase):
 
     def test_bypass_check_against_tr(self):
         seq = Sequence(pulse=self.pulse, **CONFIG_SEQUENCE["init"])
-        del seq._N_adc
+        del seq._N_totalADC
         self.assertIsNone(seq._check_against_tr())
 
     def test_bypass_check_against_tr_burst(self):
@@ -271,7 +271,7 @@ class TestSequence(TestCase):
         self.assertTrue(tmp.duration_preparation == seq.duration_preparation)
         self.assertTrue(tmp.duration_recovery == seq.duration_recovery)
         self.assertNotEqual(tmp._get_onChanges(), seq._get_onChanges())
-        self.assertTrue(tmp.pulse.shape, seq.pulse.shape)
+        self.assertTrue(tmp.pulse.shape, seq.pulse.shape)  # type: ignore
         self.assertTrue(tmp.pulse.duration, seq.pulse.duration)
         self.assertTrue(tmp.pulse.flipAngle, seq.pulse.flipAngle)
         self.assertTrue(tmp.pulse.offset, seq.pulse.offset)

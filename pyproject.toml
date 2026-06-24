@@ -15,7 +15,7 @@ build-backend = "hatchling.build"
 [project]
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#version
 # https://packaging.python.org/en/latest/specifications/version-specifiers/#version-specifiers
-version = "0.9.2"
+version = "0.9.1"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#name
 name = "ihmt"
@@ -25,18 +25,18 @@ description = "Inhomogeneous magnetization transfer simulator for magnetic reson
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#authors-maintainers
 authors = [
-    { name = "Timothy Anderson", email = "timothy.anderson@univ-amu.com" },
+    { name = "Timothy Anderson", email = "30357667+SirTwinkleberry@users.noreply.github.com" },
 ]
 maintainers = [
-    { name = "Timothy Anderson", email = "timothy.anderson@univ-amu.com" },
+    { name = "Timothy Anderson", email = "30357667+SirTwinkleberry@users.noreply.github.com" },
 ]
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#requires-python
-requires-python = ">=3"
+requires-python = ">=3.12"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements
 # https://packaging.python.org/en/latest/specifications/dependency-specifiers/#dependency-specifiers
-dependencies = ["numpy", "scipy", "pyyaml"]
+dependencies = ["numpy>=2", "scipy", "pyyaml"]
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#keywords
 keywords = [
@@ -87,23 +87,26 @@ readme = "README.md"
 [project.optional-dependencies]
 test = ["coverage"]
 examples = [
-    "jupyter",
-    "notebook",
-    "matplotlib",
-    "pandas",
-    "ipywidgets",
-    "anywidget",
-    "plotly",
+    "jupyter",    # examples/*/.ipynb
+    "notebook",   # examples/*/.ipynb
+    "matplotlib", # examples/*/.ipynb
+    "pandas",     # examples/*/.ipynb
+    "ipywidgets", # examples/*/.ipynb
+    "anywidget",  # examples/*/.ipynb
+    "plotly",     # examples/*/.ipynb
 ]
-all = [
-    "coverage",
-    "jupyter",
-    "notebook",
-    "matplotlib",
-    "pandas",
-    "ipywidgets",
-    "anywidget",
-    "plotly",
+dev = [
+    "coverage",        # test suite
+    "hatchling>=1.26", # build system
+    "twine",           # pip upload
+    "grayskull",       # conda recipe
+    "jupyter",         # examples/*/.ipynb
+    "notebook",        # examples/*/.ipynb
+    "matplotlib",      # examples/*/.ipynb
+    "pandas",          # examples/*/.ipynb
+    "ipywidgets",      # examples/*/.ipynb
+    "anywidget",       # examples/*/.ipynb
+    "plotly",          # examples/*/.ipynb
 ]
 
 # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#well-known-labels
@@ -111,7 +114,6 @@ all = [
 Homepage = "https://github.com/SirTwinkleberry/ihMT"
 Repository = "https://github.com/SirTwinkleberry/ihMT.git"
 Issues = "https://github.com/SirTwinkleberry/ihMT/issues"
-Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 # https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#creating-executable-scripts
 [project.scripts]

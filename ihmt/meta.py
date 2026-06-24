@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from logging import getLogger, NullHandler
 from operator import le, lt, gt, ge, eq, add, sub, mul, truediv
-from typing import Any
+from typing import Any, TypeAliasType
 from collections.abc import Callable
 from numpy import (
     pi,
@@ -82,7 +82,7 @@ class Signal(Flag):
 
     @classmethod
     def from_str(cls, key: str):
-        match str(key).upper():
+        match str(key).upper():  # Python 3.10 feature
             case "MT0":
                 return cls.MT0
             case "MTS_POSITIVE":
@@ -128,7 +128,7 @@ class Signal(Flag):
 def check_value_is_valid(
     obj: Any,
     val_to_check: Any,
-    type_to_check: type,
+    type_to_check: type | TypeAliasType,
     operators: None | list[tuple[Callable, int | float]],
     attribute_name: str,
 ) -> bool:
@@ -158,7 +158,9 @@ def check_value_is_valid(
             except Exception as _:
                 error = f"`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`."
         case _:
-            if type_to_check(val_to_check) != val_to_check:
+            if isinstance(type_to_check, TypeAliasType):
+                error = f"`type_to_check` is a TypeAlias and cannot be used to check casting compatibility for `{attribute_name}` of `{obj.__class__.__name__}` directly. Received: `{type_to_check}`."
+            elif type_to_check(val_to_check) != val_to_check:
                 error = f"`{attribute_name}` of `{obj.__class__.__name__}` must be safely castable to `{type_to_check}`. Received: `{repr(val_to_check)}`."
 
     if error is not None:
@@ -205,7 +207,7 @@ class CompositeDictionary(dict):
                 data[key] = value
         super().__init__(data)
 
-    def __getitem__(self, subscript: Signal) -> CompositeDictionary | ndarray[number]:
+    def __getitem__(self, subscript: Signal) -> "CompositeDictionary | ndarray":
         if type(subscript) != Signal:
             raise TypeError(
                 f"Accepting `{type(Signal)}` flags only. Received `{type(subscript)}`."
@@ -213,7 +215,7 @@ class CompositeDictionary(dict):
 
         if subscript == Signal.ALL:
             with errstate(divide="ignore", invalid="ignore"):
-                for subscript in Signal.values():
+                for subscript in Signal.values():  # type: ignore
                     if (subscript != Signal.ALL) and (subscript not in self.keys()):
                         try:
                             self._composite(subscript)
@@ -226,32 +228,32 @@ class CompositeDictionary(dict):
 
         return dict.__getitem__(self, subscript)
 
-    def _composite(self, composite: str):
+    def _composite(self, composite: Signal):
         match composite:
             case Signal.MTs:
-                data = 0.5 * (self[Signal.MTs_Positive] + self[Signal.MTs_Negative])
+                data = 0.5 * (self[Signal.MTs_Positive] + self[Signal.MTs_Negative])  # type: ignore
             case Signal.ihMT_CM:
-                data = 2 * (self[Signal.MTs] - self[Signal.MTd_CM])
+                data = 2 * (self[Signal.MTs] - self[Signal.MTd_CM])  # type: ignore
             case Signal.ihMT_ALT:
-                data = 2 * (self[Signal.MTs] - self[Signal.MTd_ALT])
+                data = 2 * (self[Signal.MTs] - self[Signal.MTd_ALT])  # type: ignore
             case Signal.BP:
-                data = 2 * (self[Signal.MTd_ALT] - self[Signal.MTd_CM])
+                data = 2 * (self[Signal.MTd_ALT] - self[Signal.MTd_CM])  # type: ignore
             case Signal.MTsR_Positive:
-                data = 100 - 100 * self[Signal.MTs_Positive] * self._invMT0
+                data = 100 - 100 * self[Signal.MTs_Positive] * self._invMT0  # type: ignore
             case Signal.MTsR_Negative:
-                data = 100 - 100 * self[Signal.MTs_Negative] * self._invMT0
+                data = 100 - 100 * self[Signal.MTs_Negative] * self._invMT0  # type: ignore
             case Signal.MTsR:
-                data = 100 - 100 * self[Signal.MTs] * self._invMT0
+                data = 100 - 100 * self[Signal.MTs] * self._invMT0  # type: ignore
             case Signal.MTdR_CM:
-                data = 100 - 100 * self[Signal.MTd_CM] * self._invMT0
+                data = 100 - 100 * self[Signal.MTd_CM] * self._invMT0  # type: ignore
             case Signal.MTdR_ALT:
-                data = 100 - 100 * self[Signal.MTd_ALT] * self._invMT0
+                data = 100 - 100 * self[Signal.MTd_ALT] * self._invMT0  # type: ignore
             case Signal.ihMTR_CM:
-                data = 100 * self[Signal.ihMT_CM] * self._invMT0
+                data = 100 * self[Signal.ihMT_CM] * self._invMT0  # type: ignore
             case Signal.ihMTR_ALT:
-                data = 100 * self[Signal.ihMT_ALT] * self._invMT0
+                data = 100 * self[Signal.ihMT_ALT] * self._invMT0  # type: ignore
             case Signal.BPR:
-                data = 100 * self[Signal.BP] * self._invMT0
+                data = 100 * self[Signal.BP] * self._invMT0  # type: ignore
             case _:
                 error = f"Incorrect signal flag. Must be any one or combinations of {tuple(Signal.keys())}. Received `{repr(composite)}`."
                 logger.critical(error)
@@ -260,7 +262,7 @@ class CompositeDictionary(dict):
         data.setflags(write=False)
         dict.__setitem__(self, composite, data)
 
-    def _math(self, other: Any, operator: Callable) -> CompositeDictionary:
+    def _math(self, other: Any, operator: Callable) -> "CompositeDictionary":
         if not isinstance(other, CompositeDictionary):
             try:
                 other = CompositeDictionary(other)
@@ -287,53 +289,53 @@ class CompositeDictionary(dict):
                 return False
         for key in self.keys() | other.keys():
             key = Signal.from_str(key)
-            if not array_equal(self[key], other[key]):
+            if not array_equal(self[key], other[key]):  # type: ignore
                 return False
         return True
 
-    def __add__(self, other) -> CompositeDictionary:
+    def __add__(self, other) -> "CompositeDictionary":
         return self._math(other, add)
 
-    def __sub__(self, other) -> CompositeDictionary:
+    def __sub__(self, other) -> "CompositeDictionary":
         return self._math(other, sub)
 
-    def __mul__(self, other) -> CompositeDictionary:
+    def __mul__(self, other) -> "CompositeDictionary":
         return self._math(other, mul)
 
-    def __truediv__(self, other) -> CompositeDictionary:
+    def __truediv__(self, other) -> "CompositeDictionary":
         return self._math(other, truediv)
 
     def squeeze(self):
         return CompositeDictionary({key: val.squeeze() for key, val in self.items()})
 
     def __str__(self, round_decimals: None | int = None, nan_to_0: bool = False):
-        string = f"Shape: {self[list(self.keys())[0]].shape}\n"
+        string = f"Shape: {self[list(self.keys())[0]].shape}\n"  # type: ignore
         for key in self.keys():
             val = deepcopy(self[key])
             if round_decimals is not None:
-                val = round(val, round_decimals)
+                val = round(val, round_decimals)  # type: ignore
             if nan_to_0:
-                val = nan_to_num(val, nan=0, posinf=0, neginf=0)
-            string += f"{str(key.name).rjust(13)} = {val.tolist()}\n"
+                val = nan_to_num(val, nan=0, posinf=0, neginf=0)  # type: ignore
+            string += f"{str(key.name).rjust(13)} = {val.tolist()}\n"  # type: ignore
         return string
 
     #####
     # BELOW: property getters and setters
     #####
     @property
-    def T(self) -> CompositeDictionary:
+    def T(self) -> "CompositeDictionary":
         return CompositeDictionary({key: val.T for key, val in self.items()})
 
     @property
-    def _invMT0(self) -> ndarray[number]:
+    def _invMT0(self) -> ndarray:
         if not hasattr(self, "__invMT0"):
-            self.__invMT0 = 1.0 / self[Signal.MT0]
+            self.__invMT0 = 1.0 / self[Signal.MT0]  # type: ignore
             self.__invMT0.setflags(write=False)
         return self.__invMT0
 
 
 class _Event:
-    _classAttributes: tuple[str]
+    _classAttributes: tuple[str, ...]
 
     _onChanges: dict[str, list[Callable]]
 
@@ -430,12 +432,13 @@ class _Event:
 # Immutable class
 class _BaseUnit(float):
     _unit = None
+    __label: str
 
     def __new__(
         cls, value: int | float, label: None | str = None, *args, **kwargs
-    ) -> _BaseUnit:
+    ) -> "_BaseUnit":
         instance = super().__new__(cls, value)
-        instance.__label = label
+        instance.__label = label if label is not None else ""
         return instance
 
     @classmethod
@@ -470,60 +473,66 @@ class _BaseUnit(float):
 
 class Frequency(_BaseUnit):
     _unit = "Hz"
+    __angular: "AngularFrequency"
+    __period: "Duration"
 
     @staticmethod
-    def from_hertz(value: int | float, label: str | None = None) -> Frequency:
-        return Frequency(value, label)
+    def from_hertz(value: int | float, label: str | None = None) -> "Frequency":
+        return Frequency(value, label)  # type: ignore
 
     @property
-    def angular(self) -> AngularFrequency:
+    def angular(self) -> "AngularFrequency":
         if not hasattr(self, "__angular"):
-            self.__angular = AngularFrequency(_2pi * self, self.label)
+            self.__angular = AngularFrequency(_2pi * self, self.label)  # type: ignore
         return self.__angular
 
     @property
-    def period(self) -> Duration:
+    def period(self) -> "Duration":
         if not hasattr(self, "__period"):
-            self.__period = Duration(1.0 / self, self.label)
+            self.__period = Duration(1.0 / self, self.label)  # type: ignore
             self.__period.__rate = self
         return self.__period
 
 
 class AngularFrequency(_BaseUnit):
     _unit = "rad • Hz"
+    __frequency: "Frequency"
 
     @staticmethod
-    def from_radHertz(value: int | float, label: str | None = None) -> AngularFrequency:
-        return AngularFrequency(value, label)
+    def from_radHertz(
+        value: int | float, label: str | None = None
+    ) -> "AngularFrequency":
+        return AngularFrequency(value, label)  # type: ignore
 
     @property
-    def frequency(self) -> Frequency:
+    def frequency(self) -> "Frequency":
         if not hasattr(self, "__frequency"):
-            self.__frequency = Frequency(_inv_2pi * self, self.label)
+            self.__frequency = Frequency(_inv_2pi * self, self.label)  # type: ignore
             self.__frequency.__angular = self
         return self.__frequency
 
     @property
-    def period(self) -> Duration:
+    def period(self) -> "Duration":
         return self.frequency.period
 
 
 class Duration(_BaseUnit):
     _unit = "s"
+    __rate: "Frequency"
 
     @staticmethod
-    def from_seconds(value: int | float, label: str | None = None) -> Duration:
-        return Duration(value, label)
+    def from_seconds(value: int | float, label: str | None = None) -> "Duration":
+        return Duration(value, label)  # type: ignore
 
     @property
-    def rate(self) -> Frequency:
+    def rate(self) -> "Frequency":
         if not hasattr(self, "__rate"):
-            self.__rate = Frequency(1.0 / self, self.label)
+            self.__rate = Frequency(1.0 / self, self.label)  # type: ignore
             self.__rate.__period = self
         return self.__rate
 
     @property
-    def angular_rate(self) -> AngularFrequency:
+    def angular_rate(self) -> "AngularFrequency":
         return self.rate.angular
 
 
@@ -531,12 +540,12 @@ class Angle(_BaseUnit):
     _unit = "°"
 
     @staticmethod
-    def from_radians(value: int | float, label: str | None = None) -> Angle:
-        return Angle(_rad2deg * value, label)
+    def from_radians(value: int | float, label: str | None = None) -> "Angle":
+        return Angle(_rad2deg * value, label)  # type: ignore
 
     @staticmethod
-    def from_degrees(value: int | float, label: str | None = None) -> Angle:
-        return Angle(value, label)
+    def from_degrees(value: int | float, label: str | None = None) -> "Angle":
+        return Angle(value, label)  # type: ignore
 
     @property
     def rad(self) -> float:
@@ -585,5 +594,5 @@ class Angle(_BaseUnit):
         return self.__cot
 
 
-type ScalarOrVector = number | ndarray[number]
-type ScalarOrMatrix = number | ndarray[number]
+type ScalarOrVector = int | float | number | ndarray  # Python 3.12 feature
+type ScalarOrMatrix = int | float | number | ndarray  # Python 3.12 feature

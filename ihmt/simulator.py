@@ -26,10 +26,10 @@ from numpy import (
     deg2rad,
     cos,
     ndarray,
-    number,
     complex128,
     iscomplex,
 )
+from operator import lt
 from numpy.linalg import matrix_power, eig
 from scipy.linalg import expm
 from typing import Any
@@ -45,19 +45,21 @@ logger.debug("`simulator` module loaded successfully")
 
 
 class Simulator(_Event):
-    _output_vectorSlice: bool
-    _export_readMatrix: bool
     _system: System
     _sequence: Sequence
+    _output_vectorSlice: slice
+    _export_readMatrix: bool
 
     _pulse: Pulse
+    _relative_transmitB1: float
 
-    _classAttributes: tuple[str] = (
+    _classAttributes = (
         "output_vectorSlice",
         "export_readMatrix",
         "system",
         "sequence",
         "pulse",
+        "relative_transmitB1",
     )
 
     def __init__(
@@ -67,7 +69,7 @@ class Simulator(_Event):
         output_vectorSlice: slice,
         export_readMatrix: bool,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """_summary_
 
@@ -90,6 +92,7 @@ class Simulator(_Event):
         self.output_vectorSlice = output_vectorSlice
         self.export_readMatrix = export_readMatrix
         self.pulse = sequence.pulse
+        self.relative_transmitB1 = 1.0
 
         self.onChange(
             "pulse",
@@ -102,7 +105,7 @@ class Simulator(_Event):
 
         self._check_pulse_match()
 
-    def copy(self) -> Simulator:
+    def copy(self) -> "Simulator":
         system = self.system.copy()
         sequence = self.sequence.copy()
         sequence.pulse = system.pulse
@@ -116,7 +119,7 @@ class Simulator(_Event):
             logger.critical(error)
             raise ValueError(error)
 
-    def SteadyState(self) -> dict[str, ndarray[number]]:
+    def SteadyState(self) -> dict[str, ndarray]:
         """_summary_
 
         Array in steady-state is the eigenvector associated to eigenvalue=1 (last column here)
@@ -129,14 +132,14 @@ class Simulator(_Event):
 
         Returns
         -------
-        tuple[ndarray[number], ...]
+        tuple[ndarray, ...]
             _description_
         """
         self._check_pulse_match()
 
         sys = self.system
         seq = self.sequence
-        output: dict[str, ndarray[number]] = dict()
+        output: dict[str, ndarray] = dict()
 
         mat_REX = vstack(
             [
@@ -146,25 +149,23 @@ class Simulator(_Event):
         )
 
         # Readout & Recovery
-        evol_relax_interReadRF: ndarray[number] = expm(mat_REX * seq.es)
-        evol_relax_recovery: ndarray[number] = expm(mat_REX * seq.duration_recovery)
+        evol_relax_interReadRF: ndarray = expm(mat_REX * seq.es)
+        evol_relax_recovery: ndarray = expm(mat_REX * seq.duration_recovery)
         evol_rf_readoutInstantAction = eye(1 + sys.N_poolFree + 2 * sys.N_poolBound)
         evol_rf_readoutInstantAction[0, 0] = cos(deg2rad(seq.readout_flipAngle))
-        read: ndarray[number] = evol_relax_interReadRF @ evol_rf_readoutInstantAction
-        evol_RAGE: ndarray[number] = evol_relax_recovery @ matrix_power(
-            read, seq.N_adc - seq.N_dummyADC
+        read: ndarray = evol_relax_interReadRF @ evol_rf_readoutInstantAction
+        evol_RAGE: ndarray = evol_relax_recovery @ matrix_power(
+            read, seq.N_totalADC - seq.N_dummyADC
         )
-        evol_dummyRAGE: ndarray[number] = matrix_power(read, seq.N_dummyADC)
+        evol_dummyRAGE: ndarray = matrix_power(read, seq.N_dummyADC)
 
         if Signal.MT0 in seq.signal:
-            evol_relax_fullPrep: ndarray[number] = expm(
-                mat_REX * seq.duration_preparation
-            )
+            evol_relax_fullPrep: ndarray = expm(mat_REX * seq.duration_preparation)
         v_MT0 = eig(round(evol_dummyRAGE @ (evol_relax_fullPrep @ evol_RAGE), 16))[1][
             :, -1
         ]
         if (v_MT0.dtype == complex128) and (not iscomplex(v_MT0).any()):
-            v_MT0 = v_MT0.real
+            v_MT0 = v_MT0.real  # type: ignore
         output["MT0"] = v_MT0[self.output_vectorSlice] / v_MT0[-1]
 
         if (
@@ -172,18 +173,18 @@ class Simulator(_Event):
             or (Signal.MTd_ALT in seq.signal)
             or (Signal.MTd_CM in seq.signal)
         ):
-            evol_relax_interPulse: ndarray[number] = expm(
+            evol_relax_interPulse: ndarray = expm(
                 mat_REX * (seq.dt_interPulse - seq.pulse.duration)
             )
-            evol_relax_TR_burst: ndarray[number] = expm(
+            evol_relax_TR_burst: ndarray = expm(
                 mat_REX * (seq.TR_burst - seq.N_pulse * seq.dt_interPulse)
             )
-            evol_relax_lastBurst: ndarray[number] = expm(
+            evol_relax_lastBurst: ndarray = expm(
                 mat_REX * (seq.dt_lastBurst - seq.N_pulse * seq.dt_interPulse)
             )
 
             if (Signal.MTs in seq.signal) or (Signal.MTd_ALT in seq.signal):
-                evol_rf_singleSat_Positive: ndarray[number] = expm(
+                evol_rf_singleSat_Positive: ndarray = expm(
                     vstack(
                         [
                             hstack(
@@ -200,7 +201,7 @@ class Simulator(_Event):
                     * seq.pulse.duration
                 )
 
-                evol_rf_singleSat_Negative: ndarray[number] = expm(
+                evol_rf_singleSat_Negative: ndarray = expm(
                     vstack(
                         [
                             hstack(
@@ -218,7 +219,7 @@ class Simulator(_Event):
                 )
 
                 if Signal.MTs_Positive in seq.signal:
-                    evol_MTsat_single: ndarray[number] = (
+                    evol_MTsat_single: ndarray = (
                         evol_relax_lastBurst
                         @ matrix_power(
                             evol_relax_interPulse @ evol_rf_singleSat_Positive,
@@ -238,14 +239,14 @@ class Simulator(_Event):
                     if (v_MTs_Positive.dtype == complex128) and (
                         not iscomplex(v_MTs_Positive).any()
                     ):
-                        v_MTs_Positive = v_MTs_Positive.real
+                        v_MTs_Positive = v_MTs_Positive.real  # type: ignore
                     output["MTs_Positive"] = (
                         v_MTs_Positive[self.output_vectorSlice] / v_MTs_Positive[-1]
                     )
 
                 if Signal.MTs_Negative in seq.signal:
                     if (sys.poolBound_lineshapeAsymmetry != 0).any():
-                        evol_MTsat_single: ndarray[number] = (
+                        evol_MTsat_single: ndarray = (
                             evol_relax_lastBurst
                             @ matrix_power(
                                 evol_relax_interPulse @ evol_rf_singleSat_Negative,
@@ -265,7 +266,7 @@ class Simulator(_Event):
                         if (v_MTs_Negative.dtype == complex128) and (
                             not iscomplex(v_MTs_Negative).any()
                         ):
-                            v_MTs_Negative = v_MTs_Negative.real
+                            v_MTs_Negative = v_MTs_Negative.real  # type: ignore
                         output["MTs_Negative"] = (
                             v_MTs_Negative[self.output_vectorSlice] / v_MTs_Negative[-1]
                         )
@@ -273,7 +274,7 @@ class Simulator(_Event):
                         output["MTs_Negative"] = output["MTs_Positive"]
 
                 if Signal.MTd_ALT in seq.signal:
-                    evol_MTsat_dual_ALT: ndarray[number] = (
+                    evol_MTsat_dual_ALT: ndarray = (
                         evol_relax_lastBurst
                         @ matrix_power(
                             matrix_power(
@@ -308,13 +309,13 @@ class Simulator(_Event):
                     if (v_MTd_ALT.dtype == complex128) and (
                         not iscomplex(v_MTd_ALT).any()
                     ):
-                        v_MTd_ALT = v_MTd_ALT.real
+                        v_MTd_ALT = v_MTd_ALT.real  # type: ignore
                     output["MTd_ALT"] = (
                         v_MTd_ALT[self.output_vectorSlice] / v_MTd_ALT[-1]
                     )
 
             if Signal.MTd_CM in seq.signal:
-                evol_rf_dualSat_SM: ndarray[number] = expm(
+                evol_rf_dualSat_SM: ndarray = expm(
                     vstack(
                         [
                             hstack(
@@ -331,7 +332,7 @@ class Simulator(_Event):
                     * seq.pulse.duration
                 )
 
-                evol_MTsat_dual_CM: ndarray[number] = (
+                evol_MTsat_dual_CM: ndarray = (
                     evol_relax_lastBurst
                     @ matrix_power(
                         evol_relax_interPulse @ evol_rf_dualSat_SM, seq.N_pulse
@@ -347,7 +348,7 @@ class Simulator(_Event):
                     round(evol_dummyRAGE @ (evol_MTsat_dual_CM @ evol_RAGE), 16)
                 )[1][:, -1]
                 if (v_MTd_CM.dtype == complex128) and (not iscomplex(v_MTd_CM).any()):
-                    v_MTd_CM = v_MTd_CM.real
+                    v_MTd_CM = v_MTd_CM.real  # type: ignore
                 output["MTd_CM"] = v_MTd_CM[self.output_vectorSlice] / v_MTd_CM[-1]
 
         if self.export_readMatrix:
@@ -406,3 +407,19 @@ class Simulator(_Event):
     def pulse(self, val: Pulse):
         self._pulse = val
         self._changed("pulse")
+
+    @property
+    def relative_transmitB1(self):
+        return self._relative_transmitB1
+
+    @relative_transmitB1.setter
+    def relative_transmitB1(self, val: float):
+        check_value_is_valid(self, val, float, [(lt, 0)], "relative_transmitB1")
+        scaling = val
+        if hasattr(self, "_relative_transmitB1"):
+            scaling = val / self._relative_transmitB1
+        if scaling != 1:
+            self.pulse.flipAngle *= scaling
+            self.sequence.readout_flipAngle *= scaling
+        self._relative_transmitB1 = val
+        self._changed("relative_transmitB1")

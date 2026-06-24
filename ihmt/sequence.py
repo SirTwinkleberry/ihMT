@@ -37,7 +37,8 @@ class Sequence(_Event):
     _N_pulsePerOffset: int
     _N_pulse: int
     _N_burst: int
-    _N_adc: int
+    _N_totalADC: int
+    _N_dummyADC: int
 
     _readout_flipAngle: float
 
@@ -50,13 +51,13 @@ class Sequence(_Event):
     _duration_preparation: float
     _duration_recovery: float
 
-    _classAttributes: tuple[str] = (
+    _classAttributes = (
         "signal",
         "pulse",
         "N_pulsePerOffset",
         "N_pulse",
         "N_burst",
-        "N_adc",
+        "N_totalADC",
         "N_dummyADC",
         "readout_flipAngle",
         "dt_interPulse",
@@ -76,7 +77,7 @@ class Sequence(_Event):
         N_pulsePerOffset: int,
         N_pulse: int,
         N_burst: int,
-        N_adc: int,
+        N_totalADC: int,
         N_dummyADC: int,
         dt_interPulse: float,
         TR_burst: float,
@@ -85,7 +86,7 @@ class Sequence(_Event):
         tr: float,
         readout_flipAngle: float,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """_summary_
 
@@ -101,7 +102,7 @@ class Sequence(_Event):
             _description_
         N_burst : int
             _description_
-        N_adc : int
+        N_totalADC : int
             _aka `turbo_factor`_
         N_dummyADC : int
             _Number of dummy readout echoes_
@@ -142,7 +143,7 @@ class Sequence(_Event):
         self.TR_burst = TR_burst
 
         self.es = es
-        self.N_adc = N_adc
+        self.N_totalADC = N_totalADC
         self.N_dummyADC = N_dummyADC
 
         self.tr = tr
@@ -221,7 +222,7 @@ class Sequence(_Event):
             ],
         )
         self.onChange(
-            "N_adc",
+            "N_totalADC",
             [
                 lambda: self._reset_computed_attributes(
                     ["duration_readout", "duration_recovery"]
@@ -246,14 +247,14 @@ class Sequence(_Event):
         self._check_against_pulse_duration()
         self._check_against_N_dummyADC()
 
-    def copy(self) -> Sequence:
+    def copy(self) -> "Sequence":
         return Sequence(
             self.signal,
             self.pulse.copy(),
             self.N_pulsePerOffset,
             self.N_pulse,
             self.N_burst,
-            self.N_adc,
+            self.N_totalADC,
             self.N_dummyADC,
             self.dt_interPulse,
             self.TR_burst,
@@ -265,7 +266,7 @@ class Sequence(_Event):
 
     def _check_against_tr(self):
         if (
-            hasattr(self, "_N_adc")
+            hasattr(self, "_N_totalADC")
             and hasattr(self, "_es")  # Readout parameters
             and hasattr(self, "_N_burst")
             and hasattr(self, "_TR_burst")
@@ -273,7 +274,21 @@ class Sequence(_Event):
             and hasattr(self, "_tr")
         ):
             if self.tr < round(self.duration_readout + self.duration_preparation, 6):
-                error = "TR < round(N_adc * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)"
+                error = "TR < round(N_totalADC * ES + (N_burst - 1) * TR_burst + dt_lastBurst, 6)\n"
+                error += "in particular:\n"
+                error += f"TR = {repr(self.tr)} s\n"
+                error += f"N_totalADC = {repr(self.N_totalADC)}\n"
+                error += f"es = {repr(self.es)} s\n"
+                error += f"N_burst = {repr(self.N_burst)}\n"
+                error += f"TR_burst = {repr(self.TR_burst)} s\n"
+                error += f"dt_lastBurst = {repr(self.dt_lastBurst)} s\n"
+                error += f"Evaluating to:\n"
+                error += f"duration_readout = {repr(self.duration_readout)} s\n"
+                error += f"duration_preparation = {repr(self.duration_preparation)} s\n"
+                error += f"round(read + prep, 6) = {repr(round(self.duration_readout + self.duration_preparation, 6))} s\n"
+                error += f"therefore: TR [{self.tr} s] < (Prep + Read) [{round(self.duration_readout + self.duration_preparation, 6)} s]\n"
+                error += f"which is invalid."
+                logger.critical(error)
                 raise ValueError(error)
 
     def _check_against_tr_burst(self):
@@ -308,9 +323,9 @@ class Sequence(_Event):
                 raise ValueError(error)
 
     def _check_against_N_dummyADC(self):
-        if hasattr(self, "_N_dummyADC") and hasattr(self, "_N_adc"):
-            if self.N_adc < self.N_dummyADC:
-                error = "N_adc < N_dummyADC"
+        if hasattr(self, "_N_dummyADC") and hasattr(self, "_N_totalADC"):
+            if self.N_totalADC < self.N_dummyADC:
+                error = "N_totalADC < N_dummyADC"
                 logger.critical(error)
                 raise ValueError(error)
 
@@ -379,14 +394,14 @@ class Sequence(_Event):
         self._changed("N_burst")
 
     @property
-    def N_adc(self):
-        return self._N_adc
+    def N_totalADC(self):
+        return self._N_totalADC
 
-    @N_adc.setter
-    def N_adc(self, val: int):
-        check_value_is_valid(self, val, int, [(lt, 0)], "N_adc")
-        self._N_adc = int(val)
-        self._changed("N_adc")
+    @N_totalADC.setter
+    def N_totalADC(self, val: int):
+        check_value_is_valid(self, val, int, [(lt, 0)], "N_totalADC")
+        self._N_totalADC = int(val)
+        self._changed("N_totalADC")
 
     @property
     def N_dummyADC(self):
@@ -461,7 +476,7 @@ class Sequence(_Event):
     @property
     def duration_readout(self):
         if not hasattr(self, "_duration_readout"):
-            self._duration_readout = self.N_adc * self.es
+            self._duration_readout = self.N_totalADC * self.es
             self._changed("duration_readout")
         return self._duration_readout
 

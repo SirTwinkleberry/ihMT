@@ -21,7 +21,7 @@ from abc import ABC
 from numpy import cos, pi, sqrt
 from scipy.integrate import quad
 from operator import le, lt, gt
-from typing import Any, NewType
+from typing import Any
 
 from ihmt.meta import _Event, check_value_is_valid, _deg2rad
 
@@ -50,7 +50,7 @@ class _Pulse(ABC, _Event):
     _b1peak: float
     _omegaRMS: float
 
-    _classAttributes: tuple[str] = (
+    _classAttributes = (
         "gyromagneticFactor",
         "duration",
         "flipAngle",
@@ -90,8 +90,8 @@ class _Pulse(ABC, _Event):
         logger.critical(error)
         raise NotImplementedError(error)
 
-    def copy(self) -> _Pulse:
-        return self(**self.__dict__)
+    def copy(self) -> "_Pulse":
+        return self.__class__(**self.__dict__)
 
     #####
     # BELOW: property getters and setters
@@ -227,7 +227,7 @@ class _Pulse(ABC, _Event):
 class Tukey(_Pulse):
     _shape: float  # r factor for Tukey shape
 
-    _classAttributes: tuple[str] = ("shape", *_Pulse._get_classAttributes())
+    _classAttributes = ("shape", *_Pulse._get_classAttributes())
 
     def __init__(
         self,
@@ -236,7 +236,7 @@ class Tukey(_Pulse):
         flipAngle: float,
         offset: float,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         """_Tukey pulse class_
 
@@ -267,7 +267,7 @@ class Tukey(_Pulse):
             ],
         )
 
-    def copy(self) -> Tukey:
+    def copy(self) -> "Tukey":
         return Tukey(self.duration, self.shape, self.flipAngle, self.offset)
 
     def value(self, t: float) -> float:
@@ -351,4 +351,4 @@ class Tukey(_Pulse):
         self._changed("powerIntegral")
 
 
-Pulse = NewType("Pulse", _Pulse)
+type Pulse = _Pulse  # Python 3.12 feature

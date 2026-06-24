@@ -22,7 +22,8 @@ from datetime import datetime
 from sys import maxsize
 from typing import Any
 from scipy.io import savemat
-from numpy import set_printoptions, array, number, ndarray
+from numpy import set_printoptions, array, ndarray
+from numpy.typing import NDArray
 from yaml import safe_load
 from sys import argv
 from pathlib import Path
@@ -71,8 +72,8 @@ def SingleRun(
     output_fullVector: bool,
     export_read: bool,
     *args: Any,
-    **kwargs: Any
-) -> dict[str, ndarray[number]]:
+    **kwargs: Any,
+) -> dict[str, ndarray]:
     """_summary_
 
     Parameters
@@ -138,7 +139,7 @@ def SingleRun(
 
     Returns
     -------
-    dict[str, ndarray[number]]
+    dict[str, ndarray]
         _description_
 
     Raises
@@ -162,7 +163,7 @@ def SingleRun(
         N_pulsePerOffset=N_altern,
         N_pulse=np,
         N_burst=nb,
-        N_adc=turbo,
+        N_totalADC=turbo,
         N_dummyADC=N_dummyADC,
         dt_interPulse=dt,
         TR_burst=btr,
@@ -192,7 +193,7 @@ def SingleRun(
         output_fullVector=output_fullVector,
     )
 
-    arrays: dict[str, ndarray[number]] = simulator.SteadyState()
+    arrays: dict[str, ndarray] = simulator.SteadyState()
 
     if export:
         Path(outputDir).resolve().mkdir(parents=True, exist_ok=True)
@@ -208,13 +209,13 @@ def SingleRun(
 def GridRuns(
     simulator: Simulator,
     range_keys: list[str],
-    ranges: dict[str, ndarray[number]],
+    ranges: dict[str, ndarray],
     safe: bool = False,
-) -> dict[str, ndarray[number]]:
+) -> dict[str, ndarray]:
     def _runs(range_keys):
         if len(range_keys) == 0:
-            for key, val in (tmp := simulator.SteadyState()).items():
-                data[key].append(val)
+            for key, val in simulator.SteadyState().items():
+                data[key].append(val)  # type: ignore
             return
         attribute = range_keys.pop(0)
 
@@ -236,9 +237,10 @@ def GridRuns(
     if not safe:
         simulator = simulator.copy()
 
-    data: dict[list[number]] = {key: [] for key in Signal.keys() | {"readout"}}
+    data: dict[str, list] = {key: [] for key in Signal.keys() | {"readout"}}  # type: ignore
     _runs(range_keys.copy())
-    data = {key: array(val) for key, val in data.items() if val}
+
+    data: dict[str, ndarray] = {key: array(val) for key, val in data.items() if val}
 
     # Get (shape of ranges, shape of output vector)
     shape = list(len(ranges[key]) for key in range_keys)
@@ -254,10 +256,10 @@ def GridRuns(
 
 def SampledRuns(
     simulator: Simulator,
-    samplers: dict[str, ndarray[number]],
-    grids: dict[str, ndarray[number]],
+    samplers: dict[str, ndarray],
+    grids: dict[str, ndarray],
     safe: bool = False,
-) -> dict[str, ndarray[number]]:
+) -> dict[str, ndarray]:
     raise NotImplementedError
 
 
