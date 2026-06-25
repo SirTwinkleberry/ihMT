@@ -8,7 +8,7 @@ sequence:
   N_pulsePerOffset: 1
   N_pulse: 1
   N_burst: 5
-  N_adc: 88
+  N_totalADC: 88
   N_dummyADC: 0
   dt_interPulse: 0.00608
   TR_burst: 0.145

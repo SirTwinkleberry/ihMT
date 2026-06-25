@@ -219,15 +219,17 @@ def GridRuns(
             return
         attribute = range_keys.pop(0)
 
-        if hasattr(simulator.pulse, attribute):
-            path = simulator.pulse
+        if hasattr(simulator, attribute):
+            path = simulator
         elif hasattr(simulator.system, attribute):
             path = simulator.system
+        elif hasattr(simulator.pulse, attribute):
+            path = simulator.pulse
         elif hasattr(simulator.sequence, attribute):
             path = simulator.sequence
         else:
             raise AttributeError(
-                f"Attribute could not be found in the simulator's pulse, system, or sequence. Received `{attribute}`."
+                f"Attribute could not be found in the simulator, its pulse, system, or sequence. Received `{attribute}`."
             )
 
         for val in ranges[attribute]:
