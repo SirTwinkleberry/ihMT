@@ -33,3 +33,25 @@ from ihmt.trajector import Trajector
 from ihmt.run import SingleRun, GridRuns, SampledRuns
 
 from ihmt.vectorized.pulse import TukeyVector
+
+# Check if update available
+current = 'undefined'
+try:
+    from importlib.metadata import version
+    from requests import get, codes
+    from tomllib import loads
+    current = version('ihmt')
+    response = get("https://raw.githubusercontent.com/SirTwinkleberry/ihMT/refs/heads/master/pyproject.toml")
+    if response.status_code == codes.ok:
+        head = loads(response.text)['project']['version']
+        if head == current:
+            print(f"You are running the latest version of the `ihmt` package. Version: {current}")
+        else:
+            print(f"Your version of the `ihmt` package is not up-to-date. Current version: {current}")
+            print("Check https://github.com/SirTwinkleberry/ihMT for information on updating.")
+    response.raise_for_status()
+except Exception as e:
+    print("Could not check if current `ihmt` package version is up-to-date.")
+    print("You can check for yourself over at: https://github.com/SirTwinkleberry/ihMT")
+    print(f"Current version: {current}")
+    print(e)
