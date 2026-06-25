@@ -466,7 +466,7 @@ class System(_Event):
             )
         else:
             poolBound_Rrf_Positive: ndarray = (
-                0.5 * norm_A * superLorentzian(self.poolBound_T2, self.pulse.offset)
+                0.5 * norm_A * superLorentzian(self.poolBound_T2, array([self.pulse.offset] * self.N_poolBound))
             )
             poolBound_Rrf_Negative: ndarray = poolBound_Rrf_Positive
 
